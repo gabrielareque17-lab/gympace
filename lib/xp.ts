@@ -1,0 +1,271 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import {
+  ACHIEVEMENT_REGISTRY,
+  type AchievementStats,
+} from "@/lib/achievements";
+import { calculateLongestActivityStreak } from "@/lib/competition-progress";
+
+export type XPRank = "rookie" | "bronze" | "silver" | "gold" | "platinum" | "elite";
+
+export type XPFeedback = {
+  previousXp: number;
+  totalXp: number;
+  gainedXp: number;
+  previousLevel: number;
+  currentLevel: number;
+  leveledUp: boolean;
+  rank: XPRank;
+  levelProgress: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number | null;
+};
+
+type RunRow = {
+  distance: number | null;
+  pace: string | null;
+  created_at: string;
+};
+
+type WorkoutRow = {
+  muscle_group: string | null;
+  created_at: string;
+};
+
+type CompetitionParticipantRow = {
+  progress: number | null;
+  competitions: {
+    type: string | null;
+    end_date: string | null;
+  } | null;
+};
+
+const LEVEL_BASE_XP = 120;
+const LEVEL_GROWTH = 1.18;
+
+export async function syncUserXP(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<XPFeedback> {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("total_xp, current_level, level, rank")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const previousXp = Number(profile?.total_xp ?? 0);
+  const previousLevel = Number(profile?.current_level ?? profile?.level ?? 1);
+  const totalXp = await calculateTotalXPForUser(supabase, userId);
+  const currentLevel = calculateLevelFromXP(totalXp);
+  const rank = getRankForLevel(currentLevel);
+  const levelState = getLevelProgress(totalXp);
+
+  const { error } = await supabase
+    .from("profiles")
+    .upsert(
+      {
+        user_id: userId,
+        total_xp: totalXp,
+        current_level: currentLevel,
+        level: currentLevel,
+        rank,
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (error) throw error;
+
+  return {
+    previousXp,
+    totalXp,
+    gainedXp: Math.max(totalXp - previousXp, 0),
+    previousLevel,
+    currentLevel,
+    leveledUp: currentLevel > previousLevel,
+    rank,
+    ...levelState,
+  };
+}
+
+export async function calculateTotalXPForUser(
+  supabase: SupabaseClient,
+  userId: string
+) {
+  const [runs, workouts, participants] = await Promise.all([
+    fetchRuns(supabase, userId),
+    fetchWorkouts(supabase, userId),
+    fetchCompetitionParticipants(supabase, userId),
+  ]);
+
+  const stats = buildAchievementStats(runs, workouts);
+  const achievementXp = ACHIEVEMENT_REGISTRY.filter((achievement) =>
+    achievement.check(stats)
+  ).length * 125;
+
+  const runXp = runs.reduce(
+    (sum, run) => sum + 25 + Math.round(Number(run.distance ?? 0) * 8),
+    0
+  );
+  const workoutXp = workouts.length * 45;
+  const streakXp = Math.max(stats.currentStreak, stats.gymStreak) * 15;
+  const competitionXp = participants.reduce((sum, participant) => {
+    const progress = Number(participant.progress ?? 0);
+    const isEnded = participant.competitions?.end_date
+      ? new Date(participant.competitions.end_date) < new Date()
+      : false;
+
+    return sum + 60 + Math.round(progress * 4) + (isEnded ? 100 : 0);
+  }, 0);
+
+  return runXp + workoutXp + streakXp + achievementXp + competitionXp;
+}
+
+export function calculateLevelFromXP(totalXp: number) {
+  let level = 1;
+
+  while (totalXp >= getXPRequiredForLevel(level + 1)) {
+    level += 1;
+  }
+
+  return level;
+}
+
+export function getLevelProgress(totalXp: number) {
+  const currentLevel = calculateLevelFromXP(totalXp);
+  const currentThreshold = getXPRequiredForLevel(currentLevel);
+  const nextThreshold = getXPRequiredForLevel(currentLevel + 1);
+  const span = nextThreshold - currentThreshold;
+  const xpIntoLevel = Math.max(totalXp - currentThreshold, 0);
+
+  return {
+    levelProgress: Math.min(Math.round((xpIntoLevel / span) * 100), 100),
+    xpIntoLevel,
+    xpForNextLevel: span,
+  };
+}
+
+export function getRankForLevel(level: number): XPRank {
+  if (level >= 30) return "elite";
+  if (level >= 22) return "platinum";
+  if (level >= 15) return "gold";
+  if (level >= 8) return "silver";
+  if (level >= 3) return "bronze";
+  return "rookie";
+}
+
+function getXPRequiredForLevel(level: number) {
+  if (level <= 1) return 0;
+
+  let total = 0;
+  for (let current = 2; current <= level; current += 1) {
+    total += Math.round(LEVEL_BASE_XP * Math.pow(LEVEL_GROWTH, current - 2));
+  }
+
+  return total;
+}
+
+function buildAchievementStats(
+  runs: RunRow[],
+  workouts: WorkoutRow[]
+): AchievementStats {
+  const totalKm = runs.reduce((sum, run) => sum + Number(run.distance ?? 0), 0);
+  const longestRun = runs.reduce(
+    (max, run) => Math.max(max, Number(run.distance ?? 0)),
+    0
+  );
+  const paces = runs
+    .map((run) => paceToSeconds(run.pace))
+    .filter((pace): pace is number => pace !== null);
+  const gymDates = workouts.map((workout) => workout.created_at);
+
+  return {
+    totalRuns: runs.length,
+    totalKm,
+    longestRun,
+    currentStreak: calculateLongestActivityStreak(runs.map((run) => run.created_at)),
+    bestPaceSeconds: paces.length > 0 ? Math.min(...paces) : null,
+    gymTotalSessions: workouts.length,
+    gymChestSessions: workouts.filter((workout) => workout.muscle_group === "peito").length,
+    gymLegSessions: workouts.filter((workout) => workout.muscle_group === "pernas").length,
+    gymStreak: calculateLongestActivityStreak(gymDates),
+    gymHasPersonalRecord: false,
+    hasPerfectWeek: hasFiveSessionsInAWeek(workouts),
+  };
+}
+
+async function fetchRuns(supabase: SupabaseClient, userId: string): Promise<RunRow[]> {
+  const { data, error } = await supabase
+    .from("runs")
+    .select("distance, pace, created_at")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return (data ?? []) as RunRow[];
+}
+
+async function fetchWorkouts(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<WorkoutRow[]> {
+  const { data, error } = await supabase
+    .from("workouts")
+    .select("muscle_group, created_at")
+    .eq("user_id", userId);
+
+  if (error) {
+    const missingTable = error.code === "42P01" || error.message.toLowerCase().includes("workouts");
+    if (missingTable) return [];
+    throw error;
+  }
+
+  return (data ?? []) as WorkoutRow[];
+}
+
+async function fetchCompetitionParticipants(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<CompetitionParticipantRow[]> {
+  const { data, error } = await supabase
+    .from("competition_participants")
+    .select("progress, competitions(type, end_date)")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  return ((data ?? []) as unknown as CompetitionParticipantRow[]).map((row) => ({
+    ...row,
+    competitions: Array.isArray(row.competitions)
+      ? row.competitions[0] ?? null
+      : row.competitions,
+  }));
+}
+
+function paceToSeconds(pace: string | null) {
+  if (!pace) return null;
+  const [minutes, seconds] = pace.split(":").map(Number);
+  if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return null;
+  return minutes * 60 + seconds;
+}
+
+function hasFiveSessionsInAWeek(workouts: WorkoutRow[]) {
+  const weeks: Record<string, Set<string>> = {};
+
+  for (const workout of workouts) {
+    const date = new Date(workout.created_at);
+    if (Number.isNaN(date.getTime())) continue;
+
+    const weekKey = `${date.getFullYear()}-${getWeekNumber(date)}`;
+    weeks[weekKey] ??= new Set();
+    weeks[weekKey].add(date.toISOString().slice(0, 10));
+  }
+
+  return Object.values(weeks).some((days) => days.size >= 5);
+}
+
+function getWeekNumber(date: Date) {
+  const copy = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = copy.getUTCDay() || 7;
+  copy.setUTCDate(copy.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(copy.getUTCFullYear(), 0, 1));
+  return Math.ceil(((copy.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+}

@@ -1,0 +1,1129 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import {
+  Activity,
+  ArrowRight,
+  Award,
+  BarChart3,
+  Dumbbell,
+  Flame,
+  Star,
+  Target,
+  Trophy,
+  TrendingUp,
+  Users,
+  Zap,
+} from "lucide-react";
+
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
+function useInView<T extends HTMLElement = HTMLElement>(threshold = 0.12) {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return [ref, inView] as const;
+}
+
+// ─── Animated Counter ─────────────────────────────────────────────────────────
+
+function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [current, setCurrent] = useState(0);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setStarted(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    const duration = 1600;
+    const start = Date.now();
+    const tick = () => {
+      const t = Math.min((Date.now() - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setCurrent(Math.round(eased * target));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [started, target]);
+
+  return (
+    <span ref={ref}>
+      {current.toLocaleString("pt-BR")}
+      {suffix}
+    </span>
+  );
+}
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+
+function NavBar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 24);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  return (
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? "border-b border-white/[0.05] bg-[#080808]/85 shadow-[0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-xl"
+          : ""
+      }`}
+    >
+      <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6">
+        <div className="flex items-center gap-2.5">
+          <div className="grid size-[30px] place-items-center rounded-[8px] bg-[#B6FF00] shadow-[0_0_16px_rgba(182,255,0,0.4)]">
+            <Zap className="size-[15px] text-[#080808]" strokeWidth={3} />
+          </div>
+          <span className="font-display text-[17px] font-bold tracking-[-0.02em]">GymPace</span>
+        </div>
+
+        <nav className="hidden items-center gap-7 md:flex">
+          {[
+            ["Funcionalidades", "#features"],
+            ["Analytics", "#analytics"],
+            ["Competições", "#competitions"],
+            ["Evolução", "#evolution"],
+          ].map(([label, href]) => (
+            <a
+              key={label}
+              href={href}
+              className="text-[13px] text-[#F5F5F5]/45 transition-colors duration-150 hover:text-[#F5F5F5]/90"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="hidden text-[13px] text-[#F5F5F5]/45 transition-colors hover:text-[#F5F5F5]/90 md:block"
+          >
+            Entrar
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-[10px] bg-[#B6FF00] px-4 py-2 text-[13px] font-bold text-[#080808] transition-all duration-200 hover:bg-[#CAFF30] hover:shadow-[0_0_20px_rgba(182,255,0,0.4)]"
+          >
+            Começar grátis
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─── App Preview Mockup ───────────────────────────────────────────────────────
+
+function AppPreview() {
+  return (
+    <div className="relative mx-auto max-w-5xl">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-[#080808] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-[#080808] to-transparent" />
+
+      <div className="absolute inset-0 scale-95 rounded-3xl bg-[#B6FF00]/[0.06] blur-3xl" />
+
+      <div className="relative overflow-hidden rounded-[20px] border border-white/[0.07] bg-[#0C0C0C] shadow-[0_40px_80px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)]">
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-[#0A0A0A] px-4 py-3">
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="size-[11px] rounded-full bg-white/10" />
+            ))}
+          </div>
+          <div className="mx-auto flex h-6 w-44 items-center justify-center rounded-md bg-white/[0.04] text-[10px] text-white/20">
+            gympace.app
+          </div>
+        </div>
+
+        {/* Dashboard content */}
+        <div className="bg-[#090909] p-5">
+          <div className="mb-5">
+            <div className="mb-1.5 h-1.5 w-10 rounded-full bg-[#B6FF00]/50" />
+            <div className="h-4 w-28 rounded bg-white/10" />
+          </div>
+
+          {/* 4 metric cards */}
+          <div className="mb-4 grid grid-cols-4 gap-2.5">
+            {[
+              { label: "KM Semanal", value: "47.3", unit: "km", p: 94 },
+              { label: "Pace Médio", value: "5:12", unit: "/km", p: 72 },
+              { label: "Treinos", value: "6", unit: "sessões", p: 100 },
+              { label: "Meta", value: "94", unit: "%", p: 94 },
+            ].map((m) => (
+              <div
+                key={m.label}
+                className="rounded-xl border border-white/[0.06] bg-[#111111] p-3"
+              >
+                <div className="mb-2.5 text-[8px] font-semibold uppercase tracking-widest text-white/25">
+                  {m.label}
+                </div>
+                <div className="mb-2 flex items-baseline gap-1">
+                  <span className="font-display text-[18px] font-bold leading-none">
+                    {m.value}
+                  </span>
+                  <span className="text-[8px] font-bold text-[#B6FF00]">{m.unit}</span>
+                </div>
+                <div className="h-[2px] w-full overflow-hidden rounded-full bg-white/[0.06]">
+                  <div
+                    className="h-full rounded-full bg-[#B6FF00]"
+                    style={{ width: `${m.p}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Charts row */}
+          <div className="grid grid-cols-[1fr_160px] gap-2.5">
+            <div className="h-32 rounded-xl border border-white/[0.06] bg-[#111111] p-4">
+              <div className="mb-3 flex justify-between text-[8px] text-white/28">
+                <span className="font-semibold uppercase tracking-wider">Volume Semanal</span>
+                <span className="text-[#B6FF00]">↑ 12%</span>
+              </div>
+              <div className="flex h-16 items-end gap-1">
+                {[35, 58, 42, 72, 48, 65, 80, 94].map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-sm"
+                    style={{
+                      height: `${h}%`,
+                      background:
+                        i === 7
+                          ? "#B6FF00"
+                          : `rgba(182,255,0,${i === 6 ? 0.3 : 0.08 + i * 0.025})`,
+                      boxShadow: i === 7 ? "0 0 8px rgba(182,255,0,0.35)" : "none",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-[#111111] p-4">
+              <div className="relative size-14">
+                <svg viewBox="0 0 56 56" className="size-full -rotate-90">
+                  <circle
+                    cx="28"
+                    cy="28"
+                    r="22"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.05)"
+                    strokeWidth="4.5"
+                  />
+                  <circle
+                    cx="28"
+                    cy="28"
+                    r="22"
+                    fill="none"
+                    stroke="#B6FF00"
+                    strokeWidth="4.5"
+                    strokeDasharray={`${2 * Math.PI * 22 * 0.7} ${2 * Math.PI * 22}`}
+                    strokeLinecap="round"
+                    style={{ filter: "drop-shadow(0 0 5px rgba(182,255,0,0.5))" }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="font-display text-sm font-bold text-[#B6FF00]">14</span>
+                </div>
+              </div>
+              <div className="text-[8px] font-bold tracking-widest text-[#B6FF00]">SILVER</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Hero Section ─────────────────────────────────────────────────────────────
+
+function HeroSection() {
+  return (
+    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#080808] pt-16">
+      {/* Grid */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+          backgroundSize: "72px 72px",
+        }}
+      />
+
+      {/* Glows */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-[900px] w-[1100px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF00]/[0.05] blur-[130px]" />
+        <div className="absolute right-0 top-1/3 h-[400px] w-[400px] translate-x-1/2 rounded-full bg-[#4ADE80]/[0.04] blur-[80px]" />
+        <div className="absolute bottom-1/4 left-0 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.03] blur-[60px]" />
+      </div>
+
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-20 text-center">
+        {/* Badge */}
+        <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/22 bg-[#B6FF00]/[0.07] px-4 py-1.5">
+          <Flame className="size-3 text-[#B6FF00]" />
+          <span className="text-[11px] font-semibold tracking-wide text-[#B6FF00]">
+            Para atletas híbridos — corrida + academia
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h1 className="mb-5 font-display font-bold leading-[1.02] tracking-[-0.03em] [font-size:clamp(3rem,9vw,7rem)]">
+          Treine.{" "}
+          <span className="sm:hidden">
+            <br />
+          </span>
+          Evolua.
+          <br />
+          <span style={{ color: "#B6FF00" }}>Supere.</span>
+        </h1>
+
+        <p className="mx-auto mb-10 max-w-[520px] text-[15px] leading-[1.75] text-[#F5F5F5]/42">
+          A plataforma definitiva para atletas sérios. Registre corridas e sessões de academia,
+          acompanhe analytics em tempo real e compita com outros atletas.
+        </p>
+
+        {/* CTAs */}
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/register"
+            className="group flex items-center gap-2.5 rounded-[12px] bg-[#B6FF00] px-7 py-3.5 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.28)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.45)]"
+          >
+            Começar agora — é grátis
+            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+          <a
+            href="#features"
+            className="flex items-center gap-2 rounded-[12px] border border-white/[0.09] bg-white/[0.04] px-6 py-3.5 text-[14px] font-medium text-[#F5F5F5]/60 backdrop-blur-sm transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-[#F5F5F5]/90"
+          >
+            Ver funcionalidades
+          </a>
+        </div>
+
+        {/* Trust */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#F5F5F5]/26">
+          {["Sem cartão de crédito", "Configuração em 2 minutos", "Cancele quando quiser"].map(
+            (t) => (
+              <div key={t} className="flex items-center gap-1.5">
+                <div className="size-1 rounded-full bg-[#B6FF00]/50" />
+                {t}
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Dashboard preview */}
+        <div className="relative mt-16 w-full">
+          <AppPreview />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Stats Bar ────────────────────────────────────────────────────────────────
+
+function StatsBar() {
+  const stats = [
+    { label: "Atletas ativos", value: 2400, suffix: "+" },
+    { label: "Treinos registrados", value: 85000, suffix: "+" },
+    { label: "KM rastreados", value: 1200000, suffix: "" },
+    { label: "Competições criadas", value: 340, suffix: "+" },
+  ];
+
+  return (
+    <section className="border-y border-white/[0.04] bg-[#0A0A0A] py-12">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+          {stats.map((s, i) => (
+            <div key={i} className="text-center">
+              <div className="mb-1 font-display text-3xl font-bold text-[#B6FF00]">
+                <AnimatedNumber target={s.value} suffix={s.suffix} />
+              </div>
+              <div className="text-[12px] text-[#F5F5F5]/35">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Features Section ─────────────────────────────────────────────────────────
+
+const FEATURES = [
+  {
+    icon: BarChart3,
+    title: "Analytics Premium",
+    description:
+      "Heatmap de consistência, tendências de pace mês a mês, volume semanal e score de performance baseado em dados reais.",
+    tag: "Inteligente",
+    color: "#B6FF00",
+  },
+  {
+    icon: Trophy,
+    title: "Competições ao vivo",
+    description:
+      "Crie ou participe de competições com outros atletas. Rankings em tempo real, convites e resultados automáticos.",
+    tag: "Competitivo",
+    color: "#FACC15",
+  },
+  {
+    icon: TrendingUp,
+    title: "XP & Evolução",
+    description:
+      "Sistema de progressão gamificado com níveis, ranks e conquistas. Cada treino te coloca mais perto do topo.",
+    tag: "Gamificado",
+    color: "#A78BFA",
+  },
+  {
+    icon: Users,
+    title: "Comunidade",
+    description:
+      "Explore atletas, compare rankings e construa sua reputação na plataforma de atletas híbridos.",
+    tag: "Social",
+    color: "#22D3EE",
+  },
+  {
+    icon: Activity,
+    title: "Corridas & Academia",
+    description:
+      "Registre corridas com pace e distância, ou sessões de academia por grupo muscular. Fluxo rápido, dados reais.",
+    tag: "Registro",
+    color: "#FB923C",
+  },
+  {
+    icon: Target,
+    title: "Metas semanais",
+    description:
+      "Defina metas de KM, volume ou consistência. Acompanhe o progresso com barras e feedbacks visuais em tempo real.",
+    tag: "Metas",
+    color: "#F472B6",
+  },
+];
+
+function FeaturesSection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  return (
+    <section id="features" ref={ref} className="bg-[#080808] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div
+          className={`mb-16 text-center transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+        >
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] text-[#F5F5F5]/50">
+            Funcionalidades
+          </div>
+          <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+            Tudo que um atleta
+            <br />
+            <span style={{ color: "#B6FF00" }}>sério precisa</span>
+          </h2>
+          <p className="mx-auto max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
+            Não é um app de fitness genérico. É uma plataforma de performance construída para
+            quem leva o treino a sério.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f, i) => {
+            const Icon = f.icon;
+            return (
+              <div
+                key={f.title}
+                className={`group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] hover:shadow-[0_8px_40px_rgba(0,0,0,0.5)] ${
+                  inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
+                style={{ transitionDelay: `${i * 75}ms` }}
+              >
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+                <div
+                  className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+                  style={{ background: f.color + "20" }}
+                />
+
+                <div className="mb-4 flex items-start justify-between">
+                  <div className="grid size-10 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04]">
+                    <Icon className="size-5" style={{ color: f.color }} strokeWidth={1.8} />
+                  </div>
+                  <span className="rounded-full border border-white/[0.07] px-2.5 py-0.5 text-[10px] font-medium text-[#F5F5F5]/35">
+                    {f.tag}
+                  </span>
+                </div>
+
+                <h3 className="mb-2 font-display text-[17px] font-semibold">{f.title}</h3>
+                <p className="text-[13px] leading-[1.65] text-[#F5F5F5]/42">{f.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Analytics Section ────────────────────────────────────────────────────────
+
+const HEATMAP_PATTERN = Array.from({ length: 12 }, (_, week) =>
+  Array.from({ length: 7 }, (_, day) => {
+    const seed = week * 13 + day * 7;
+    return (seed % 4 === 0 ? 3 : seed % 3 === 0 ? 2 : seed % 7 === 0 ? 1 : 0) as 0 | 1 | 2 | 3;
+  })
+);
+
+function AnalyticsMockup() {
+  return (
+    <div className="relative">
+      <div className="absolute inset-0 scale-90 rounded-3xl bg-[#B6FF00]/[0.05] blur-3xl" />
+      <div className="relative rounded-2xl border border-white/[0.07] bg-[#111111] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+        {/* Score + Ring */}
+        <div className="mb-4 grid grid-cols-[1fr_116px] gap-3">
+          <div className="rounded-xl border border-white/[0.05] bg-[#0F0F0F] p-4">
+            <div className="mb-3 text-[8px] font-semibold uppercase tracking-widest text-white/25">
+              Performance Score
+            </div>
+            {[
+              { label: "Consistência", value: 82, color: "#B6FF00" },
+              { label: "Volume", value: 67, color: "#60A5FA" },
+              { label: "Streak", value: 55, color: "#F472B6" },
+              { label: "Nível", value: 70, color: "#A78BFA" },
+            ].map((s) => (
+              <div key={s.label} className="mb-2.5 last:mb-0">
+                <div className="mb-1 flex justify-between text-[8px]">
+                  <span className="text-white/38">{s.label}</span>
+                  <span className="font-mono text-white/48">{s.value}%</span>
+                </div>
+                <div className="h-[3px] rounded-full bg-white/[0.06]">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${s.value}%`, background: s.color }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.05] bg-[#0F0F0F] p-4">
+            <div className="relative size-16">
+              <svg viewBox="0 0 64 64" className="size-full -rotate-90">
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="26"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.05)"
+                  strokeWidth="5"
+                />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="26"
+                  fill="none"
+                  stroke="#B6FF00"
+                  strokeWidth="5"
+                  strokeDasharray={`${2 * Math.PI * 26 * 0.74} ${2 * Math.PI * 26}`}
+                  strokeLinecap="round"
+                  style={{ filter: "drop-shadow(0 0 6px rgba(182,255,0,0.5))" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="font-display text-lg font-bold text-[#B6FF00]">74</span>
+              </div>
+            </div>
+            <div className="text-[8px] font-bold tracking-widest text-[#B6FF00]">OVERALL</div>
+          </div>
+        </div>
+
+        {/* Heatmap */}
+        <div className="rounded-xl border border-white/[0.05] bg-[#0F0F0F] p-4">
+          <div className="mb-3 text-[8px] font-semibold uppercase tracking-widest text-white/25">
+            Consistência — últimas 12 semanas
+          </div>
+          <div className="flex gap-1">
+            {HEATMAP_PATTERN.map((week, wi) => (
+              <div key={wi} className="flex flex-col gap-1">
+                {week.map((level, di) => (
+                  <div
+                    key={di}
+                    className="size-[10px] rounded-sm"
+                    style={{
+                      background:
+                        level === 3
+                          ? "#B6FF00"
+                          : level === 2
+                            ? "rgba(182,255,0,0.42)"
+                            : level === 1
+                              ? "rgba(96,165,250,0.48)"
+                              : "rgba(255,255,255,0.05)",
+                      boxShadow: level === 3 ? "0 0 4px rgba(182,255,0,0.4)" : "none",
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="mt-2.5 flex items-center gap-3 text-[8px] text-white/24">
+            <div className="flex items-center gap-1">
+              <div className="size-2 rounded-sm bg-white/[0.05]" />
+              Nenhum
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="size-2 rounded-sm bg-[#60A5FA]/48" />
+              Academia
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="size-2 rounded-sm bg-[#B6FF00]/42" />
+              Corrida
+            </div>
+            <div className="flex items-center gap-1">
+              <div
+                className="size-2 rounded-sm bg-[#B6FF00]"
+                style={{ boxShadow: "0 0 4px rgba(182,255,0,0.5)" }}
+              />
+              Ambos
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsSection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  return (
+    <section id="analytics" ref={ref} className="bg-[#0A0A0A] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid items-center gap-16 lg:grid-cols-2">
+          <div
+            className={`transition-all duration-700 ${inView ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
+          >
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#B6FF00]">
+              <BarChart3 className="size-3" />
+              Analytics Premium
+            </div>
+            <h2 className="mb-5 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Dados que
+              <br />
+              <span style={{ color: "#B6FF00" }}>transformam</span>
+              <br />
+              performance
+            </h2>
+            <p className="mb-8 text-[14px] leading-[1.75] text-[#F5F5F5]/40">
+              Heatmap de consistência estilo GitHub, tendências de pace mês a mês, volume semanal
+              comparativo e um score de performance geral baseado em consistência, volume, streak e
+              nível.
+            </p>
+
+            <div className="space-y-3">
+              {[
+                "Heatmap de atividade dos últimos 84 dias",
+                "Tendências de pace com comparação mensal",
+                "Score de performance multidimensional",
+                "Volume semanal com histórico de 8 semanas",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3">
+                  <div className="flex size-5 items-center justify-center rounded-full bg-[#B6FF00]/15">
+                    <div className="size-1.5 rounded-full bg-[#B6FF00]" />
+                  </div>
+                  <span className="text-[13px] text-[#F5F5F5]/55">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className={`transition-all delay-150 duration-700 ${inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+          >
+            <AnalyticsMockup />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Competitions Section ─────────────────────────────────────────────────────
+
+function CompetitionsMockup() {
+  const competitors = [
+    { initials: "LM", name: "Lucas M.", sub: "Atleta Silver", value: "47.3 km", rank: 1, color: "#FACC15" },
+    { initials: "AS", name: "Ana S.", sub: "Atleta Gold", value: "43.8 km", rank: 2, color: "#A1A1AA" },
+    { initials: "PR", name: "Pedro R.", sub: "Atleta Bronze", value: "38.2 km", rank: 3, color: "#CD7F32" },
+    { initials: "JC", name: "Julia C.", sub: "Atleta Rookie", value: "31.5 km", rank: 4, color: "#71717A" },
+  ];
+
+  return (
+    <div className="relative">
+      <div className="absolute inset-0 scale-90 rounded-3xl bg-[#FACC15]/[0.04] blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+        <div className="border-b border-white/[0.05] px-5 py-4">
+          <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-[#FACC15]/60">
+            Competição Ativa
+          </div>
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-[15px] font-semibold">
+              Desafio Semanal — KM Total
+            </h3>
+            <span className="rounded-full border border-[#FACC15]/20 bg-[#FACC15]/[0.08] px-2.5 py-1 text-[10px] font-semibold text-[#FACC15]">
+              3 dias restantes
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-2 p-4">
+          {competitors.map((c, i) => (
+            <div
+              key={i}
+              className={`flex items-center gap-3 rounded-xl p-3 ${
+                i === 0
+                  ? "border border-[#FACC15]/15 bg-[#FACC15]/[0.05]"
+                  : "border border-white/[0.04] bg-[#0F0F0F]"
+              }`}
+            >
+              <span className="w-5 text-center font-display text-base font-bold text-white/20">
+                {c.rank}
+              </span>
+              <div
+                className="grid size-8 place-items-center rounded-full text-[10px] font-bold"
+                style={{ background: `${c.color}18`, color: c.color }}
+              >
+                {c.initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-semibold">{c.name}</div>
+                <div className="text-[10px] text-white/30">{c.sub}</div>
+              </div>
+              <div
+                className="font-mono text-[13px] font-bold tabular-nums"
+                style={{ color: c.color }}
+              >
+                {c.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between border-t border-white/[0.04] px-5 py-3 text-[10px] text-white/24">
+          <span>8 participantes</span>
+          <span>Atualizado agora</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetitionsSection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  return (
+    <section id="competitions" ref={ref} className="bg-[#080808] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid items-center gap-16 lg:grid-cols-2">
+          <div
+            className={`order-2 lg:order-1 transition-all duration-700 ${inView ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
+          >
+            <CompetitionsMockup />
+          </div>
+
+          <div
+            className={`order-1 lg:order-2 transition-all delay-150 duration-700 ${inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+          >
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FACC15]/20 bg-[#FACC15]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#FACC15]">
+              <Trophy className="size-3" />
+              Competições
+            </div>
+            <h2 className="mb-5 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Compete.
+              <br />
+              <span style={{ color: "#FACC15" }}>Conquiste</span>
+              <br />a liderança.
+            </h2>
+            <p className="mb-8 text-[14px] leading-[1.75] text-[#F5F5F5]/40">
+              Crie competições por KM total, sessões ou streaks. Convide atletas, acompanhe o
+              ranking em tempo real e descubra quem é o mais consistente da semana.
+            </p>
+
+            <div className="space-y-3">
+              {[
+                "Rankings atualizados a cada novo treino",
+                "Modalidades: corrida, academia ou híbrido",
+                "Convites por link ou código único",
+                "Histórico completo de competições e resultados",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3">
+                  <div className="flex size-5 items-center justify-center rounded-full bg-[#FACC15]/15">
+                    <div className="size-1.5 rounded-full bg-[#FACC15]" />
+                  </div>
+                  <span className="text-[13px] text-[#F5F5F5]/55">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── XP & Evolution Section ───────────────────────────────────────────────────
+
+const RANKS = [
+  { name: "Rookie", color: "#71717A", xp: "0 XP" },
+  { name: "Bronze", color: "#CD7F32", xp: "500 XP" },
+  { name: "Silver", color: "#A1A1AA", xp: "1.5k XP" },
+  { name: "Gold", color: "#EAB308", xp: "3.5k XP" },
+  { name: "Platinum", color: "#22D3EE", xp: "7k XP" },
+  { name: "Elite", color: "#B6FF00", xp: "15k XP" },
+];
+
+function XPSection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  return (
+    <section id="evolution" ref={ref} className="bg-[#0A0A0A] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div
+          className={`mb-14 text-center transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+        >
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#A78BFA]/20 bg-[#A78BFA]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#A78BFA]">
+            <Star className="size-3" />
+            XP & Evolução
+          </div>
+          <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+            Cada treino te leva
+            <br />
+            <span style={{ color: "#A78BFA" }}>mais longe</span>
+          </h2>
+          <p className="mx-auto max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
+            Sistema de progressão gamificado. Ganhe XP por cada corrida e sessão de academia. Suba
+            de rank. Conquiste badges exclusivos.
+          </p>
+        </div>
+
+        {/* Rank progression */}
+        <div
+          className={`mb-12 flex justify-center overflow-x-auto pb-2 transition-all delay-200 duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+        >
+          <div className="flex items-end gap-0">
+            {RANKS.map((rank, i) => (
+              <div key={rank.name} className="flex items-center">
+                <div className="flex flex-col items-center gap-2 px-2">
+                  <div
+                    className="relative flex size-12 items-center justify-center rounded-full border-2 sm:size-14"
+                    style={{
+                      borderColor: rank.color,
+                      background: i === RANKS.length - 1 ? `${rank.color}18` : "transparent",
+                      boxShadow:
+                        i === RANKS.length - 1 ? `0 0 28px ${rank.color}50` : "none",
+                    }}
+                  >
+                    <Zap className="size-5 sm:size-6" style={{ color: rank.color }} strokeWidth={2} />
+                    {i === RANKS.length - 1 && (
+                      <div className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#B6FF00]">
+                        <Star className="size-2.5 fill-[#080808] text-[#080808]" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold" style={{ color: rank.color }}>
+                    {rank.name}
+                  </span>
+                  <span className="text-[9px] text-white/22">{rank.xp}</span>
+                </div>
+                {i < RANKS.length - 1 && (
+                  <div
+                    className="h-px w-5 sm:w-8"
+                    style={{
+                      background: `linear-gradient(90deg, ${rank.color}50, ${RANKS[i + 1].color}50)`,
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              icon: Activity,
+              title: "+10 XP por corrida",
+              sub: "Mais distância = mais XP",
+              color: "#B6FF00",
+            },
+            {
+              icon: Dumbbell,
+              title: "+5 XP por treino",
+              sub: "Academia conta tanto quanto corrida",
+              color: "#60A5FA",
+            },
+            {
+              icon: Award,
+              title: "Badges exclusivos",
+              sub: "Conquistas desbloqueadas por marcos",
+              color: "#A78BFA",
+            },
+          ].map((b, i) => {
+            const Icon = b.icon;
+            return (
+              <div
+                key={i}
+                className={`rounded-2xl border border-white/[0.07] bg-[#111111] p-5 transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+                style={{ transitionDelay: `${300 + i * 100}ms` }}
+              >
+                <div className="mb-3 grid size-10 place-items-center rounded-xl bg-white/[0.04]">
+                  <Icon className="size-5" style={{ color: b.color }} strokeWidth={1.8} />
+                </div>
+                <div className="mb-1 font-display text-[16px] font-semibold">{b.title}</div>
+                <div className="text-[12px] text-[#F5F5F5]/35">{b.sub}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Social / Testimonials ────────────────────────────────────────────────────
+
+function SocialSection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  const testimonials = [
+    {
+      name: "Rafael M.",
+      role: "Triatleta amador",
+      text: "O GymPace mudou como eu acompanho meu volume. Ter corrida + academia no mesmo analytics é game changer.",
+      color: "#B6FF00",
+    },
+    {
+      name: "Camila T.",
+      role: "Corredora de rua",
+      text: "As competições são viciantes. Comecei só para ver o ranking e virei atleta de verdade.",
+      color: "#22D3EE",
+    },
+    {
+      name: "Bruno L.",
+      role: "Personal trainer",
+      text: "Indico para todos os meus alunos. O sistema de XP motiva muito mais do que qualquer app genérico.",
+      color: "#A78BFA",
+    },
+  ];
+
+  return (
+    <section ref={ref} className="bg-[#080808] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div
+          className={`mb-14 text-center transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+        >
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#22D3EE]/20 bg-[#22D3EE]/[0.06] px-3 py-1.5 text-[11px] font-semibold text-[#22D3EE]">
+            <Users className="size-3" />
+            Comunidade
+          </div>
+          <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+            Atletas reais.
+            <br />
+            <span style={{ color: "#22D3EE" }}>Resultados reais.</span>
+          </h2>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {testimonials.map((t, i) => (
+            <div
+              key={i}
+              className={`relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] ${inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+              style={{ transitionDelay: `${i * 100}ms` }}
+            >
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+
+              <div className="mb-4 flex gap-0.5">
+                {Array.from({ length: 5 }, (_, j) => (
+                  <Star key={j} className="size-3.5 fill-current" style={{ color: t.color }} />
+                ))}
+              </div>
+              <p className="mb-5 text-[13px] leading-[1.7] text-[#F5F5F5]/55">"{t.text}"</p>
+              <div className="flex items-center gap-3">
+                <div
+                  className="grid size-8 place-items-center rounded-full text-[11px] font-bold"
+                  style={{ background: `${t.color}18`, color: t.color }}
+                >
+                  {t.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+                </div>
+                <div>
+                  <div className="text-[13px] font-semibold">{t.name}</div>
+                  <div className="text-[11px] text-white/30">{t.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── CTA Section ──────────────────────────────────────────────────────────────
+
+function CTASection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  return (
+    <section ref={ref} className="bg-[#0A0A0A] py-24">
+      <div className="mx-auto max-w-4xl px-6">
+        <div
+          className={`relative overflow-hidden rounded-3xl border border-[#B6FF00]/14 bg-[#111111] px-8 py-16 text-center transition-all duration-700 ${inView ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
+        >
+          {/* Glows */}
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute left-1/2 top-0 h-[320px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF00]/[0.06] blur-[90px]" />
+            <div className="absolute bottom-0 left-1/4 h-[200px] w-[200px] translate-y-1/2 rounded-full bg-[#B6FF00]/[0.04] blur-[60px]" />
+          </div>
+
+          {/* Grid */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.025]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(182,255,0,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(182,255,0,0.8) 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+            }}
+          />
+
+          <div className="relative z-10">
+            <div className="mx-auto mb-6 grid size-14 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_40px_rgba(182,255,0,0.4)]">
+              <Zap className="size-7 text-[#080808]" strokeWidth={3} />
+            </div>
+
+            <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+              Pronto para
+              <br />
+              <span style={{ color: "#B6FF00" }}>começar?</span>
+            </h2>
+
+            <p className="mx-auto mb-10 max-w-md text-[14px] leading-[1.75] text-[#F5F5F5]/40">
+              Junte-se a atletas que já transformaram seu treino com analytics premium, competições
+              e progressão gamificada.
+            </p>
+
+            <Link
+              href="/register"
+              className="group inline-flex items-center gap-2.5 rounded-xl bg-[#B6FF00] px-8 py-4 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.3)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.5)]"
+            >
+              Começar agora — é grátis
+              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+
+            <p className="mt-5 text-[11px] text-[#F5F5F5]/24">
+              Sem cartão de crédito · Grátis para sempre · Configuração em 2 minutos
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+
+function Footer() {
+  return (
+    <footer className="border-t border-white/[0.04] bg-[#080808] py-10">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
+          <div className="flex items-center gap-2.5">
+            <div className="grid size-7 place-items-center rounded-[7px] bg-[#B6FF00]">
+              <Zap className="size-3.5 text-[#080808]" strokeWidth={3} />
+            </div>
+            <span className="font-display text-[15px] font-bold">GymPace</span>
+          </div>
+
+          <div className="flex items-center gap-6 text-[12px] text-[#F5F5F5]/30">
+            <Link href="/privacy" className="transition-colors hover:text-[#F5F5F5]/60">
+              Privacidade
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-[#F5F5F5]/60">
+              Termos
+            </Link>
+          </div>
+
+          <div className="flex flex-col items-center gap-1 text-right">
+            <div className="text-[11px] text-[#F5F5F5]/20">
+              © 2026 GymPace. Todos os direitos reservados.
+            </div>
+            <div className="text-[10px] text-[#F5F5F5]/14">
+              Powered by{" "}
+              <span className="font-semibold text-[#B6FF00]/40">Gravix Tech</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+export function LandingPage() {
+  useEffect(() => {
+    const prev = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = "smooth";
+    return () => {
+      document.documentElement.style.scrollBehavior = prev;
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#080808] text-[#F5F5F5] antialiased">
+      <NavBar />
+      <HeroSection />
+      <StatsBar />
+      <FeaturesSection />
+      <AnalyticsSection />
+      <CompetitionsSection />
+      <XPSection />
+      <SocialSection />
+      <CTASection />
+      <Footer />
+    </div>
+  );
+}
