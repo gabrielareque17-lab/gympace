@@ -78,9 +78,14 @@ export function NotificationsPanel({
 
   return (
     <div
-      className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0D0D0D]"
-      style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)" }}
+      className="flex flex-col overflow-hidden rounded-t-3xl border-t border-x border-white/[0.09] bg-[#0D0D0D] md:rounded-2xl md:border"
+      style={{ boxShadow: "0 -8px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04)" }}
     >
+      {/* Mobile drag handle */}
+      <div className="flex justify-center pb-1 pt-3 md:hidden">
+        <div className="h-[5px] w-10 rounded-full bg-white/[0.14]" />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3.5">
         <div className="flex items-center gap-2">
@@ -109,8 +114,8 @@ export function NotificationsPanel({
         )}
       </div>
 
-      {/* List */}
-      <div className="max-h-[420px] overflow-y-auto overscroll-contain">
+      {/* List — constrained height on both mobile and desktop */}
+      <div className="max-h-[60vh] overflow-y-auto overscroll-contain md:max-h-[420px]">
         {notifications.length === 0 ? (
           <EmptyState />
         ) : (
@@ -126,6 +131,9 @@ export function NotificationsPanel({
           </ul>
         )}
       </div>
+
+      {/* iPhone home-indicator safe area */}
+      <div className="h-safe-bottom md:hidden" style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
     </div>
   );
 }
@@ -161,7 +169,7 @@ function NotificationItem({
             : "bg-white/[0.025] hover:bg-white/[0.04]"
         )}
       >
-        {/* Unread dot */}
+        {/* Icon with unread dot */}
         <div className="relative mt-0.5 shrink-0">
           <div
             className="grid size-8 place-items-center rounded-xl"

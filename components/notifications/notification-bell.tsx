@@ -2,6 +2,7 @@
 
 import { Bell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NotificationsPanel } from "./notifications-panel";
@@ -13,35 +14,47 @@ interface NotificationBellProps {
 
 export function NotificationBell({ context = "header" }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
 
-  // Close on outside click
+  // createPortal requires the DOM — only render after mount
+  useEffect(() => { setMounted(true); }, []);
+
+  // Close when clicking outside bell and outside panel
   useEffect(() => {
     if (!isOpen) return;
-    function handlePointerDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+    function onDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (bellRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setIsOpen(false);
     }
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
   }, [isOpen]);
 
   // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setIsOpen(false); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
+  // Lock body scroll on mobile only
+  useEffect(() => {
+    if (!isOpen) return;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Bell button */}
+    <>
+      {/* Bell trigger */}
       <button
+        ref={bellRef}
         type="button"
         onClick={() => setIsOpen((o) => !o)}
         aria-label="Notificações"
@@ -58,46 +71,58 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
           strokeWidth={isOpen ? 2.2 : 1.8}
           style={isOpen ? { filter: "drop-shadow(0 0 5px rgba(182,255,0,0.5))" } : undefined}
         />
-
-        {/* Unread badge */}
         {unreadCount > 0 && (
           <span
             aria-label={`${unreadCount} notificações não lidas`}
             className="absolute right-0.5 top-0.5 flex min-w-[14px] items-center justify-center rounded-full px-[3px] text-[8px] font-bold leading-[14px] text-[#080808]"
-            style={{
-              height: "14px",
-              background: "#B6FF00",
-              boxShadow: "0 0 8px rgba(182,255,0,0.65)",
-            }}
+            style={{ height: "14px", background: "#B6FF00", boxShadow: "0 0 8px rgba(182,255,0,0.65)" }}
           >
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Panel */}
-      {isOpen && (
+      {/* Portal — breaks out of every ancestor stacking context */}
+      {mounted && isOpen && createPortal(
         <>
-          {/* Mobile backdrop */}
+          {/* Keyframes: sheet on mobile, dropdown on desktop */}
+          <style>{`
+            @keyframes notifBackdropIn {
+              from { opacity: 0; }
+              to   { opacity: 1; }
+            }
+            @keyframes notifSheetIn {
+              from { transform: translateY(100%); }
+              to   { transform: translateY(0); }
+            }
+            @keyframes notifDropIn {
+              from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+              to   { opacity: 1; transform: translateY(0)    scale(1);    }
+            }
+            .notif-backdrop-anim { animation: notifBackdropIn 0.18s ease; }
+            .notif-panel-anim    { animation: notifSheetIn 0.28s cubic-bezier(0.16,1,0.3,1); }
+            @media (min-width: 768px) {
+              .notif-panel-anim  { animation: notifDropIn 0.2s cubic-bezier(0.16,1,0.3,1); }
+            }
+          `}</style>
+
+          {/* Backdrop — dark + blur on mobile, barely visible on desktop */}
           <div
-            className="fixed inset-0 z-[98] bg-black/40 backdrop-blur-[2px] md:hidden"
+            className="notif-backdrop-anim fixed inset-0 z-[9998] bg-black/60 backdrop-blur-[4px] md:bg-black/20 md:backdrop-blur-[1px]"
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Notification panel — fixed position adapts to context */}
+          {/* Panel wrapper */}
           <div
+            ref={panelRef}
             className={cn(
-              "fixed z-[99]",
-              // Mobile: full width strip below top bar (notif-panel-top = safe-area-aware)
-              "inset-x-3 notif-panel-top",
-              // Desktop sidebar context: appears to the right of the 256px sidebar
-              context === "sidebar" && "md:inset-x-auto md:left-[268px] md:w-[380px] md:top-4",
-              // Desktop header context: appears to the right of the bell
-              context === "header" && "md:inset-x-auto md:right-4 md:left-auto md:w-[380px] md:top-[62px]"
+              "notif-panel-anim fixed z-[9999]",
+              // Mobile: bottom sheet — full width, anchored at screen bottom
+              "inset-x-0 bottom-0",
+              // Desktop: override to dropdown anchored near the bell
+              context === "sidebar" && "md:inset-x-auto md:bottom-auto md:left-[268px] md:top-4 md:w-[380px]",
+              context === "header"  && "md:inset-x-auto md:bottom-auto md:right-4   md:top-[62px] md:w-[380px]",
             )}
-            style={{
-              animation: "notifSlideIn 0.18s cubic-bezier(0.16,1,0.3,1)",
-            }}
           >
             <NotificationsPanel
               notifications={notifications}
@@ -106,15 +131,9 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
               onClose={() => setIsOpen(false)}
             />
           </div>
-        </>
+        </>,
+        document.body
       )}
-
-      <style>{`
-        @keyframes notifSlideIn {
-          from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-          to   { opacity: 1; transform: translateY(0)    scale(1);    }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
