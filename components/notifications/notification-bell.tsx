@@ -19,7 +19,6 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
   const panelRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
 
-  // createPortal requires the DOM — only render after mount
   useEffect(() => { setMounted(true); }, []);
 
   // Close when clicking outside bell and outside panel
@@ -42,12 +41,18 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
     return () => document.removeEventListener("keydown", onKey);
   }, [isOpen]);
 
-  // Lock body scroll on mobile only
+  // Lock body scroll on mobile when open
   useEffect(() => {
     if (!isOpen) return;
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    if (isMobile) document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    if (isMobile) {
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.touchAction = "";
+    };
   }, [isOpen]);
 
   return (
@@ -60,7 +65,9 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
         aria-label="Notificações"
         aria-expanded={isOpen}
         className={cn(
-          "relative grid size-8 place-items-center rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/40",
+          "relative grid size-8 place-items-center rounded-xl transition-all duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/40",
+          "active:scale-90",
           isOpen
             ? "bg-[#B6FF00]/10 text-[#B6FF00]"
             : "text-[#F5F5F5]/45 hover:bg-white/[0.05] hover:text-[#F5F5F5]/75"
@@ -85,30 +92,30 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
       {/* Portal — breaks out of every ancestor stacking context */}
       {mounted && isOpen && createPortal(
         <>
-          {/* Keyframes: sheet on mobile, dropdown on desktop */}
           <style>{`
             @keyframes notifBackdropIn {
               from { opacity: 0; }
               to   { opacity: 1; }
             }
             @keyframes notifSheetIn {
-              from { transform: translateY(100%); }
-              to   { transform: translateY(0); }
+              from { transform: translateY(100%); opacity: 0.6; }
+              to   { transform: translateY(0);    opacity: 1;   }
             }
             @keyframes notifDropIn {
-              from { opacity: 0; transform: translateY(-8px) scale(0.96); }
-              to   { opacity: 1; transform: translateY(0)    scale(1);    }
+              from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+              to   { opacity: 1; transform: translateY(0)     scale(1);    }
             }
-            .notif-backdrop-anim { animation: notifBackdropIn 0.18s ease; }
-            .notif-panel-anim    { animation: notifSheetIn 0.28s cubic-bezier(0.16,1,0.3,1); }
+            .notif-backdrop-anim { animation: notifBackdropIn 0.2s ease both; }
+            .notif-panel-anim    { animation: notifSheetIn 0.32s cubic-bezier(0.16,1,0.3,1) both; }
             @media (min-width: 768px) {
-              .notif-panel-anim  { animation: notifDropIn 0.2s cubic-bezier(0.16,1,0.3,1); }
+              .notif-panel-anim  { animation: notifDropIn 0.22s cubic-bezier(0.16,1,0.3,1) both; }
             }
           `}</style>
 
-          {/* Backdrop — dark + blur on mobile, barely visible on desktop */}
+          {/* Backdrop: heavy blur on mobile, subtle on desktop */}
           <div
-            className="notif-backdrop-anim fixed inset-0 z-[9998] bg-black/60 backdrop-blur-[4px] md:bg-black/20 md:backdrop-blur-[1px]"
+            className="notif-backdrop-anim fixed inset-0 z-[9998] md:bg-black/25 md:backdrop-blur-[2px]"
+            style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
             onClick={() => setIsOpen(false)}
           />
 
@@ -117,11 +124,11 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
             ref={panelRef}
             className={cn(
               "notif-panel-anim fixed z-[9999]",
-              // Mobile: bottom sheet — full width, anchored at screen bottom
+              // Mobile: full-width bottom sheet
               "inset-x-0 bottom-0",
-              // Desktop: override to dropdown anchored near the bell
-              context === "sidebar" && "md:inset-x-auto md:bottom-auto md:left-[268px] md:top-4 md:w-[380px]",
-              context === "header"  && "md:inset-x-auto md:bottom-auto md:right-4   md:top-[62px] md:w-[380px]",
+              // Desktop: dropdown near the bell
+              context === "sidebar" && "md:inset-x-auto md:bottom-auto md:left-[268px] md:top-4 md:w-[390px]",
+              context === "header"  && "md:inset-x-auto md:bottom-auto md:right-4   md:top-[62px] md:w-[390px]",
             )}
           >
             <NotificationsPanel

@@ -26,6 +26,7 @@ type Run = {
 
 type Workout = {
   muscle_group: string | null;
+  muscle_groups: string[] | null;
   created_at: string;
 };
 
@@ -214,7 +215,7 @@ export default async function PerfilPage() {
     user
       ? supabase
           .from("workouts")
-          .select("muscle_group, created_at")
+          .select("muscle_group, muscle_groups, created_at")
           .eq("user_id", user.id)
       : Promise.resolve({ data: null, error: null }),
     user
@@ -283,8 +284,14 @@ export default async function PerfilPage() {
     currentStreak,
     bestPaceSeconds,
     gymTotalSessions: workouts.length,
-    gymChestSessions: workouts.filter((w) => w.muscle_group === "peito").length,
-    gymLegSessions: workouts.filter((w) => w.muscle_group === "pernas").length,
+    gymChestSessions: workouts.filter((w) => {
+      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
+      return keys.includes("peito");
+    }).length,
+    gymLegSessions: workouts.filter((w) => {
+      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
+      return keys.includes("pernas");
+    }).length,
     gymStreak: computeStreak(workouts.map((w) => w.created_at)),
     gymHasPersonalRecord: false,
     hasPerfectWeek: hasPerfectWeek(workouts.map((w) => w.created_at)),

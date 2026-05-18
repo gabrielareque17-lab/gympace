@@ -47,7 +47,10 @@ export async function POST(request: Request) {
     type: 'new_follower',
     title: 'Novo seguidor',
     message: `${followerName} começou a seguir você.`,
-    data: { follower_id: user.id },
+    data: {
+      follower_id: user.id,
+      follower_username: followerProfile?.username ?? null,
+    },
   })
 
   return NextResponse.json({ ok: true })

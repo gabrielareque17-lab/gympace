@@ -29,6 +29,7 @@ type RunRow = {
 
 type WorkoutRow = {
   muscle_group: string | null;
+  muscle_groups: string[] | null;
   created_at: string;
 };
 
@@ -185,8 +186,14 @@ function buildAchievementStats(
     currentStreak: calculateLongestActivityStreak(runs.map((run) => run.created_at)),
     bestPaceSeconds: paces.length > 0 ? Math.min(...paces) : null,
     gymTotalSessions: workouts.length,
-    gymChestSessions: workouts.filter((workout) => workout.muscle_group === "peito").length,
-    gymLegSessions: workouts.filter((workout) => workout.muscle_group === "pernas").length,
+    gymChestSessions: workouts.filter((w) => {
+      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
+      return keys.includes("peito");
+    }).length,
+    gymLegSessions: workouts.filter((w) => {
+      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
+      return keys.includes("pernas");
+    }).length,
     gymStreak: calculateLongestActivityStreak(gymDates),
     gymHasPersonalRecord: false,
     hasPerfectWeek: hasFiveSessionsInAWeek(workouts),
@@ -209,7 +216,7 @@ async function fetchWorkouts(
 ): Promise<WorkoutRow[]> {
   const { data, error } = await supabase
     .from("workouts")
-    .select("muscle_group, created_at")
+    .select("muscle_group, muscle_groups, created_at")
     .eq("user_id", userId);
 
   if (error) {

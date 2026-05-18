@@ -52,6 +52,9 @@ const MUSCLE_GROUP_LABELS: Record<string, string> = {
   bracos: "Braços",
   abdomen: "Abdômen",
   "full-body": "Full Body",
+  biceps: "Bíceps",
+  triceps: "Tríceps",
+  cardio: "Cardio",
 };
 
 const INTENSITY_LABELS: Record<string, string> = {
@@ -176,8 +179,9 @@ function FeedCard({ event }: { event: FeedEvent }) {
       </>
     );
   } else if (type === "workout") {
-    const p = payload as { title?: string; muscle_group?: string; duration_minutes?: number; intensity?: string };
-    const muscle = MUSCLE_GROUP_LABELS[p.muscle_group ?? ""] ?? p.muscle_group ?? "academia";
+    const p = payload as { title?: string; muscle_group?: string; muscle_groups?: string[]; duration_minutes?: number; intensity?: string };
+    const muscleKeys = p.muscle_groups?.length ? p.muscle_groups : (p.muscle_group ? [p.muscle_group] : []);
+    const muscle = muscleKeys.length ? muscleKeys.map((k) => MUSCLE_GROUP_LABELS[k] ?? k).join(" + ") : "academia";
     const intensityColorMap: Record<string, TagColor> = { leve: "lime", moderado: "amber", intenso: "orange" };
     const intensityColor: TagColor = intensityColorMap[p.intensity ?? ""] ?? "neutral";
     action = (

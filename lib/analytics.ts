@@ -59,6 +59,7 @@ export type AnalyticsData = {
 export type RunRow = { distance: number | null; pace: string | null; created_at: string };
 export type WorkoutRow = {
   muscle_group: string | null;
+  muscle_groups: string[] | null;
   duration_minutes: number | null;
   created_at: string;
 };
@@ -78,6 +79,9 @@ const MUSCLE_LABELS: Record<string, string> = {
   bracos: "Braços",
   abdomen: "Abdômen",
   "full-body": "Full Body",
+  biceps: "Bíceps",
+  triceps: "Tríceps",
+  cardio: "Cardio",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -200,10 +204,13 @@ function computeWorkoutGroups(workouts: WorkoutRow[]): WorkoutGroup[] {
   const groups: Record<string, { sessions: number; minutes: number }> = {};
 
   for (const w of workouts) {
-    const key = w.muscle_group ?? "unknown";
-    groups[key] ??= { sessions: 0, minutes: 0 };
-    groups[key].sessions++;
-    groups[key].minutes += Number(w.duration_minutes ?? 0);
+    const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : ["unknown"]);
+    const mins = Number(w.duration_minutes ?? 0);
+    for (const key of keys) {
+      groups[key] ??= { sessions: 0, minutes: 0 };
+      groups[key].sessions++;
+      groups[key].minutes += mins;
+    }
   }
 
   return Object.entries(groups)

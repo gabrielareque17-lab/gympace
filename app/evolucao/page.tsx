@@ -31,7 +31,7 @@ export default async function EvolucaoPage() {
         .order("created_at", { ascending: true }),
       supabase
         .from("workouts")
-        .select("muscle_group,duration_minutes,created_at")
+        .select("muscle_group,muscle_groups,duration_minutes,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true }),
       supabase

@@ -129,7 +129,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const isFollowing = !!followRow
 
   type RunRow = { distance: number; pace: string | null; created_at: string };
-  type GymRow = { muscle_group: string | null; created_at: string };
+  type GymRow = { muscle_group: string | null; muscle_groups: string[] | null; created_at: string };
 
   const [{ data: rawRuns }, workoutsResult] = await Promise.all([
     supabase
@@ -138,7 +138,7 @@ export default async function PublicProfilePage({ params }: Props) {
       .eq("user_id", profile.user_id),
     supabase
       .from("workouts")
-      .select("muscle_group, created_at")
+      .select("muscle_group, muscle_groups, created_at")
       .eq("user_id", profile.user_id),
   ]);
 

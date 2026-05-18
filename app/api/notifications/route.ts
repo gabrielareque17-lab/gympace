@@ -17,7 +17,9 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ notifications: data ?? [] })
+  return NextResponse.json({ notifications: data ?? [] }, {
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  })
 }
 
 export async function POST(request: Request) {
@@ -52,5 +54,5 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true }, { status: 201 })
+  return NextResponse.json({ ok: true }, { status: 201, headers: { 'Content-Type': 'application/json; charset=utf-8' } })
 }

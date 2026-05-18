@@ -8,7 +8,7 @@ import { syncUserXP } from "@/lib/xp";
 
 type Params = { params: Promise<{ id: string }> };
 
-const VALID_GROUPS = ["peito", "costas", "pernas", "ombros", "bracos", "abdomen", "full-body"] as const;
+const VALID_GROUPS = ["peito", "costas", "pernas", "ombros", "bracos", "abdomen", "full-body", "biceps", "triceps", "cardio"] as const;
 const VALID_INTENSITIES = ["leve", "moderado", "intenso"] as const;
 
 async function revalidateAll(competitionIds: string[] = []) {
@@ -73,12 +73,22 @@ export async function PATCH(req: Request, { params }: Params) {
     if (!t) return NextResponse.json({ error: "Nome do treino é obrigatório" }, { status: 400 });
     updates.title = t;
   }
-  if (body.muscle_group !== undefined) {
+  if (body.muscle_groups !== undefined) {
+    const mgs: string[] = Array.isArray(body.muscle_groups)
+      ? (body.muscle_groups as unknown[]).map((g) => String(g).trim()).filter(Boolean)
+      : [];
+    if (mgs.length === 0 || !mgs.every((g) => VALID_GROUPS.includes(g as (typeof VALID_GROUPS)[number]))) {
+      return NextResponse.json({ error: "Grupo muscular inválido" }, { status: 400 });
+    }
+    updates.muscle_group = mgs[0];
+    updates.muscle_groups = mgs;
+  } else if (body.muscle_group !== undefined) {
     const mg = String(body.muscle_group).trim();
     if (!VALID_GROUPS.includes(mg as (typeof VALID_GROUPS)[number])) {
       return NextResponse.json({ error: "Grupo muscular inválido" }, { status: 400 });
     }
     updates.muscle_group = mg;
+    updates.muscle_groups = [mg];
   }
   if (body.duration_minutes !== undefined) {
     const dm = Number(body.duration_minutes);
@@ -98,7 +108,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .update(updates)
     .eq("id", id)
     .eq("user_id", user.id)
-    .select("id,title,muscle_group,duration_minutes,intensity,notes,created_at")
+    .select("id,title,muscle_group,muscle_groups,duration_minutes,intensity,notes,created_at")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
