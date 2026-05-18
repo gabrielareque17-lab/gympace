@@ -412,8 +412,8 @@ export default async function Home() {
 
   return (
     <AppShell>
-      <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <header className="mb-6 sm:mb-8">
+      <div className="min-w-0 flex-1 p-3 sm:p-6 lg:p-8">
+        <header className="mb-4 sm:mb-8">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Overview
           </p>
@@ -432,7 +432,7 @@ export default async function Home() {
           ))}
         </section>
 
-        <div className="mt-3 max-w-xs">
+        <div className="mt-3 sm:max-w-xs">
           <XPCard />
         </div>
 
@@ -487,7 +487,7 @@ function MetricCard({ title, value, unit, detail, icon: Icon, progress }: Metric
 
 function RecentActivities({ activities }: { activities: RecentActivity[] }) {
   return (
-    <section className="mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+    <section className="mt-3 sm:mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
       <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
         <div>
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
@@ -642,7 +642,7 @@ function WeekConsistencyCard({ days }: { days: DayActivity[] }) {
   const activeDays = days.filter((d) => d.hasRun || d.hasWorkout).length;
 
   return (
-    <section className="mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+    <section className="mt-3 sm:mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
       <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
         <div>
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">

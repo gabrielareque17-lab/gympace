@@ -2,6 +2,7 @@
 
 import { LayoutDashboard, Rss, Swords, Timer, UserRound } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -16,6 +17,21 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const initialHeight = useRef(0);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    initialHeight.current = vv.height;
+    function onResize() {
+      setKeyboardOpen(vv!.height < initialHeight.current * 0.75);
+    }
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
+
+  if (keyboardOpen) return null;
 
   return (
     <nav

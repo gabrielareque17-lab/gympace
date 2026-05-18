@@ -187,4 +187,12 @@
   .page-enter {
     animation: page-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+
+  /* Notification panel mobile top.
+     The html element has padding-top: env(safe-area-inset-top) AND the header
+     also has paddingTop: env(safe-area-inset-top) internally, so the panel must
+     account for both to appear just below the header edge. */
+  .notif-panel-top {
+    top: calc(3.5rem + 2 * env(safe-area-inset-top, 0px) + 6px);
+  }
 }

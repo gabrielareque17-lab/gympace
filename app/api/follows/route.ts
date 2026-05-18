@@ -32,6 +32,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Fetch follower display name for the notification message
+  const { data: followerProfile } = await supabase
+    .from('profiles')
+    .select('display_name, username')
+    .eq('user_id', user.id)
+    .single()
+
+  const followerName =
+    followerProfile?.display_name || followerProfile?.username || 'Alguém'
+
+  await supabase.from('notifications').insert({
+    user_id: following_id,
+    type: 'new_follower',
+    title: 'Novo seguidor',
+    message: `${followerName} começou a seguir você.`,
+    data: { follower_id: user.id },
+  })
+
   return NextResponse.json({ ok: true })
 }
 

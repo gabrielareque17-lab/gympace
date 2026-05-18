@@ -28,7 +28,7 @@ export function AvatarCard({ definition, isSelected, onSelect, isLoading }: Avat
       onMouseLeave={() => setIsHovered(false)}
       disabled={isLoading}
       className={cn(
-        'relative flex flex-col items-center gap-3 rounded-2xl border p-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-60',
+        'relative flex flex-col items-center gap-2 rounded-2xl border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-3 sm:p-4',
         isSelected
           ? 'bg-[#141414]'
           : 'border-white/[0.06] bg-[#111111] hover:bg-[#141414] hover:border-white/[0.14]'
@@ -42,16 +42,17 @@ export function AvatarCard({ definition, isSelected, onSelect, isLoading }: Avat
       {/* Selected checkmark */}
       {isSelected && (
         <span
-          className="absolute right-2.5 top-2.5 grid size-5 place-items-center rounded-full"
+          className="absolute right-2 top-2 grid size-4 place-items-center rounded-full sm:right-2.5 sm:top-2.5 sm:size-5"
           style={{ backgroundColor: accentColor }}
         >
-          <Check className="size-3 text-[#080808]" strokeWidth={3} />
+          <Check className="size-2.5 text-[#080808] sm:size-3" strokeWidth={3} />
         </span>
       )}
 
       {/* Avatar illustration */}
       <div className="flex items-center justify-center">
-        <AvatarSVG avatarId={definition.id} accentColor={accentColor} size={52} />
+        <AvatarSVG avatarId={definition.id} accentColor={accentColor} size={42} className="sm:hidden" />
+        <AvatarSVG avatarId={definition.id} accentColor={accentColor} size={52} className="hidden sm:block" />
       </div>
 
       {/* Category dot */}
@@ -62,8 +63,8 @@ export function AvatarCard({ definition, isSelected, onSelect, isLoading }: Avat
 
       {/* Label + description */}
       <div className="text-center">
-        <p className="font-display text-sm font-semibold text-[#F5F5F5]">{definition.label}</p>
-        <p className="mt-0.5 text-xs text-[#F5F5F5]/45">{definition.description}</p>
+        <p className="font-display text-xs font-semibold text-[#F5F5F5] sm:text-sm">{definition.label}</p>
+        <p className="mt-0.5 text-[10px] text-[#F5F5F5]/40 sm:text-xs sm:text-[#F5F5F5]/45">{definition.description}</p>
       </div>
     </button>
   )

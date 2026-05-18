@@ -1,4 +1,7 @@
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
+
+import { updateActiveCompetitionProgressForUser } from '@/lib/competition-progress'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { syncUserXP } from '@/lib/xp'
 
@@ -33,7 +36,12 @@ export async function POST(_req: Request, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  await updateActiveCompetitionProgressForUser(supabase, user.id)
   const xpFeedback = await syncUserXP(supabase, user.id)
+
+  revalidatePath('/competicoes')
+  revalidatePath(`/competicoes/${id}`)
+
   return NextResponse.json({ ok: true, xpFeedback })
 }
 

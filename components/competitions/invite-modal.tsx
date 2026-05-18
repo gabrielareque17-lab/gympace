@@ -78,7 +78,10 @@ export function InviteModal({ competitionId, onClose }: InviteModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center"
+      style={{ paddingBottom: "calc(1rem + env(keyboard-inset-height, 0px))" }}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
@@ -86,7 +89,7 @@ export function InviteModal({ competitionId, onClose }: InviteModalProps) {
       />
 
       {/* Panel */}
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0C0C0C] shadow-[0_0_80px_rgba(182,255,0,0.05),0_30px_80px_rgba(0,0,0,0.75)]">
+      <div className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0C0C0C] shadow-[0_0_80px_rgba(182,255,0,0.05),0_30px_80px_rgba(0,0,0,0.75)]" style={{ maxHeight: "85dvh" }}>
         {/* Top neon line */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B6FF00]/30 to-transparent" />
 
@@ -133,7 +136,7 @@ export function InviteModal({ competitionId, onClose }: InviteModalProps) {
         </div>
 
         {/* Results */}
-        <div className="min-h-[88px] max-h-72 overflow-y-auto px-5 pb-5 space-y-2">
+        <div className="min-h-[88px] flex-1 overflow-y-auto px-5 pb-5 space-y-2">
           {!query.trim() && (
             <p className="py-8 text-center text-xs text-[#F5F5F5]/25">
               Digite para buscar atletas

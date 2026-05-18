@@ -27,7 +27,7 @@ function formatPace(value: number) {
 export function WeeklyEvolutionChart({ data }: { data: WeeklyDataPoint[] }) {
   if (data.length === 0) {
     return (
-      <section className="mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+      <section className="mt-3 sm:mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
         <div className="border-b border-white/[0.05] px-5 py-4">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
             Evolução semanal
@@ -62,7 +62,7 @@ export function WeeklyEvolutionChart({ data }: { data: WeeklyDataPoint[] }) {
       : 7.0;
 
   return (
-    <section className="mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+    <section className="mt-3 sm:mt-5 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
       <div className="flex flex-col gap-4 border-b border-white/[0.05] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">

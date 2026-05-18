@@ -18,7 +18,6 @@ import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { JoinButton } from "@/components/competitions/join-button";
 import { InviteButton } from "@/components/competitions/invite-button";
 import { InviteBanner } from "@/components/competitions/invite-banner";
-import { ProgressUpdater } from "@/components/competitions/progress-updater";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getAvatarById } from "@/lib/avatar-registry";
 
@@ -34,6 +33,13 @@ const TYPE_CONFIG: Record<CompType, { label: string; icon: LucideIcon; color: st
   academia: { label: "Academia",  icon: Dumbbell, color: "#60A5FA", unit: "sessões" },
   streak:   { label: "Sequência", icon: Flame,    color: "#FB923C", unit: "dias" },
   hibrido:  { label: "Híbrido",   icon: Zap,      color: "#A78BFA", unit: "pts" },
+};
+
+const AUTO_UPDATE_MSG: Record<CompType, string> = {
+  corrida:  "Progresso calculado automaticamente das suas corridas registradas neste período.",
+  academia: "Progresso calculado automaticamente dos seus treinos registrados neste período.",
+  streak:   "Progresso calculado automaticamente dos dias consecutivos com corridas ou treinos.",
+  hibrido:  "Progresso calculado automaticamente combinando corridas e treinos registrados.",
 };
 
 const RANK_MEDALS = {
@@ -167,7 +173,6 @@ export default async function CompetitionDetailPage({ params }: Props) {
   const myRank = myEntry ? leaderboard.indexOf(myEntry) + 1 : null;
   const days = ended ? null : daysLeft(competition.end_date);
   const target = Number(competition.target_value);
-  const isCorrida = competition.type === "corrida";
 
   const podium = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
@@ -327,19 +332,9 @@ export default async function CompetitionDetailPage({ params }: Props) {
                     )}
                   </div>
 
-                  {!isCorrida && !ended && (
-                    <ProgressUpdater
-                      competitionId={competition.id}
-                      currentProgress={myEntry.progress}
-                      unit={cfg.unit}
-                      color={cfg.color}
-                    />
-                  )}
-                  {isCorrida && (
-                    <p className="mt-2.5 text-[10px] text-[#F5F5F5]/22">
-                      Progresso calculado automaticamente das suas corridas registradas neste período.
-                    </p>
-                  )}
+                  <p className="mt-2.5 text-[10px] text-[#F5F5F5]/22">
+                    {AUTO_UPDATE_MSG[competition.type as CompType]}
+                  </p>
                 </div>
               )}
             </div>

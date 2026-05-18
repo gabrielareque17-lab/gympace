@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Menu, Zap } from "lucide-react";
 
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ProfileProvider>
-      <div className="flex min-h-screen bg-[#0D0D0D] text-[#F5F5F5]">
+      <div className="flex min-h-dvh bg-[#0D0D0D] text-[#F5F5F5]">
         {/* Desktop sidebar */}
         <div className="hidden md:flex">
           <Sidebar email={email} />
@@ -75,8 +76,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="font-display text-[15px] font-bold tracking-tight">GymPace</span>
             </div>
 
-            {/* Spacer to balance the menu button */}
-            <div className="size-9" aria-hidden="true" />
+            {/* Notification bell */}
+            <NotificationBell context="header" />
           </header>
 
           {/* Main content — extra bottom padding reserves space for the fixed bottom nav */}

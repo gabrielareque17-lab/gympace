@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { AvatarCard } from "@/components/ui/avatar/avatar-card";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
-import { AVATAR_REGISTRY, AvatarType } from "@/lib/avatar-registry";
+import { AVATAR_REGISTRY, type AvatarCategory, AvatarType } from "@/lib/avatar-registry";
 
 type Step = "credentials" | "avatar";
 
@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string>("runner-v1");
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string>("runner-sprint");
   const [selectedAvatarType, setSelectedAvatarType] = useState<AvatarType>("runner");
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -166,17 +166,44 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              <div className="mb-5 grid grid-cols-2 gap-3">
-                {AVATAR_REGISTRY.map((def) => (
-                  <AvatarCard
-                    key={def.id}
-                    definition={def}
-                    isSelected={selectedAvatarId === def.id}
-                    onSelect={handleAvatarSelect}
-                    isLoading={isLoading}
-                  />
-                ))}
-              </div>
+              {/* Avatar categories */}
+              {(
+                [
+                  { id: 'running' as AvatarCategory, label: 'Corrida',  accentColor: '#B6FF00' },
+                  { id: 'gym'     as AvatarCategory, label: 'Academia', accentColor: '#60A5FA' },
+                  { id: 'hybrid'  as AvatarCategory, label: 'Híbrido',  accentColor: '#A78BFA' },
+                ]
+              ).map((cat) => {
+                const avatars = AVATAR_REGISTRY.filter((a) => a.category === cat.id)
+                return (
+                  <div key={cat.id} className="mb-4 space-y-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: cat.accentColor, boxShadow: `0 0 5px ${cat.accentColor}` }}
+                      />
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-[0.2em]"
+                        style={{ color: cat.accentColor }}
+                      >
+                        {cat.label}
+                      </span>
+                      <div className="h-px flex-1" style={{ background: `${cat.accentColor}18` }} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {avatars.map((def) => (
+                        <AvatarCard
+                          key={def.id}
+                          definition={def}
+                          isSelected={selectedAvatarId === def.id}
+                          onSelect={handleAvatarSelect}
+                          isLoading={isLoading}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
 
               {message ? (
                 <div

@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
+import { updateActiveCompetitionProgressForUser } from '@/lib/competition-progress'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { syncUserXP } from '@/lib/xp'
 
@@ -84,6 +85,10 @@ export async function PATCH(req: Request, { params }: Params) {
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
   if (!updatedInvite) return NextResponse.json({ error: 'Convite já respondido' }, { status: 409 })
+
+  if (action === 'accept') {
+    await updateActiveCompetitionProgressForUser(supabase, user.id)
+  }
 
   const xpFeedback = action === 'accept' ? await syncUserXP(supabase, user.id) : null
 

@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
@@ -76,7 +77,7 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
   }, []);
 
   return (
-    <aside className="flex min-h-screen w-[256px] shrink-0 flex-col border-r border-white/[0.06] bg-[#090909] px-3 py-5 text-[#F5F5F5]">
+    <aside className="flex h-dvh w-[256px] shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-white/[0.06] bg-[#090909] px-3 py-5 text-[#F5F5F5]">
       <div className="mb-6 flex items-center gap-2.5 px-2">
         <div className="grid size-8 place-items-center rounded-xl bg-[#B6FF00] shadow-[0_0_20px_rgba(182,255,0,0.28)]">
           <Zap className="size-4 text-[#080808]" strokeWidth={2.8} />
@@ -87,7 +88,7 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
             Train harder
           </p>
         </div>
-        {onClose && (
+        {onClose ? (
           <button
             type="button"
             onClick={onClose}
@@ -95,6 +96,8 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
           >
             <X className="size-4" />
           </button>
+        ) : (
+          <NotificationBell context="sidebar" />
         )}
       </div>
 
