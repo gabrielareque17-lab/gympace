@@ -39,11 +39,13 @@ interface PendingInviteCardProps {
   compact?: boolean
 }
 
+import { formatShortDate } from '@/lib/date-utils'
+
 type Status = 'idle' | 'accepting' | 'rejecting' | 'accepted' | 'rejected'
 
 function fmtDate(iso?: string | null) {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
+  return formatShortDate(iso)
 }
 
 export function PendingInviteCard({

@@ -24,6 +24,7 @@ import {
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { LevelUpOverlay } from "@/components/xp/level-up-overlay";
 import { useProfile } from "@/hooks/use-profile";
+import { formatDateLabel as formatRunDate } from "@/lib/date-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,17 +96,6 @@ function computePace(distKm: number, durationStr: string): string | null {
   const m = Math.floor(paceSec / 60);
   const s = Math.round(paceSec % 60);
   return s === 60 ? `${m + 1}:00` : `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function formatRunDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "--";
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Hoje";
-  if (d.toDateString() === yesterday.toDateString()) return "Ontem";
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d);
 }
 
 function getRunType(value: string | null) {

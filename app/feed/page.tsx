@@ -8,6 +8,12 @@ import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getFeedEvents, type FeedEvent, type FeedProfile } from "@/lib/feed";
 import { cn } from "@/lib/utils";
+import {
+  formatDateTime,
+  formatTimeAgo,
+  getDateGroup,
+  type DateGroup,
+} from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -54,49 +60,6 @@ const INTENSITY_LABELS: Record<string, string> = {
   intenso: "Intenso",
 };
 
-const MONTHS_PT = [
-  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-];
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60_000);
-  if (m < 1) return "agora";
-  if (m < 60) return `há ${m} min`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `há ${h}h`;
-  if (h < 48) return "ontem";
-  const d = Math.floor(h / 24);
-  if (d < 7) return `há ${d} dias`;
-  return `há ${Math.floor(d / 7)} sem`;
-}
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  const day = d.getDate();
-  const month = MONTHS_PT[d.getMonth()];
-  const year = d.getFullYear();
-  const h = String(d.getHours()).padStart(2, "0");
-  const min = String(d.getMinutes()).padStart(2, "0");
-  return `${day} ${month} ${year} • ${h}:${min}`;
-}
-
-type DateGroup = "hoje" | "ontem" | "semana" | "anterior";
-
-function getDateGroup(iso: string): DateGroup {
-  const now = new Date();
-  const d = new Date(iso);
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterdayStart = new Date(todayStart);
-  yesterdayStart.setDate(todayStart.getDate() - 1);
-  const weekStart = new Date(todayStart);
-  weekStart.setDate(todayStart.getDate() - 7);
-  if (d >= todayStart) return "hoje";
-  if (d >= yesterdayStart) return "ontem";
-  if (d >= weekStart) return "semana";
-  return "anterior";
-}
 
 const GROUP_LABELS: Record<DateGroup, string> = {
   hoje: "Hoje",
@@ -189,7 +152,7 @@ function FeedCard({ event }: { event: FeedEvent }) {
   const { event_type: type, payload, created_at, profile } = event;
   const name = profile?.display_name ?? profile?.username ?? "Atleta";
   const profileHref = profile?.username ? `/perfil/${profile.username}` : undefined;
-  const time = timeAgo(created_at);
+  const time = formatTimeAgo(created_at);
   const dateDetail = formatDateTime(created_at);
   const config = EVENT_CONFIG[type] ?? EVENT_CONFIG.run;
   const { Icon, color, badgeBg } = config;

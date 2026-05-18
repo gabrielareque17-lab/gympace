@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { formatLongDate as fmtDate } from "@/lib/date-utils";
 import {
   ArrowLeft,
   Crown,
@@ -55,14 +56,6 @@ function getStatus(start: string, end: string): "active" | "upcoming" | "ended" 
   if (now < new Date(start)) return "upcoming";
   if (now > new Date(end)) return "ended";
   return "active";
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 }
 
 function daysLeft(end: string) {

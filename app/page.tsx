@@ -3,6 +3,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { XPCard } from "@/components/xp/xp-card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { cn } from "@/lib/utils";
+import { formatDateLabel } from "@/lib/date-utils";
 import {
   Activity,
   CalendarCheck,
@@ -390,17 +391,7 @@ function formatDecimal(value: number) {
   }).format(value);
 }
 
-function formatRunDate(isoString: string): string {
-  const date = new Date(isoString);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return "Hoje";
-  if (date.toDateString() === yesterday.toDateString()) return "Ontem";
-
-  return date.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-}
+const formatRunDate = formatDateLabel;
 
 export default async function Home() {
   const [metrics, recentActivities, chartData, weekDays] = await Promise.all([

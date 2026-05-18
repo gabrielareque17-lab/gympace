@@ -23,6 +23,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { PageHeader, SectionCard } from "@/components/ui/page-layout";
 import { LevelUpOverlay } from "@/components/xp/level-up-overlay";
 import { useProfile } from "@/hooks/use-profile";
+import { formatShortDate as formatDate } from "@/lib/date-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,11 +101,6 @@ function getIntensity(value: string | null) {
   return INTENSITIES.find((i) => i.value === value) ?? null;
 }
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "--";
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d);
-}
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 

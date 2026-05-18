@@ -12,6 +12,7 @@ import {
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppNotification, NotificationType } from "@/hooks/use-notifications";
+import { formatRelativeTime } from "@/lib/date-utils";
 
 interface TypeConfig {
   icon: LucideIcon;
@@ -47,19 +48,6 @@ const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
   },
 };
 
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffMin < 1) return "agora";
-  if (diffMin < 60) return `${diffMin}m`;
-  if (diffHour < 24) return `${diffHour}h`;
-  if (diffDay < 7) return `${diffDay}d`;
-  return date.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-}
 
 interface NotificationsPanelProps {
   notifications: AppNotification[];

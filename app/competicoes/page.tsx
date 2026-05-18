@@ -6,6 +6,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { JoinButton } from "@/components/competitions/join-button";
 import { PendingInviteCard } from "@/components/competitions/pending-invite-card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { formatShortDate as fmtDate } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +42,6 @@ function getStatus(start: string, end: string): "active" | "upcoming" | "ended" 
   if (now < new Date(start)) return "upcoming";
   if (now > new Date(end)) return "ended";
   return "active";
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
 }
 
 function daysLeft(end: string) {
