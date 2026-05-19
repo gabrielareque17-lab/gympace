@@ -20,6 +20,18 @@ import {
 
 export type AchievementCategory = "corrida" | "academia";
 
+export type AchievementRarity = "comum" | "raro" | "epico" | "lendario";
+
+export const RARITY_CONFIG: Record<
+  AchievementRarity,
+  { label: string; color: string; glow: string }
+> = {
+  comum:    { label: "Comum",    color: "#94A3B8", glow: "rgba(148,163,184,0.15)" },
+  raro:     { label: "Raro",     color: "#60A5FA", glow: "rgba(96,165,250,0.15)"  },
+  epico:    { label: "Épico",    color: "#A78BFA", glow: "rgba(167,139,250,0.15)" },
+  lendario: { label: "Lendário", color: "#F59E0B", glow: "rgba(245,158,11,0.15)" },
+};
+
 export interface AchievementStats {
   // Running
   totalRuns: number;
@@ -27,7 +39,7 @@ export interface AchievementStats {
   longestRun: number;
   currentStreak: number;
   bestPaceSeconds: number | null;
-  // Gym (populated when gym logging is implemented)
+  // Gym
   gymTotalSessions: number;
   gymChestSessions: number;
   gymLegSessions: number;
@@ -42,7 +54,10 @@ export interface AchievementDefinition {
   name: string;
   description: string;
   icon: LucideIcon;
+  iconKey: string;
   accentHex: string;
+  rarity: AchievementRarity;
+  getProgress?: (stats: AchievementStats) => { current: number; target: number; unit: string };
   check: (stats: AchievementStats) => boolean;
 }
 
@@ -67,7 +82,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Primeiro Passo",
     description: "Complete a primeira corrida registrada",
     icon: Route,
+    iconKey: "route",
     accentHex: "#B6FF00",
+    rarity: "comum",
+    getProgress: (s) => ({ current: Math.min(s.totalRuns, 1), target: 1, unit: "corrida" }),
     check: (s) => s.totalRuns >= 1,
   },
   {
@@ -76,7 +94,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Primeiro 5K",
     description: "Alcance 5km em uma única corrida",
     icon: MapPin,
+    iconKey: "map-pin",
     accentHex: "#B6FF00",
+    rarity: "comum",
+    getProgress: (s) => ({ current: Math.min(s.longestRun, 5), target: 5, unit: "km" }),
     check: (s) => s.longestRun >= 5,
   },
   {
@@ -85,7 +106,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Primeiro 10K",
     description: "Alcance 10km em uma única corrida",
     icon: TrendingUp,
+    iconKey: "trending-up",
     accentHex: "#B6FF00",
+    rarity: "raro",
+    getProgress: (s) => ({ current: Math.min(s.longestRun, 10), target: 10, unit: "km" }),
     check: (s) => s.longestRun >= 10,
   },
   {
@@ -94,7 +118,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Primeiro 21K",
     description: "Complete a distância de meio maratona",
     icon: Award,
+    iconKey: "award",
     accentHex: "#A78BFA",
+    rarity: "epico",
+    getProgress: (s) => ({ current: Math.min(s.longestRun, 21.1), target: 21.1, unit: "km" }),
     check: (s) => s.longestRun >= 21.1,
   },
   {
@@ -103,7 +130,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "50km Acumulados",
     description: "50km de corridas registradas no total",
     icon: Target,
+    iconKey: "target",
     accentHex: "#60A5FA",
+    rarity: "raro",
+    getProgress: (s) => ({ current: Math.min(s.totalKm, 50), target: 50, unit: "km" }),
     check: (s) => s.totalKm >= 50,
   },
   {
@@ -112,7 +142,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "100km Acumulados",
     description: "100km de corridas registradas no total",
     icon: Trophy,
+    iconKey: "trophy",
     accentHex: "#FB923C",
+    rarity: "epico",
+    getProgress: (s) => ({ current: Math.min(s.totalKm, 100), target: 100, unit: "km" }),
     check: (s) => s.totalKm >= 100,
   },
   {
@@ -121,7 +154,9 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Sub 5/km",
     description: "Alcance pace de 5:00/km ou melhor",
     icon: Zap,
+    iconKey: "zap",
     accentHex: "#B6FF00",
+    rarity: "raro",
     check: (s) => s.bestPaceSeconds !== null && s.bestPaceSeconds <= 300,
   },
   {
@@ -130,7 +165,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Sequência de Corrida",
     description: "7 dias consecutivos com corrida registrada",
     icon: Flame,
+    iconKey: "flame",
     accentHex: "#FB923C",
+    rarity: "raro",
+    getProgress: (s) => ({ current: Math.min(s.currentStreak, 7), target: 7, unit: "dias" }),
     check: (s) => s.currentStreak >= 7,
   },
 
@@ -141,7 +179,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Primeiro Treino",
     description: "Registre o primeiro treino de força",
     icon: Dumbbell,
+    iconKey: "dumbbell",
     accentHex: "#60A5FA",
+    rarity: "comum",
+    getProgress: (s) => ({ current: Math.min(s.gymTotalSessions, 1), target: 1, unit: "sessão" }),
     check: (s) => s.gymTotalSessions >= 1,
   },
   {
@@ -150,7 +191,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Treino de Peito",
     description: "Complete o primeiro treino de peito",
     icon: Shield,
+    iconKey: "shield",
     accentHex: "#60A5FA",
+    rarity: "comum",
+    getProgress: (s) => ({ current: Math.min(s.gymChestSessions, 1), target: 1, unit: "treino" }),
     check: (s) => s.gymChestSessions >= 1,
   },
   {
@@ -159,7 +203,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Dia de Perna",
     description: "Complete o primeiro treino de pernas",
     icon: Layers,
+    iconKey: "layers",
     accentHex: "#A78BFA",
+    rarity: "comum",
+    getProgress: (s) => ({ current: Math.min(s.gymLegSessions, 1), target: 1, unit: "treino" }),
     check: (s) => s.gymLegSessions >= 1,
   },
   {
@@ -168,7 +215,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "7 Dias Ativos",
     description: "Registre treinos em 7 dias diferentes",
     icon: Calendar,
+    iconKey: "calendar",
     accentHex: "#60A5FA",
+    rarity: "raro",
+    getProgress: (s) => ({ current: Math.min(s.gymTotalSessions, 7), target: 7, unit: "dias" }),
     check: (s) => s.gymTotalSessions >= 7,
   },
   {
@@ -177,7 +227,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "30 Treinos",
     description: "Complete 30 sessões de musculação",
     icon: Trophy,
+    iconKey: "trophy",
     accentHex: "#FB923C",
+    rarity: "epico",
+    getProgress: (s) => ({ current: Math.min(s.gymTotalSessions, 30), target: 30, unit: "sessões" }),
     check: (s) => s.gymTotalSessions >= 30,
   },
   {
@@ -186,7 +239,10 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Sequência de Academia",
     description: "Treine na academia por 7 dias seguidos",
     icon: Flame,
+    iconKey: "flame",
     accentHex: "#FB923C",
+    rarity: "raro",
+    getProgress: (s) => ({ current: Math.min(s.gymStreak, 7), target: 7, unit: "dias" }),
     check: (s) => s.gymStreak >= 7,
   },
   {
@@ -195,7 +251,9 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Recorde Pessoal",
     description: "Supere sua carga máxima em um exercício",
     icon: BarChart2,
+    iconKey: "bar-chart-2",
     accentHex: "#A78BFA",
+    rarity: "raro",
     check: (s) => s.gymHasPersonalRecord,
   },
   {
@@ -204,7 +262,9 @@ export const ACHIEVEMENT_REGISTRY: AchievementDefinition[] = [
     name: "Semana Perfeita",
     description: "Treine 5 ou mais dias em uma única semana",
     icon: Star,
+    iconKey: "star",
     accentHex: "#A78BFA",
+    rarity: "epico",
     check: (s) => s.hasPerfectWeek,
   },
 ];

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { FollowButton } from "@/components/social/follow-button";
@@ -7,12 +8,15 @@ import { getAvatarById } from "@/lib/avatar-registry";
 import {
   ACHIEVEMENT_REGISTRY,
   CATEGORIES,
-  type AchievementDefinition,
   type AchievementStats,
 } from "@/lib/achievements";
+import {
+  AchievementGrid,
+  type AchievementCardData,
+} from "@/components/profile/achievement-grid";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getLevelProgress } from "@/lib/xp";
-import { Check } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +107,8 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const isOwnProfile = currentUser?.id === profile.user_id
 
+  const adminSupabase = createSupabaseAdminClient();
+
   const [
     { data: followRow },
     { count: followersCount },
@@ -116,11 +122,11 @@ export default async function PublicProfilePage({ params }: Props) {
           .eq("following_id", profile.user_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase
+    adminSupabase
       .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("following_id", profile.user_id),
-    supabase
+    adminSupabase
       .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("follower_id", profile.user_id),
@@ -132,11 +138,11 @@ export default async function PublicProfilePage({ params }: Props) {
   type GymRow = { muscle_group: string | null; muscle_groups: string[] | null; created_at: string };
 
   const [{ data: rawRuns }, workoutsResult] = await Promise.all([
-    supabase
+    adminSupabase
       .from("runs")
       .select("distance, pace, created_at")
       .eq("user_id", profile.user_id),
-    supabase
+    adminSupabase
       .from("workouts")
       .select("muscle_group, muscle_groups, created_at")
       .eq("user_id", profile.user_id),
@@ -190,6 +196,18 @@ export default async function PublicProfilePage({ params }: Props) {
   }));
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
+  const achievementCards: AchievementCardData[] = achievements.map((a) => ({
+    id: a.id,
+    category: a.category,
+    name: a.name,
+    description: a.description,
+    iconKey: a.iconKey,
+    accentHex: a.accentHex,
+    rarity: a.rarity,
+    unlocked: a.unlocked,
+    progress: a.getProgress ? a.getProgress(achievementStats) : undefined,
+  }));
+
   const accentColor = avatarDef?.accentColor ?? "#B6FF00";
 
   return (
@@ -229,16 +247,22 @@ export default async function PublicProfilePage({ params }: Props) {
                   )}
 
                   {/* Follower / following counts */}
-                  <div className="mt-2 flex items-center gap-3">
-                    <span className="text-xs text-[#F5F5F5]/45">
-                      <span className="font-bold text-[#F5F5F5]/80">{followersCount ?? 0}</span>
-                      {" "}seguidores
-                    </span>
-                    <span className="text-[#F5F5F5]/20">·</span>
-                    <span className="text-xs text-[#F5F5F5]/45">
-                      <span className="font-bold text-[#F5F5F5]/80">{followingCount ?? 0}</span>
-                      {" "}seguindo
-                    </span>
+                  <div className="mt-2 flex items-center gap-1">
+                    <Link
+                      href={`/perfil/${profile.username}/seguidores`}
+                      className="group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-95 active:opacity-60"
+                    >
+                      <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
+                      seguidores
+                    </Link>
+                    <span className="text-[10px] text-[#F5F5F5]/15">·</span>
+                    <Link
+                      href={`/perfil/${profile.username}/seguindo`}
+                      className="group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-95 active:opacity-60"
+                    >
+                      <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
+                      seguindo
+                    </Link>
                   </div>
 
                   {profile.bio && (
@@ -330,37 +354,7 @@ export default async function PublicProfilePage({ params }: Props) {
               </div>
             </div>
 
-            <div className="divide-y divide-white/[0.04] px-5">
-              {CATEGORIES.map(({ key: category, label, color }) => {
-                const cat = achievements.filter((a) => a.category === category);
-                const catUnlocked = cat.filter((a) => a.unlocked).length;
-                return (
-                  <div key={category} className="py-5">
-                    <div className="mb-4 flex items-center gap-2.5">
-                      <div
-                        className="size-1.5 shrink-0 rounded-full"
-                        style={{ background: color }}
-                      />
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-[0.18em]"
-                        style={{ color: `${color}99` }}
-                      >
-                        {label}
-                      </span>
-                      <div className="h-px flex-1 bg-white/[0.05]" />
-                      <span className="text-[10px] font-semibold tabular-nums text-[#F5F5F5]/28">
-                        {catUnlocked}/{cat.length}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      {cat.map((a) => (
-                        <AchievementBadge key={a.id} achievement={a} />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <AchievementGrid achievements={achievementCards} categories={CATEGORIES} />
           </section>
         </div>
       </div>
@@ -368,64 +362,3 @@ export default async function PublicProfilePage({ params }: Props) {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function AchievementBadge({
-  achievement,
-}: {
-  achievement: AchievementDefinition & { unlocked: boolean };
-}) {
-  const { name, description, icon: Icon, accentHex, unlocked } = achievement;
-  return (
-    <div
-      className="relative flex flex-col gap-3 rounded-2xl border p-3.5 transition-all duration-200"
-      style={{
-        borderColor: unlocked ? `${accentHex}28` : "rgba(255,255,255,0.05)",
-        background: unlocked ? `${accentHex}0A` : "rgba(255,255,255,0.018)",
-        boxShadow: unlocked ? `0 0 24px ${accentHex}0C` : "none",
-      }}
-    >
-      <div className="absolute right-2.5 top-2.5">
-        {unlocked ? (
-          <div
-            className="grid size-[18px] place-items-center rounded-full"
-            style={{ background: accentHex }}
-          >
-            <Check className="size-3 text-[#080808]" strokeWidth={3} />
-          </div>
-        ) : (
-          <svg viewBox="0 0 12 12" fill="currentColor" className="size-3 text-[#F5F5F5]/15">
-            <path d="M9 5V3.5a3 3 0 0 0-6 0V5H2v6h8V5H9zm-5-1.5a2 2 0 0 1 4 0V5H4V3.5z" />
-          </svg>
-        )}
-      </div>
-
-      <div
-        className="grid size-10 place-items-center rounded-xl"
-        style={
-          unlocked
-            ? {
-                background: `${accentHex}1E`,
-                color: accentHex,
-                boxShadow: `0 0 16px ${accentHex}32`,
-              }
-            : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.2)" }
-        }
-      >
-        <Icon className="size-5" strokeWidth={unlocked ? 2 : 1.5} />
-      </div>
-
-      <div className="min-w-0">
-        <p
-          className="line-clamp-2 text-xs font-bold leading-tight"
-          style={{ color: unlocked ? "#F5F5F5" : "rgba(255,255,255,0.28)" }}
-        >
-          {name}
-        </p>
-        <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-[#F5F5F5]/22">
-          {description}
-        </p>
-      </div>
-    </div>
-  );
-}
