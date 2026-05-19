@@ -8,16 +8,14 @@ import {
   Clock,
   Dumbbell,
   Flame,
-  Layers,
   Loader2,
   MoreVertical,
   Pencil,
   RefreshCw,
-  Shield,
   Trash2,
   Trophy,
-  Zap,
 } from "lucide-react";
+import { MuscleIllustration } from "@/components/academia/muscle-illustration";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { PageHeader, SectionCard } from "@/components/ui/page-layout";
@@ -39,7 +37,7 @@ type Workout = {
 
 type FormState = {
   title: string;
-  muscle_group: string;
+  muscle_groups: string[];
   duration_minutes: string;
   intensity: string;
   notes: string;
@@ -68,13 +66,13 @@ type XPFeedback = {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MUSCLE_GROUPS = [
-  { value: "peito", name: "Peito", icon: Shield, color: "#60A5FA" },
-  { value: "costas", name: "Costas", icon: Layers, color: "#A78BFA" },
-  { value: "pernas", name: "Pernas", icon: Zap, color: "#B6FF00" },
-  { value: "ombros", name: "Ombros", icon: Flame, color: "#FB923C" },
-  { value: "bracos", name: "Braços", icon: Dumbbell, color: "#F472B6" },
-  { value: "abdomen", name: "Abdômen", icon: Flame, color: "#22D3EE" },
-  { value: "full-body", name: "Full body", icon: Trophy, color: "#B6FF00" },
+  { value: "peito",     name: "Peito",    color: "#60A5FA" },
+  { value: "costas",    name: "Costas",   color: "#A78BFA" },
+  { value: "pernas",    name: "Pernas",   color: "#B6FF00" },
+  { value: "ombros",    name: "Ombros",   color: "#FB923C" },
+  { value: "bracos",    name: "Braços",   color: "#F472B6" },
+  { value: "abdomen",   name: "Abdômen",  color: "#22D3EE" },
+  { value: "full-body", name: "Full Body", color: "#B6FF00" },
 ] as const;
 
 const INTENSITIES = [
@@ -85,7 +83,7 @@ const INTENSITIES = [
 
 const initialForm: FormState = {
   title: "",
-  muscle_group: "full-body",
+  muscle_groups: ["full-body"],
   duration_minutes: "",
   intensity: "",
   notes: "",
@@ -95,6 +93,21 @@ const initialForm: FormState = {
 
 function getMuscleGroup(value: string) {
   return MUSCLE_GROUPS.find((g) => g.value === value) ?? MUSCLE_GROUPS[MUSCLE_GROUPS.length - 1];
+}
+
+function getPrimaryGroup(groups: string[]) {
+  return getMuscleGroup(groups[0] ?? "full-body");
+}
+
+function toggleMuscleGroup(cur: FormState, value: string): FormState {
+  const has = cur.muscle_groups.includes(value);
+  if (has && cur.muscle_groups.length === 1) return cur;
+  return {
+    ...cur,
+    muscle_groups: has
+      ? cur.muscle_groups.filter((g) => g !== value)
+      : [...cur.muscle_groups, value],
+  };
 }
 
 function getIntensity(value: string | null) {
@@ -117,7 +130,8 @@ async function saveWorkoutApi(form: FormState) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title: form.title,
-      muscle_group: form.muscle_group,
+      muscle_group: form.muscle_groups[0] ?? "full-body",
+      muscle_groups: form.muscle_groups,
       duration_minutes: Number(form.duration_minutes),
       intensity: form.intensity || null,
       notes: form.notes || null,
@@ -138,7 +152,10 @@ async function deleteWorkoutApi(id: string) {
 async function editWorkoutApi(id: string, updates: Partial<FormState>) {
   const body: Record<string, unknown> = {};
   if (updates.title !== undefined) body.title = updates.title;
-  if (updates.muscle_group !== undefined) body.muscle_group = updates.muscle_group;
+  if (updates.muscle_groups !== undefined && updates.muscle_groups.length > 0) {
+    body.muscle_group = updates.muscle_groups[0];
+    body.muscle_groups = updates.muscle_groups;
+  }
   if (updates.duration_minutes !== undefined) body.duration_minutes = Number(updates.duration_minutes);
   body.intensity = updates.intensity || null;
   body.notes = updates.notes || null;
@@ -169,8 +186,7 @@ export default function AcademiaPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const selectedGroup = getMuscleGroup(form.muscle_group);
-  const SelectedIcon = selectedGroup.icon;
+  const selectedGroup = getPrimaryGroup(form.muscle_groups);
   const isSaving = status === "saving";
 
   const loadWorkouts = useCallback(async () => {
@@ -264,16 +280,25 @@ export default function AcademiaPage() {
 
           {/* Muscle group selector */}
           <section aria-label="Grupos musculares" className="mb-5">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#F5F5F5]/28">
-              Grupos musculares
-            </p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#F5F5F5]/28">
+                Grupos musculares
+              </p>
+              {form.muscle_groups.length > 1 && (
+                <span className="text-[10px] font-semibold text-[#F5F5F5]/30">
+                  {form.muscle_groups.length} selecionados
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 xl:grid-cols-7">
               {MUSCLE_GROUPS.map((group) => (
                 <MuscleCard
                   key={group.value}
-                  {...group}
-                  active={group.value === form.muscle_group}
-                  onSelect={() => setForm((cur) => ({ ...cur, muscle_group: group.value }))}
+                  value={group.value}
+                  name={group.name}
+                  color={group.color}
+                  active={form.muscle_groups.includes(group.value)}
+                  onSelect={() => setForm((cur) => toggleMuscleGroup(cur, group.value))}
                 />
               ))}
             </div>
@@ -295,10 +320,12 @@ export default function AcademiaPage() {
                     </p>
                   </div>
                   <div
-                    className="grid size-9 place-items-center rounded-xl"
-                    style={{ background: selectedGroup.color, boxShadow: `0 0 20px ${selectedGroup.color}30` }}
+                    className="grid size-9 place-items-center rounded-xl overflow-hidden"
+                    style={{ background: `${selectedGroup.color}18`, border: `1px solid ${selectedGroup.color}35`, boxShadow: `0 0 20px ${selectedGroup.color}20` }}
                   >
-                    <SelectedIcon className="size-4 text-[#080808]" strokeWidth={2.5} />
+                    <div className="size-8 p-1">
+                      <MuscleIllustration group={selectedGroup.value} color={selectedGroup.color} active />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -397,10 +424,20 @@ export default function AcademiaPage() {
 
               {/* Footer */}
               <div className="flex flex-col gap-3 border-t border-white/[0.05] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p className="text-xs font-medium text-[#F5F5F5]/28">
-                  Tipo selecionado:{" "}
-                  <span style={{ color: selectedGroup.color }}>{selectedGroup.name}</span>
-                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {form.muscle_groups.map((v) => {
+                    const g = getMuscleGroup(v);
+                    return (
+                      <span
+                        key={v}
+                        className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]"
+                        style={{ borderColor: `${g.color}35`, color: g.color, background: `${g.color}0E` }}
+                      >
+                        {g.name}
+                      </span>
+                    );
+                  })}
+                </div>
                 <button
                   type="submit"
                   disabled={isSaving}
@@ -468,14 +505,14 @@ export default function AcademiaPage() {
 // ─── Muscle card ──────────────────────────────────────────────────────────────
 
 function MuscleCard({
+  value,
   name,
-  icon: Icon,
   color,
   active,
   onSelect,
 }: {
+  value: string;
   name: string;
-  icon: React.ElementType;
   color: string;
   active: boolean;
   onSelect: () => void;
@@ -484,21 +521,50 @@ function MuscleCard({
     <button
       type="button"
       onClick={onSelect}
-      className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-[#141414]"
-      style={active ? { borderColor: `${color}40`, boxShadow: `0 0 24px ${color}12` } : undefined}
+      className="group relative flex flex-col items-center overflow-hidden rounded-2xl border bg-[#111111] pb-3 pt-3 text-center transition-all duration-300 hover:-translate-y-0.5"
+      style={
+        active
+          ? { borderColor: `${color}45`, boxShadow: `0 0 20px ${color}18, 0 4px 16px ${color}0A` }
+          : { borderColor: "rgba(255,255,255,0.06)" }
+      }
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      {/* Top accent line */}
       <div
-        className="mb-3 grid size-9 place-items-center rounded-lg border transition-all duration-200"
-        style={{ borderColor: `${color}22`, background: `${color}12`, color, boxShadow: active ? `0 0 16px ${color}18` : undefined }}
-      >
-        <Icon className="size-4" strokeWidth={2} />
+        className="absolute inset-x-0 top-0 h-px transition-opacity duration-300"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${color}${active ? "70" : "20"}, transparent)`,
+        }}
+      />
+
+      {/* Radial glow behind illustration */}
+      <div
+        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(ellipse at 50% 45%, ${color}${active ? "14" : "06"} 0%, transparent 70%)`,
+        }}
+      />
+
+      {/* Illustration */}
+      <div className="relative z-10 mb-2 h-16 w-full px-3">
+        <MuscleIllustration group={value} color={color} active={active} />
       </div>
-      <p className="font-display text-sm font-semibold leading-tight">{name}</p>
-      <div className="mt-3 h-[2px] overflow-hidden rounded-full bg-white/[0.06]">
+
+      {/* Name */}
+      <p
+        className="relative z-10 text-[11px] font-bold leading-tight tracking-[0.02em] transition-colors duration-200"
+        style={{ color: active ? color : "rgba(245,245,245,0.45)" }}
+      >
+        {name}
+      </p>
+
+      {/* Bottom progress bar */}
+      <div className="absolute bottom-0 inset-x-0 h-[2px] overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: active ? "100%" : "0%", background: color }}
+          className="h-full transition-all duration-500"
+          style={{
+            width: active ? "100%" : "0%",
+            background: `linear-gradient(90deg, transparent, ${color}CC, transparent)`,
+          }}
         />
       </div>
     </button>
@@ -621,7 +687,6 @@ function WorkoutCard({
 }) {
   const group = getMuscleGroup(workout.muscle_group);
   const intensity = getIntensity(workout.intensity);
-  const Icon = group.icon;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -673,10 +738,10 @@ function WorkoutCard({
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <div
-            className="grid size-9 shrink-0 place-items-center rounded-lg border"
-            style={{ borderColor: `${group.color}20`, background: `${group.color}10`, color: group.color }}
+            className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border p-0.5"
+            style={{ borderColor: `${group.color}22`, background: `${group.color}10` }}
           >
-            <Icon className="size-4" strokeWidth={2} />
+            <MuscleIllustration group={workout.muscle_group} color={group.color} active />
           </div>
           <span
             className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
@@ -763,15 +828,14 @@ function EditWorkoutModal({
 }) {
   const [form, setForm] = useState<FormState>({
     title: workout.title,
-    muscle_group: workout.muscle_group,
+    muscle_groups: [workout.muscle_group],
     duration_minutes: String(workout.duration_minutes),
     intensity: workout.intensity ?? "",
     notes: workout.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const group = getMuscleGroup(form.muscle_group);
-  const GroupIcon = group.icon;
+  const group = getPrimaryGroup(form.muscle_groups);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -806,22 +870,28 @@ function EditWorkoutModal({
             <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#F5F5F5]/30">Grupo muscular</p>
             <div className="grid grid-cols-4 gap-2">
               {MUSCLE_GROUPS.map((g) => {
-                const GIcon = g.icon;
-                const active = form.muscle_group === g.value;
+                const active = form.muscle_groups[0] === g.value;
                 return (
                   <button
                     key={g.value}
                     type="button"
-                    onClick={() => setForm((cur) => ({ ...cur, muscle_group: g.value }))}
-                    className="flex flex-col items-center gap-1.5 rounded-xl border py-2.5 text-[10px] font-semibold transition-all"
+                    onClick={() => setForm((cur) => ({ ...cur, muscle_groups: [g.value] }))}
+                    className="relative flex flex-col items-center overflow-hidden rounded-xl border pb-2 pt-2 text-center transition-all duration-200"
                     style={
                       active
-                        ? { borderColor: `${g.color}50`, background: `${g.color}12`, color: g.color }
-                        : { borderColor: "rgba(245,245,245,0.07)", background: "rgba(245,245,245,0.02)", color: "rgba(245,245,245,0.35)" }
+                        ? { borderColor: `${g.color}45`, background: `${g.color}0E`, boxShadow: `0 0 14px ${g.color}14` }
+                        : { borderColor: "rgba(245,245,245,0.07)", background: "rgba(245,245,245,0.02)" }
                     }
                   >
-                    <GIcon className="size-4" strokeWidth={2} />
-                    {g.name}
+                    <div className="h-10 w-full px-2">
+                      <MuscleIllustration group={g.value} color={g.color} active={active} />
+                    </div>
+                    <span
+                      className="mt-1 text-[9px] font-bold leading-tight"
+                      style={{ color: active ? g.color : "rgba(245,245,245,0.35)" }}
+                    >
+                      {g.name}
+                    </span>
                   </button>
                 );
               })}
@@ -918,7 +988,7 @@ function EditWorkoutModal({
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-[#080808] transition disabled:opacity-55"
               style={{ background: group.color }}
             >
-              {saving ? <Loader2 className="size-4 animate-spin" /> : <GroupIcon className="size-4" strokeWidth={2.5} />}
+              {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" strokeWidth={2.5} />}
               {saving ? "Salvando..." : "Salvar"}
             </button>
           </div>
