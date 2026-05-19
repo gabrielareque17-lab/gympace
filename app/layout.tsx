@@ -34,6 +34,8 @@ export const metadata: Metadata = {
   },
 };
 
+import OneSignalProvider from "@/components/providers/onesignal-provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,7 +46,10 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <OneSignalProvider />
+      </body>
     </html>
   );
 }
