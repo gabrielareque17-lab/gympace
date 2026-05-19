@@ -13,6 +13,7 @@ import {
   Swords,
   Target,
   Timer,
+  Trophy,
   UserRound,
   X,
   Zap,
@@ -28,26 +29,50 @@ import { useProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 
 const rankStyles: Record<string, { label: string; color: string }> = {
-  rookie: { label: "Rookie", color: "#94A3B8" },
-  bronze: { label: "Bronze", color: "#CD7F32" },
-  silver: { label: "Silver", color: "#A1A1AA" },
-  gold: { label: "Gold", color: "#EAB308" },
+  rookie:   { label: "Rookie",   color: "#94A3B8" },
+  bronze:   { label: "Bronze",   color: "#CD7F32" },
+  silver:   { label: "Silver",   color: "#A1A1AA" },
+  gold:     { label: "Gold",     color: "#EAB308" },
   platinum: { label: "Platinum", color: "#22D3EE" },
-  elite: { label: "Elite", color: "#B6FF00" },
+  elite:    { label: "Elite",    color: "#B6FF00" },
 };
 
-const navigationItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Feed", href: "/feed", icon: Rss },
-  { label: "Perfil", href: "/perfil", icon: UserRound },
-  { label: "Explorar", href: "/explorar", icon: Compass },
-  { label: "Competições", href: "/competicoes", icon: Swords },
-  { label: "Convites", href: "/convites", icon: Bell },
-  { label: "Corridas", href: "/corridas", icon: Timer },
-  { label: "Academia", href: "/academia", icon: Dumbbell },
-  { label: "Metas", href: "/metas", icon: Target },
-  { label: "Evolução", href: "/evolucao", icon: BarChart3 },
-  { label: "Configurações", href: "/configuracoes", icon: Settings2 },
+type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavGroup = { label: string | null; items: NavItem[] };
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [
+      { label: "Dashboard",    href: "/",             icon: LayoutDashboard },
+      { label: "Feed",         href: "/feed",          icon: Rss            },
+      { label: "Perfil",       href: "/perfil",        icon: UserRound      },
+      { label: "Explorar",     href: "/explorar",      icon: Compass        },
+    ],
+  },
+  {
+    label: "Atividades",
+    items: [
+      { label: "Corridas",     href: "/corridas",      icon: Timer          },
+      { label: "Academia",     href: "/academia",      icon: Dumbbell       },
+      { label: "Metas",        href: "/metas",         icon: Target         },
+      { label: "Evolução",     href: "/evolucao",      icon: BarChart3      },
+    ],
+  },
+  {
+    label: "Social",
+    items: [
+      { label: "Desafios",     href: "/desafios",      icon: Swords         },
+      { label: "Competições",  href: "/competicoes",   icon: Trophy         },
+      { label: "Convites",     href: "/convites",      icon: Bell           },
+    ],
+  },
+  {
+    label: null,
+    items: [
+      { label: "Configurações", href: "/configuracoes", icon: Settings2     },
+    ],
+  },
 ];
 
 export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?: string }) {
@@ -76,15 +101,31 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
     });
   }, []);
 
+  const rankKey = profile?.rank ?? "rookie";
+  const rankColor = rankStyles[rankKey]?.color ?? "#B6FF00";
+  const rankLabel = rankStyles[rankKey]?.label ?? "Rookie";
+
   return (
-    <aside className="flex h-dvh w-[256px] shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-white/[0.06] bg-[#090909] px-3 py-5 text-[#F5F5F5]">
-      <div className="mb-6 flex items-center gap-2.5 px-2">
-        <div className="grid size-8 place-items-center rounded-xl bg-[#B6FF00] shadow-[0_0_20px_rgba(182,255,0,0.28)]">
+    <aside
+      className="flex h-dvh w-[256px] shrink-0 flex-col overflow-hidden border-r border-white/[0.06] bg-[#0A0A0A] text-[#F5F5F5]"
+    >
+      {/* ── Header ── */}
+      <div
+        className="flex shrink-0 items-center gap-2.5 px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
+          paddingBottom: "14px",
+        }}
+      >
+        <div
+          className="grid size-8 place-items-center rounded-xl bg-[#B6FF00]"
+          style={{ boxShadow: "0 0 18px rgba(182,255,0,0.28)" }}
+        >
           <Zap className="size-4 text-[#080808]" strokeWidth={2.8} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-sm font-bold tracking-tight">GymPace</p>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#B6FF00]/60">
+          <p className="font-display text-[14px] font-bold tracking-tight">GymPace</p>
+          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/55">
             Train harder
           </p>
         </div>
@@ -92,102 +133,139 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
           <button
             type="button"
             onClick={onClose}
-            className="grid size-7 place-items-center rounded-lg text-[#F5F5F5]/40 transition-colors hover:bg-white/[0.05] hover:text-[#F5F5F5]/70"
+            aria-label="Fechar menu"
+            className="grid size-8 place-items-center rounded-xl text-[#F5F5F5]/35 transition-all duration-150 active:scale-90 active:bg-white/[0.06] hover:bg-white/[0.05] hover:text-[#F5F5F5]/65"
           >
-            <X className="size-4" />
+            <X className="size-[15px]" />
           </button>
         ) : (
           <NotificationBell context="sidebar" />
         )}
       </div>
 
-      <nav className="flex-1 space-y-px" aria-label="Navegação principal">
-        {navigationItems.map((item) => {
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-          return <SidebarItem key={item.label} {...item} active={isActive} />;
-        })}
+      {/* ── Navigation ── */}
+      <nav
+        className="flex-1 overflow-y-auto overscroll-contain px-2.5 pb-2"
+        aria-label="Navegação principal"
+      >
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={gi} className={gi > 0 ? "mt-0.5" : ""}>
+            {group.label && (
+              <p className="mb-1 ml-2.5 mt-3.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/20">
+                {group.label}
+              </p>
+            )}
+            {group.items.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
+                <SidebarItem
+                  key={item.label}
+                  label={item.label}
+                  href={item.href}
+                  icon={item.icon}
+                  active={isActive}
+                  onClose={onClose}
+                />
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
-      <div className="border-t border-white/[0.05] pt-4 space-y-1">
-        {/* User info block */}
+      {/* ── Footer ── */}
+      <div
+        className="shrink-0 space-y-1.5 border-t border-white/[0.05] px-2.5 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
+      >
+        {/* User card */}
         {profileLoading ? (
-          <div className="mx-2 mb-3 flex items-center gap-2.5">
-            <div className="size-8 shrink-0 animate-pulse rounded-xl bg-white/[0.06]" />
+          <div className="flex items-center gap-2.5 rounded-2xl px-2.5 py-2">
+            <div className="size-8 shrink-0 animate-pulse rounded-full bg-white/[0.06]" />
             <div className="flex-1 space-y-1.5">
               <div className="h-2.5 w-3/4 animate-pulse rounded bg-white/[0.06]" />
               <div className="h-2 w-1/2 animate-pulse rounded bg-white/[0.04]" />
             </div>
           </div>
         ) : (
-          <div className="mx-2 mb-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-2.5 py-2">
+          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.025] p-2.5">
+            {/* Avatar + name row */}
             <div className="flex items-center gap-2.5">
-            <AvatarDisplay
-              avatarId={profile?.avatarId ?? null}
-              initials={initials}
-              size="sm"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-[#F5F5F5]/65">{email || "—"}</p>
-              <p className="text-[10px] text-[#F5F5F5]/30">
-                Nível {profile?.currentLevel ?? profile?.level ?? 1} · {rankStyles[profile?.rank ?? "rookie"]?.label ?? "Rookie"}
-              </p>
-            </div>
-            </div>
-            <div className="mt-2">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#F5F5F5]/28">
-                  XP
-                </span>
-                <span
-                  className="text-[10px] font-bold tabular-nums"
-                  style={{ color: rankStyles[profile?.rank ?? "rookie"]?.color ?? "#B6FF00" }}
+              <AvatarDisplay
+                avatarId={profile?.avatarId ?? null}
+                initials={initials}
+                size="sm"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11.5px] font-semibold leading-tight text-[#F5F5F5]/72">
+                  {email || "—"}
+                </p>
+                <p
+                  className="text-[10px] font-semibold leading-tight"
+                  style={{ color: rankColor }}
                 >
-                  {profile?.totalXp ?? 0}
-                </span>
+                  Nível {profile?.currentLevel ?? profile?.level ?? 1} · {rankLabel}
+                </p>
               </div>
-              <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${profile?.levelProgress ?? 0}%`,
-                    background: rankStyles[profile?.rank ?? "rookie"]?.color ?? "#B6FF00",
-                    boxShadow: `0 0 8px ${rankStyles[profile?.rank ?? "rookie"]?.color ?? "#B6FF00"}66`,
-                  }}
-                />
+            </div>
+
+            {/* Stats: XP + Meta semanal */}
+            <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+              <div>
+                <div className="mb-[5px] flex items-center justify-between">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/22">
+                    XP
+                  </span>
+                  <span
+                    className="text-[9.5px] font-bold tabular-nums"
+                    style={{ color: rankColor }}
+                  >
+                    {profile?.totalXp ?? 0}
+                  </span>
+                </div>
+                <div className="h-[2.5px] overflow-hidden rounded-full bg-white/[0.07]">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${profile?.levelProgress ?? 0}%`,
+                      background: rankColor,
+                      boxShadow: `0 0 6px ${rankColor}55`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="mb-[5px] flex items-center justify-between">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/22">
+                    Meta
+                  </span>
+                  <span className="text-[9.5px] font-bold tabular-nums text-[#B6FF00]/65">
+                    {weeklyProgress}%
+                  </span>
+                </div>
+                <div className="h-[2.5px] overflow-hidden rounded-full bg-white/[0.07]">
+                  <div
+                    className="h-full rounded-full bg-[#B6FF00] transition-all duration-700"
+                    style={{
+                      width: `${weeklyProgress}%`,
+                      boxShadow: "0 0 6px rgba(182,255,0,0.38)",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        <div className="px-2 pb-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[11px] font-medium text-[#F5F5F5]/38">
-              Meta semanal
-            </span>
-            <span className="text-[11px] font-bold tabular-nums text-[#B6FF00]/70">
-              {weeklyProgress}%
-            </span>
-          </div>
-          <div className="h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
-            <div
-              className="h-full rounded-full bg-[#B6FF00] shadow-[0_0_8px_rgba(182,255,0,0.38)] transition-all duration-700"
-              style={{ width: `${weeklyProgress}%` }}
-            />
-          </div>
-        </div>
-
+        {/* Logout */}
         <SidebarLogout />
 
-        <div className="px-2 pt-2">
-          <p className="text-center text-[9px] tracking-[0.08em] text-[#F5F5F5]/14">
-            by{" "}
-            <span className="font-semibold text-[#B6FF00]/30">Gravix Tech</span>
-          </p>
-        </div>
+        {/* Branding */}
+        <p className="pb-0.5 text-center text-[9px] tracking-[0.06em] text-[#F5F5F5]/14">
+          by <span className="font-semibold text-[#B6FF00]/28">Gravix Tech</span>
+        </p>
       </div>
     </aside>
   );
@@ -198,36 +276,42 @@ function SidebarItem({
   href,
   icon: Icon,
   active = false,
+  onClose,
 }: {
   label: string;
   href: string;
   icon: LucideIcon;
   active?: boolean;
+  onClose?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClose}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/40",
+        "relative flex h-10 items-center gap-3 rounded-xl px-3 text-[13px] font-medium",
+        "transition-all duration-150 active:scale-[0.97]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/40",
         active
-          ? "bg-white/[0.07] text-[#F5F5F5]"
-          : "text-[#F5F5F5]/38 hover:bg-white/[0.04] hover:text-[#F5F5F5]/72"
+          ? "bg-white/[0.08] text-[#F5F5F5]"
+          : "text-[#F5F5F5]/42 hover:bg-white/[0.04] hover:text-[#F5F5F5]/72"
       )}
     >
+      {active && (
+        <span
+          className="absolute inset-y-2.5 left-0 w-[3px] rounded-full bg-[#B6FF00]"
+          style={{ boxShadow: "0 0 8px rgba(182,255,0,0.65)" }}
+        />
+      )}
       <Icon
         className={cn(
-          "size-4 shrink-0 transition-colors duration-150",
-          active
-            ? "text-[#B6FF00]"
-            : "text-[#F5F5F5]/28 group-hover:text-[#F5F5F5]/50"
+          "size-[17px] shrink-0 transition-colors duration-150",
+          active ? "text-[#B6FF00]" : "text-[#F5F5F5]/28"
         )}
         strokeWidth={active ? 2.2 : 1.8}
       />
       <span className="truncate">{label}</span>
-      {active && (
-        <span className="ml-auto block size-1.5 rounded-full bg-[#B6FF00] shadow-[0_0_6px_rgba(182,255,0,0.6)]" />
-      )}
     </Link>
   );
 }
@@ -249,10 +333,10 @@ function SidebarLogout() {
       type="button"
       onClick={handleLogout}
       disabled={isPending}
-      className="group flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm font-medium text-[#F5F5F5]/32 transition-all duration-150 hover:bg-red-500/[0.07] hover:text-red-400/80 disabled:pointer-events-none disabled:opacity-50"
+      className="group flex h-10 w-full items-center gap-3 rounded-xl px-3 text-[13px] font-medium text-red-400/55 transition-all duration-150 hover:bg-red-500/[0.08] hover:text-red-400/90 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
     >
       <LogOut
-        className="size-4 shrink-0 text-[#F5F5F5]/22 transition-colors duration-150 group-hover:text-red-400/65"
+        className="size-[17px] shrink-0 text-red-400/42 transition-colors duration-150 group-hover:text-red-400/80"
         strokeWidth={1.8}
       />
       {isPending ? "Saindo..." : "Sair da conta"}

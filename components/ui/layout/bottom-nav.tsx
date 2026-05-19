@@ -57,9 +57,9 @@ const ACTIONS = [
     border:"rgba(167,139,250,0.14)",
   },
   {
-    label: "Participar desafio",
-    desc:  "Ver competições",
-    href:  "/competicoes",
+    label: "Criar desafio",
+    desc:  "Duelo 1×1 direto",
+    href:  "/desafios/novo",
     icon:  Swords,
     color: "#FB923C",
     bg:    "rgba(251,146,60,0.06)",

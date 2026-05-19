@@ -62,18 +62,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile backdrop */}
         <div
           className={cn(
-            "fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity duration-300 md:hidden",
+            "fixed inset-0 z-40 bg-black/65 backdrop-blur-md transition-opacity duration-300 md:hidden",
             open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
           )}
           onClick={() => setOpen(false)}
         />
 
-        {/* Mobile drawer */}
+        {/* Mobile drawer — iOS spring curve */}
         <div
           className={cn(
-            "fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out md:hidden",
+            "fixed inset-y-0 left-0 z-50 md:hidden",
             open ? "translate-x-0" : "-translate-x-full"
           )}
+          style={{ transition: "transform 360ms cubic-bezier(0.32, 0.72, 0, 1)" }}
         >
           <Sidebar email={email} onClose={() => setOpen(false)} />
         </div>

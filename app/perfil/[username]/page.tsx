@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Swords } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { FollowButton } from "@/components/social/follow-button";
@@ -282,12 +283,21 @@ export default async function PublicProfilePage({ params }: Props) {
                     {athleteLabel}
                   </span>
 
-                  {/* Follow button — only for authenticated viewers of other profiles */}
+                  {/* Follow + Challenge buttons — only for authenticated viewers of other profiles */}
                   {currentUser && !isOwnProfile && (
-                    <FollowButton
-                      targetUserId={profile.user_id}
-                      initialIsFollowing={isFollowing}
-                    />
+                    <>
+                      <FollowButton
+                        targetUserId={profile.user_id}
+                        initialIsFollowing={isFollowing}
+                      />
+                      <Link
+                        href={`/desafios/novo?userId=${profile.user_id}`}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-[#F5F5F5]/60 transition-all duration-150 hover:border-[#FB923C]/30 hover:bg-[#FB923C]/[0.06] hover:text-[#FB923C]/90 active:scale-95"
+                      >
+                        <Swords className="size-3.5" strokeWidth={2} />
+                        Desafiar
+                      </Link>
+                    </>
                   )}
                 </div>
 
