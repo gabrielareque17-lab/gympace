@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "./supabase-admin";
+import { sendPushToSegment } from "./send-push";
 
 const BATCH_SIZE = 500;
 
@@ -55,6 +56,9 @@ export async function sendGymPaceUpdate({
 
     sent += batch.length;
   }
+
+  // Push to all OneSignal subscribers
+  await sendPushToSegment({ title, message, data: { type: 'gympace_update' } });
 
   return { sent };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, Zap } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
@@ -13,11 +13,40 @@ import { Sidebar } from "./sidebar";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const playerIdSynced = useRef(false);
 
   useEffect(() => {
     createSupabaseBrowserClient()
       .auth.getUser()
       .then(({ data }) => setEmail(data.user?.email ?? ""));
+  }, []);
+
+  // Sync OneSignal player ID once per session for the authenticated user.
+  // Runs here (not in root layout) so the user is guaranteed to be logged in,
+  // catching existing subscribers who never trigger the "change" event.
+  useEffect(() => {
+    if (playerIdSynced.current) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sync = (OneSignal: any) => {
+      const sub = OneSignal?.User?.PushSubscription;
+      if (!sub?.id || !sub?.optedIn) return;
+      playerIdSynced.current = true;
+      fetch("/api/user/player-id", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player_id: sub.id }),
+      }).catch(() => {});
+    };
+
+    // OneSignalDeferred executes callbacks immediately if SDK is already ready,
+    // or queues them for when it initialises.
+    if (typeof window !== "undefined") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const w = window as any;
+      w.OneSignalDeferred = w.OneSignalDeferred ?? [];
+      w.OneSignalDeferred.push(sync);
+    }
   }, []);
 
   return (
