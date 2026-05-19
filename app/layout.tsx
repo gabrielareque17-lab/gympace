@@ -24,13 +24,42 @@ const geistMono = Geist_Mono({
 export const viewport: Viewport = {
   themeColor: "#080808",
   viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export const metadata: Metadata = {
   title: "GymPace — Track your runs",
-  description: "Dashboard para monitorar corridas, pace e evolução semanal.",
+  description:
+    "A plataforma definitiva para atletas híbridos. Corrida, academia, analytics e competições.",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "GymPace",
+    startupImage: [
+      {
+        url: "/icon-512x512.png",
+        media:
+          "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "msapplication-TileColor": "#080808",
+    "msapplication-tap-highlight": "no",
   },
 };
 

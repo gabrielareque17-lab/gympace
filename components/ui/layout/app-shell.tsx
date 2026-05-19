@@ -5,9 +5,11 @@ import { Menu, Zap } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ProfileProvider } from "@/components/providers/profile-provider";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "./bottom-nav";
+import { PageTransition } from "./page-transition";
 import { Sidebar } from "./sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -110,14 +112,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Main content — extra bottom padding reserves space for the fixed bottom nav */}
-          <div className="flex min-w-0 flex-1 flex-col pb-[calc(env(safe-area-inset-bottom,0px)+68px)] md:pb-0">
+          <PageTransition className="pb-[calc(env(safe-area-inset-bottom,0px)+68px)] md:pb-0">
             {children}
-          </div>
+          </PageTransition>
         </div>
 
         {/* Mobile bottom navigation */}
         <BottomNav />
       </div>
+
+      {/* PWA install prompt — shows only when not installed */}
+      <InstallPrompt />
     </ProfileProvider>
   );
 }

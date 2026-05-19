@@ -188,6 +188,33 @@
     animation: page-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  /* Shimmer skeleton */
+  @keyframes gp-shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .gp-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.045) 25%,
+      rgba(255, 255, 255, 0.085) 50%,
+      rgba(255, 255, 255, 0.045) 75%
+    );
+    background-size: 200% 100%;
+    animation: gp-shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* Fade-in for content loaded after skeleton */
+  @keyframes gp-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .gp-fade-in {
+    animation: gp-fade-in 0.3s ease both;
+  }
+
   /* Notification panel mobile top.
      The html element has padding-top: env(safe-area-inset-top) AND the header
      also has paddingTop: env(safe-area-inset-top) internally, so the panel must
