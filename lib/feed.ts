@@ -33,11 +33,12 @@ export async function insertFeedEvent(
   supabase: SupabaseClient,
   userId: string,
   eventType: FeedEventType,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  createdAt?: string
 ): Promise<void> {
   const { error } = await supabase
     .from("activities_feed")
-    .insert({ user_id: userId, event_type: eventType, payload });
+    .insert({ user_id: userId, event_type: eventType, payload, ...(createdAt ? { created_at: createdAt } : {}) });
   if (error) console.error("[feed] insert error:", error.message);
 }
 

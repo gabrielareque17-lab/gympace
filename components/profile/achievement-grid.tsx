@@ -35,6 +35,7 @@ export type AchievementCardData = {
   accentHex: string;
   rarity: AchievementRarity;
   unlocked: boolean;
+  unlockedAt?: string;
   progress?: { current: number; target: number; unit: string };
 };
 

@@ -113,7 +113,7 @@ function NavItem({
   );
 }
 
-export function BottomNav() {
+export function BottomNav({ hidden = false }: { hidden?: boolean }) {
   const pathname   = usePathname();
   const router     = useRouter();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -155,7 +155,7 @@ export function BottomNav() {
     return () => { document.body.style.overflow = ""; };
   }, [sheetOpen]);
 
-  if (keyboardOpen) return null;
+  if (hidden || keyboardOpen) return null;
 
   function handleAction(href: string) {
     router.push(href);

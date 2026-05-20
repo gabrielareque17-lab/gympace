@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { deleteFeedEvent, insertFeedEvent } from "@/lib/feed";
 import { normalizeMuscleGroups, VALID_MUSCLE_DETAILS, VALID_MUSCLE_GROUPS } from "@/lib/muscles";
+import { syncStreaksForUser } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { syncUserXP } from "@/lib/xp";
 
@@ -18,8 +19,11 @@ async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/treinos");
   revalidatePath("/feed");
   revalidatePath("/metas");
+  revalidatePath("/desafios");
   revalidatePath("/competicoes");
   revalidatePath("/desafios-competicoes");
+  revalidatePath("/social");
+  revalidatePath("/perfil");
   for (const id of competitionIds) revalidatePath(`/competicoes/${id}`);
 }
 
@@ -45,6 +49,7 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
   const xpFeedback = await syncUserXP(supabase, user.id);
+  await syncStreaksForUser(supabase, user.id);
 
   await revalidateAll(progressUpdates.map((u) => u.competitionId));
   return NextResponse.json({ ok: true, progressUpdates, xpFeedback });
@@ -126,6 +131,14 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   if (body.notes !== undefined) updates.notes = String(body.notes).trim() || null;
 
+  if (body.created_at !== undefined) {
+    const createdAt = new Date(String(body.created_at));
+    if (Number.isNaN(createdAt.getTime())) {
+      return NextResponse.json({ error: "Data e horário do treino inválidos" }, { status: 400 });
+    }
+    updates.created_at = createdAt.toISOString();
+  }
+
   const { data, error } = await supabase
     .from("workouts")
     .update(updates)
@@ -146,7 +159,8 @@ export async function PATCH(req: Request, { params }: Params) {
     workout_split: data.workout_split ?? undefined,
     duration_minutes: data.duration_minutes ?? undefined,
     intensity: data.intensity ?? undefined,
-  });
+    created_at: data.created_at ?? undefined,
+  }, data.created_at ?? undefined);
 
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
   const xpFeedback = await syncUserXP(supabase, user.id);

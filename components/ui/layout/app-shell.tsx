@@ -15,6 +15,7 @@ import { Sidebar } from "./sidebar";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [bottomNavHidden, setBottomNavHidden] = useState(false);
   const playerIdSynced = useRef(false);
 
   useEffect(() => {
@@ -49,6 +50,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       w.OneSignalDeferred = w.OneSignalDeferred ?? [];
       w.OneSignalDeferred.push(sync);
     }
+  }, []);
+
+  useEffect(() => {
+    function onBottomNavVisibility(event: Event) {
+      const customEvent = event as CustomEvent<{ hidden?: boolean }>;
+      setBottomNavHidden(Boolean(customEvent.detail?.hidden));
+    }
+
+    window.addEventListener("gympace:bottom-nav-visibility", onBottomNavVisibility);
+    return () => {
+      window.removeEventListener("gympace:bottom-nav-visibility", onBottomNavVisibility);
+    };
   }, []);
 
   return (
@@ -113,13 +126,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Main content — extra bottom padding reserves space for the fixed bottom nav */}
-          <PageTransition className="pb-[calc(env(safe-area-inset-bottom,0px)+68px)] md:pb-0">
+          <PageTransition
+            className={cn(
+              "md:pb-0",
+              bottomNavHidden ? "pb-0" : "pb-[calc(env(safe-area-inset-bottom,0px)+68px)]"
+            )}
+          >
             {children}
           </PageTransition>
         </div>
 
         {/* Mobile bottom navigation */}
-        <BottomNav />
+        <BottomNav hidden={bottomNavHidden} />
       </div>
 
       {/* PWA install prompt — shows only when not installed */}

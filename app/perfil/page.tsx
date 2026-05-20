@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flame } from "lucide-react";
+import { Flame, Trophy } from "lucide-react";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { AvatarSelector } from "@/components/ui/avatar/avatar-selector";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
@@ -19,6 +19,11 @@ import {
   AchievementGrid,
   type AchievementCardData,
 } from "@/components/profile/achievement-grid";
+import {
+  LatestTrophiesSection,
+  type TrophyGrant,
+} from "@/components/profile/latest-trophies-section";
+import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +43,7 @@ type Workout = {
 
 // ─── Level system ────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const LEVELS = [
   { name: "Iniciante",     threshold: 0,   next: 25,       color: "#71717A" },
   { name: "Amador",        threshold: 25,  next: 100,      color: "#60A5FA" },
@@ -45,22 +51,6 @@ const LEVELS = [
   { name: "Avançado",      threshold: 300, next: 600,      color: "#FB923C" },
   { name: "Elite",         threshold: 600, next: Infinity, color: "#B6FF00" },
 ];
-
-function computeLevel(totalKm: number) {
-  let idx = 0;
-  for (let i = 0; i < LEVELS.length; i++) {
-    if (totalKm >= LEVELS[i].threshold) idx = i;
-  }
-  const level = LEVELS[idx];
-  const isMax = level.next === Infinity;
-  const progress = isMax
-    ? 100
-    : Math.min(
-        Math.round(((totalKm - level.threshold) / (level.next - level.threshold)) * 100),
-        100
-      );
-  return { ...level, levelNumber: idx + 1, progress, isMax };
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -211,6 +201,7 @@ export default async function PerfilPage() {
     { count: followersCount },
     { count: followingCount },
     userStreaks,
+    trophiesResult,
   ] = await Promise.all([
     user
       ? supabase
@@ -234,6 +225,13 @@ export default async function PerfilPage() {
     user
       ? getUserStreaks(supabase, user.id)
       : Promise.resolve(null),
+    user
+      ? supabase
+          .from("user_trophies")
+          .select("id,awarded_at,awarded_by,note,exclusive_trophies(name,description,rarity,visual)")
+          .eq("user_id", user.id)
+          .order("awarded_at", { ascending: false })
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   const runs: Run[] = (rawRuns ?? []) as Run[];
@@ -274,8 +272,6 @@ export default async function PerfilPage() {
 
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const level = computeLevel(totalKm);
-
   const dbTotalXp = Number((profile as { total_xp?: number } | null)?.total_xp ?? 0)
   const dbLevel = Number((profile as { current_level?: number } | null)?.current_level ?? 1)
   const dbRank = (profile as { rank?: string } | null)?.rank ?? 'rookie'
@@ -313,17 +309,32 @@ export default async function PerfilPage() {
   }));
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  const achievementCards: AchievementCardData[] = achievements.map((a) => ({
-    id: a.id,
-    category: a.category,
-    name: a.name,
-    description: a.description,
-    iconKey: a.iconKey,
-    accentHex: a.accentHex,
-    rarity: a.rarity,
-    unlocked: a.unlocked,
-    progress: a.getProgress ? a.getProgress(achievementStats) : undefined,
-  }));
+  const achievementCards: AchievementCardData[] = addAchievementUnlockDates({
+    runs,
+    workouts,
+    achievements: achievements.map((a) => ({
+      id: a.id,
+      category: a.category,
+      name: a.name,
+      description: a.description,
+      iconKey: a.iconKey,
+      accentHex: a.accentHex,
+      rarity: a.rarity,
+      unlocked: a.unlocked,
+      progress: a.getProgress ? a.getProgress(achievementStats) : undefined,
+    })),
+    normalizeWorkoutGroups: (workout) =>
+      normalizeMuscleGroups(
+        workout.muscle_groups?.length
+          ? workout.muscle_groups
+          : workout.muscle_group
+          ? [workout.muscle_group]
+          : []
+      ),
+  });
+  const exclusiveTrophies: TrophyGrant[] = trophiesResult.error
+    ? []
+    : ((trophiesResult.data ?? []) as unknown as TrophyGrant[]);
 
   const heatmapWeeks = buildHeatmap(runs);
 
@@ -410,6 +421,13 @@ export default async function PerfilPage() {
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
                           seguindo
                         </Link>
+                        <Link
+                          href={`/perfil/${profile.username}/trofeus`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2.5 py-2 text-xs font-bold text-[#EAB308]/85 transition-all duration-150 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-95"
+                        >
+                          <Trophy className="size-3.5" strokeWidth={2} />
+                          Ver troféus
+                        </Link>
                       </>
                     ) : (
                       <>
@@ -476,6 +494,11 @@ export default async function PerfilPage() {
               </div>
             </div>
           </section>
+
+          <LatestTrophiesSection
+            achievements={achievementCards}
+            exclusiveTrophies={exclusiveTrophies}
+          />
 
           {/* ── Avatar Customization ── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">

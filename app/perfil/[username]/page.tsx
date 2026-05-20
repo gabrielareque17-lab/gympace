@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Flame, Medal, Swords } from "lucide-react";
+import { Flame, Medal, Swords, Trophy } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { FollowButton } from "@/components/social/follow-button";
@@ -15,10 +15,15 @@ import {
   AchievementGrid,
   type AchievementCardData,
 } from "@/components/profile/achievement-grid";
+import {
+  LatestTrophiesSection,
+  type TrophyGrant,
+} from "@/components/profile/latest-trophies-section";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getLevelProgress } from "@/lib/xp";
+import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
 
 export const dynamic = "force-dynamic";
 
@@ -212,20 +217,34 @@ export default async function PublicProfilePage({ params }: Props) {
   }));
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  const achievementCards: AchievementCardData[] = achievements.map((a) => ({
-    id: a.id,
-    category: a.category,
-    name: a.name,
-    description: a.description,
-    iconKey: a.iconKey,
-    accentHex: a.accentHex,
-    rarity: a.rarity,
-    unlocked: a.unlocked,
-    progress: a.getProgress ? a.getProgress(achievementStats) : undefined,
-  }));
+  const achievementCards: AchievementCardData[] = addAchievementUnlockDates({
+    runs,
+    workouts,
+    achievements: achievements.map((a) => ({
+      id: a.id,
+      category: a.category,
+      name: a.name,
+      description: a.description,
+      iconKey: a.iconKey,
+      accentHex: a.accentHex,
+      rarity: a.rarity,
+      unlocked: a.unlocked,
+      progress: a.getProgress ? a.getProgress(achievementStats) : undefined,
+    })),
+    normalizeWorkoutGroups: (workout) =>
+      normalizeMuscleGroups(
+        workout.muscle_groups?.length
+          ? workout.muscle_groups
+          : workout.muscle_group
+          ? [workout.muscle_group]
+          : []
+      ),
+  });
 
   const accentColor = avatarDef?.accentColor ?? "#B6FF00";
-  const exclusiveTrophies = trophiesResult.error ? [] : (trophiesResult.data ?? []);
+  const exclusiveTrophies: TrophyGrant[] = trophiesResult.error
+    ? []
+    : ((trophiesResult.data ?? []) as unknown as TrophyGrant[]);
   const streakRows = publicStreaks ?? [];
 
   return (
@@ -315,6 +334,13 @@ export default async function PublicProfilePage({ params }: Props) {
                       </Link>
                     </>
                   )}
+                  <Link
+                    href={`/perfil/${profile.username}/trofeus`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-3 py-1.5 text-[11px] font-bold text-[#EAB308]/85 transition-all duration-150 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-95"
+                  >
+                    <Trophy className="size-3.5" strokeWidth={2} />
+                    Ver troféus
+                  </Link>
                 </div>
 
                 {/* Level bar */}
@@ -362,6 +388,11 @@ export default async function PublicProfilePage({ params }: Props) {
               </div>
             </div>
           </section>
+
+          <LatestTrophiesSection
+            achievements={achievementCards}
+            exclusiveTrophies={exclusiveTrophies}
+          />
 
           {/* ── Troféus exclusivos ── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">

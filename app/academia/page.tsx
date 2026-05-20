@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -9,11 +9,15 @@ import {
   Dumbbell,
   Flame,
   Loader2,
+  Pause,
   Pencil,
+  Play,
   Search,
   Sparkles,
+  Square,
   Trash2,
   Trophy,
+  X,
 } from "lucide-react";
 
 import { MuscleIllustration } from "@/components/academia/muscle-illustration";
@@ -52,6 +56,8 @@ type FormState = {
   duration_minutes: string;
   intensity: string;
   notes: string;
+  workout_date?: string;
+  workout_time?: string;
 };
 
 type ProgressUpdate = {
@@ -85,6 +91,8 @@ const initialForm: FormState = {
   duration_minutes: "",
   intensity: "",
   notes: "",
+  workout_date: "",
+  workout_time: "",
 };
 
 function primaryGroup(groups: string[]) {
@@ -101,6 +109,36 @@ function visibleDetails(groups: string[]) {
       color: group.color,
     }))
   );
+}
+
+function formatTimer(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return [hours, minutes, seconds].map((part) => String(part).padStart(2, "0")).join(":");
+}
+
+function toDateInputValue(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toTimeInputValue(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function combineDateAndTime(dateValue?: string, timeValue?: string) {
+  if (!dateValue || !timeValue) return undefined;
+  const date = new Date(`${dateValue}T${timeValue}:00`);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
 }
 
 async function fetchWorkouts(): Promise<Workout[]> {
@@ -131,6 +169,7 @@ async function saveWorkoutApi(form: FormState) {
 }
 
 async function editWorkoutApi(id: string, form: FormState) {
+  const createdAt = combineDateAndTime(form.workout_date, form.workout_time);
   const res = await fetch(`/api/workouts/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -143,6 +182,7 @@ async function editWorkoutApi(id: string, form: FormState) {
       duration_minutes: Number(form.duration_minutes),
       intensity: form.intensity || null,
       notes: form.notes || null,
+      ...(createdAt ? { created_at: createdAt } : {}),
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -159,6 +199,7 @@ async function deleteWorkoutApi(id: string) {
 
 export default function AcademiaPage() {
   const { refetch: refetchProfile } = useProfile();
+  const formRef = useRef<HTMLFormElement>(null);
   const [form, setForm] = useState<FormState>(initialForm);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [query, setQuery] = useState("");
@@ -170,6 +211,8 @@ export default function AcademiaPage() {
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [workoutTimerOpen, setWorkoutTimerOpen] = useState(false);
+  const [showWorkoutForm, setShowWorkoutForm] = useState(false);
 
   const selectedGroup = primaryGroup(form.muscle_groups);
   const detailOptions = visibleDetails(form.muscle_groups);
@@ -260,6 +303,7 @@ export default function AcademiaPage() {
     try {
       const { progressUpdates: updates, xpFeedback: xp } = await saveWorkoutApi(form);
       setForm(initialForm);
+      setShowWorkoutForm(false);
       setMessage(updates.length > 0 ? "Treino salvo e progresso competitivo atualizado." : "Treino salvo com sucesso.");
       setProgressUpdates(updates);
       setXpFeedback(xp);
@@ -296,8 +340,37 @@ export default function AcademiaPage() {
     }
   }
 
+  function handleTimedWorkoutFinish(elapsedSeconds: number) {
+    const minutes = Math.max(1, Math.round(elapsedSeconds / 60));
+    setWorkoutTimerOpen(false);
+    setForm((cur) => ({
+      ...cur,
+      title: cur.title || "Treino cronometrado",
+      duration_minutes: String(minutes),
+    }));
+    setShowWorkoutForm(true);
+    setMessage("Cronômetro finalizado. Complete os dados do treino para salvar.");
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
+  function openManualRegistration() {
+    setShowWorkoutForm(true);
+    setMessage("");
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
   return (
     <>
+      {workoutTimerOpen && (
+        <ActiveWorkoutTimer
+          onCancel={() => setWorkoutTimerOpen(false)}
+          onFinish={handleTimedWorkoutFinish}
+        />
+      )}
       {showLevelUp && xpFeedback && (
         <LevelUpOverlay
           level={xpFeedback.currentLevel}
@@ -324,10 +397,31 @@ export default function AcademiaPage() {
             <p className="mt-2 max-w-xl text-sm leading-6 text-[#F5F5F5]/40">
               Selecione grupos musculares, músculos específicos e divisões profissionais como Push, Pull e Legs.
             </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setWorkoutTimerOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#22D3EE] px-4 py-3 text-sm font-bold text-[#061014] shadow-[0_0_24px_rgba(34,211,238,0.22)] transition active:scale-[0.97]"
+              >
+                <Play className="size-4 fill-current stroke-none" />
+                Iniciar treino com cronômetro
+              </button>
+              <button
+                type="button"
+                onClick={openManualRegistration}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#F5F5F5]/55 transition hover:bg-white/[0.07]"
+              >
+                Registrar manualmente
+              </button>
+            </div>
           </header>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <form onSubmit={handleSubmit} className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              className={`${showWorkoutForm ? "block" : "hidden md:block"} overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]`}
+            >
               <div className="flex items-center justify-between gap-4 border-b border-white/[0.05] p-5">
                 <div>
                   <h2 className="font-display text-base font-semibold">Sessão</h2>
@@ -575,6 +669,137 @@ export default function AcademiaPage() {
   );
 }
 
+function ActiveWorkoutTimer({
+  onCancel,
+  onFinish,
+}: {
+  onCancel: () => void;
+  onFinish: (elapsedSeconds: number) => void;
+}) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("gympace:bottom-nav-visibility", { detail: { hidden: true } })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("gympace:bottom-nav-visibility", { detail: { hidden: false } })
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const id = window.setInterval(() => {
+      setElapsedSeconds((seconds) => seconds + 1);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [paused]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden bg-[#080808] pt-safe-top">
+      <div className="flex shrink-0 items-center justify-between px-5 pb-2 pt-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#22D3EE]/70">
+            Treino ativo
+          </p>
+          <p className="mt-1 text-xs text-[#F5F5F5]/32">Musculação cronometrada</p>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="grid size-9 place-items-center rounded-xl text-[#F5F5F5]/35 transition hover:bg-white/[0.06] hover:text-[#F5F5F5]/70"
+          aria-label="Cancelar treino"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-5 text-center">
+        <div className="mb-5 grid size-16 place-items-center rounded-2xl border border-[#22D3EE]/20 bg-[#22D3EE]/10 text-[#22D3EE] shadow-[0_0_36px_rgba(34,211,238,0.12)]">
+          <Dumbbell className="size-8" strokeWidth={1.8} />
+        </div>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#F5F5F5]/28">
+          Tempo de treino
+        </p>
+        <p
+          className="font-display text-[64px] font-bold tabular-nums leading-none tracking-tight sm:text-[88px]"
+          style={{ color: paused ? "rgba(245,245,245,0.35)" : "#F5F5F5" }}
+        >
+          {formatTimer(elapsedSeconds)}
+        </p>
+        <div className="mt-5 rounded-full border border-white/[0.07] bg-white/[0.03] px-4 py-2">
+          <span
+            className="text-[10px] font-bold uppercase tracking-[0.15em]"
+            style={{ color: paused ? "#FB923C" : "#22D3EE" }}
+          >
+            {paused ? "Pausado" : "Em andamento"}
+          </span>
+        </div>
+      </div>
+
+      <div
+        className="shrink-0 px-5"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 2rem)" }}
+      >
+        <div className="flex items-end justify-center gap-8">
+          <div className="flex flex-col items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setPaused((value) => !value)}
+              className="grid size-20 place-items-center rounded-full transition active:scale-95"
+              style={
+                paused
+                  ? {
+                      background: "#22D3EE",
+                      boxShadow: "0 0 40px rgba(34,211,238,0.42), 0 0 80px rgba(34,211,238,0.14)",
+                    }
+                  : {
+                      border: "1px solid rgba(245,245,245,0.14)",
+                      background: "rgba(245,245,245,0.09)",
+                    }
+              }
+            >
+              {paused ? (
+                <Play className="size-8 translate-x-0.5 fill-current stroke-none text-[#061014]" />
+              ) : (
+                <Pause className="size-8 text-[#F5F5F5]/90" strokeWidth={2.5} />
+              )}
+            </button>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/42">
+              {paused ? "Retomar" : "Pausar"}
+            </span>
+          </div>
+
+          <div className="mb-2 flex flex-col items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => onFinish(elapsedSeconds)}
+              className="grid size-14 place-items-center rounded-full border border-white/[0.1] bg-white/[0.05] transition active:scale-95 hover:bg-white/[0.09]"
+            >
+              <Square className="size-5 fill-current stroke-none text-[#F5F5F5]/60" />
+            </button>
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/28">
+              Finalizar
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-5 flex w-full items-center justify-center rounded-2xl border border-red-500/15 bg-red-500/[0.06] py-3 text-sm font-semibold text-red-300/75"
+        >
+          Cancelar treino
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function RecentWorkouts({
   workouts,
   status,
@@ -721,10 +946,24 @@ function EditWorkoutModal({
     duration_minutes: String(workout.duration_minutes),
     intensity: workout.intensity ?? "",
     notes: workout.notes ?? "",
+    workout_date: toDateInputValue(workout.created_at),
+    workout_time: toTimeInputValue(workout.created_at),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const details = visibleDetails(form.muscle_groups);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("gympace:bottom-nav-visibility", { detail: { hidden: true } })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("gympace:bottom-nav-visibility", { detail: { hidden: false } })
+      );
+    };
+  }, []);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -740,11 +979,38 @@ function EditWorkoutModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-4 backdrop-blur-sm sm:items-center" onClick={onClose}>
-      <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/[0.1] bg-[#111111] p-5">
+      <form
+        onSubmit={submit}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/[0.1] bg-[#111111] p-5"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 1.25rem)" }}
+      >
         <h2 className="font-display text-lg font-bold">Editar treino</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px]">
           <input required value={form.title} onChange={(e) => setForm((cur) => ({ ...cur, title: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none" />
           <input required type="number" min="1" value={form.duration_minutes} onChange={(e) => setForm((cur) => ({ ...cur, duration_minutes: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none" />
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label>
+            <span className="mb-2 block text-xs font-semibold text-[#F5F5F5]/38">Data do treino</span>
+            <input
+              required
+              type="date"
+              value={form.workout_date ?? ""}
+              onChange={(e) => setForm((cur) => ({ ...cur, workout_date: e.target.value }))}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none"
+            />
+          </label>
+          <label>
+            <span className="mb-2 block text-xs font-semibold text-[#F5F5F5]/38">Horário</span>
+            <input
+              required
+              type="time"
+              value={form.workout_time ?? ""}
+              onChange={(e) => setForm((cur) => ({ ...cur, workout_time: e.target.value }))}
+              className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none"
+            />
+          </label>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {MUSCLE_GROUPS.map((group) => {

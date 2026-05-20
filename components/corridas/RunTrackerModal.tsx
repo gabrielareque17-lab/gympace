@@ -219,6 +219,18 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
   const wakeLockRef = useRef<{ release(): Promise<void> } | null>(null);
 
   useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("gympace:bottom-nav-visibility", { detail: { hidden: true } })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("gympace:bottom-nav-visibility", { detail: { hidden: false } })
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     tracker.start();
     if ("wakeLock" in navigator) {
       (navigator as { wakeLock: { request(type: string): Promise<{ release(): Promise<void> }> } })
@@ -305,8 +317,11 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
     const sumDuration = secondsToDurationString(sumElapsed);
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-[#080808]">
-        <div className="min-h-full px-4 pb-10 pt-safe-top">
+      <div className="fixed inset-0 z-50 h-dvh overflow-y-auto overscroll-contain bg-[#080808] [-webkit-overflow-scrolling:touch]">
+        <div
+          className="min-h-dvh px-4 pt-safe-top"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 1.25rem)" }}
+        >
 
           {/* Header */}
           <div className="mb-6 flex items-center justify-between pt-4">
@@ -409,7 +424,10 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
           )}
 
           {/* Actions */}
-          <div className="flex gap-3">
+          <div
+            className="sticky bottom-0 -mx-4 flex gap-3 border-t border-white/[0.06] bg-[#080808]/95 px-4 pt-3 backdrop-blur-xl"
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 1rem)" }}
+          >
             <button
               type="button"
               onClick={handleDiscard}
