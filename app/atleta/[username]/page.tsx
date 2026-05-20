@@ -11,7 +11,8 @@ import {
   type AchievementStats,
 } from "@/lib/achievements";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Check, Flame, Route, Timer, Trophy, TrendingUp, Zap } from "lucide-react";
+import { getLocalDateKey } from "@/lib/date-utils";
+import { Check, Flame, Route, Timer, TrendingUp, Zap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -82,21 +83,19 @@ function formatDecimal(n: number): string {
 
 function computeStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
-  const uniqueDates = Array.from(new Set(dates.map((d) => d.split("T")[0]))).sort().reverse();
+  const uniqueDates = Array.from(new Set(dates.map(getLocalDateKey))).sort().reverse();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
-  const yest = new Date(today);
-  yest.setDate(today.getDate() - 1);
-  const yestStr = yest.toISOString().split("T")[0];
+  const todayStr = getLocalDateKey(new Date());
+  const yest = new Date(`${todayStr}T12:00:00`);
+  yest.setDate(yest.getDate() - 1);
+  const yestStr = getLocalDateKey(yest);
 
   if (uniqueDates[0] !== todayStr && uniqueDates[0] !== yestStr) return 0;
 
   let streak = 1;
   for (let i = 1; i < uniqueDates.length; i++) {
-    const prev = new Date(uniqueDates[i - 1] + "T00:00:00Z");
-    const curr = new Date(uniqueDates[i] + "T00:00:00Z");
+    const prev = new Date(uniqueDates[i - 1] + "T00:00:00");
+    const curr = new Date(uniqueDates[i] + "T00:00:00");
     const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86_400_000);
     if (diffDays === 1) streak++;
     else break;
@@ -107,12 +106,11 @@ function computeStreak(dates: string[]): number {
 function buildHeatmap(runs: { created_at: string; distance: number }[]): { date: string; km: number; isFuture: boolean }[][] {
   const dayKm = new Map<string, number>();
   for (const r of runs) {
-    const d = r.created_at.split("T")[0];
+    const d = getLocalDateKey(r.created_at);
     dayKm.set(d, (dayKm.get(d) ?? 0) + r.distance);
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(`${getLocalDateKey(new Date())}T12:00:00`);
   const todayMs = today.getTime();
 
   const dayOfWeek = (today.getDay() + 6) % 7;
@@ -125,7 +123,7 @@ function buildHeatmap(runs: { created_at: string; distance: number }[]): { date:
   for (let w = 0; w < 16; w++) {
     const week: { date: string; km: number; isFuture: boolean }[] = [];
     for (let d = 0; d < 7; d++) {
-      const ds = cur.toISOString().split("T")[0];
+      const ds = getLocalDateKey(cur);
       week.push({ date: ds, km: dayKm.get(ds) ?? 0, isFuture: cur.getTime() > todayMs });
       cur.setDate(cur.getDate() + 1);
     }
@@ -217,7 +215,6 @@ export default async function AthleteProfilePage({ params }: Props) {
 
   const avatarDef = profile.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const accentColor = avatarDef?.accentColor ?? "#B6FF00";
-  const glowColor = avatarDef?.glowColor ?? "rgba(182,255,0,0.2)";
 
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
   const displayName = profile.display_name || profile.username || "Atleta";

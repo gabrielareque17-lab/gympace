@@ -26,6 +26,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
+import { getLocalDateKey } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
 const rankStyles: Record<string, { label: string; color: string }> = {
@@ -83,18 +84,20 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
-      const now = new Date();
-      const day = now.getDay();
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() + (day === 0 ? -6 : 1 - day));
-      weekStart.setHours(0, 0, 0, 0);
+      const todayKey = getLocalDateKey(new Date());
+      const weekStart = new Date(`${todayKey}T12:00:00`);
+      const day = weekStart.getDay();
+      weekStart.setDate(weekStart.getDate() + (day === 0 ? -6 : 1 - day));
+      const weekStartKey = getLocalDateKey(weekStart);
       const { data } = await supabase
         .from("runs")
-        .select("distance")
+        .select("distance, created_at")
         .eq("user_id", user.id)
-        .gte("created_at", weekStart.toISOString());
+        .gte("created_at", new Date(weekStart.getTime() - 36 * 60 * 60 * 1000).toISOString());
       if (!data) return;
-      const totalKm = data.reduce((sum, r) => sum + Number(r.distance ?? 0), 0);
+      const totalKm = data
+        .filter((r) => getLocalDateKey(r.created_at) >= weekStartKey)
+        .reduce((sum, r) => sum + Number(r.distance ?? 0), 0);
       setWeeklyProgress(Math.min(Math.round((totalKm / 50) * 100), 100));
     });
   }, []);

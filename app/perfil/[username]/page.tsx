@@ -24,6 +24,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getLevelProgress } from "@/lib/xp";
 import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
+import { getLocalDateKey } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -49,21 +50,19 @@ function parsePaceToSeconds(value: string | null): number | null {
 
 function computeStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
-  const uniqueDates = Array.from(new Set(dates.map((d) => d.split("T")[0]))).sort().reverse();
+  const uniqueDates = Array.from(new Set(dates.map(getLocalDateKey))).sort().reverse();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
-  const yest = new Date(today);
-  yest.setDate(today.getDate() - 1);
-  const yestStr = yest.toISOString().split("T")[0];
+  const todayStr = getLocalDateKey(new Date());
+  const yest = new Date(`${todayStr}T12:00:00`);
+  yest.setDate(yest.getDate() - 1);
+  const yestStr = getLocalDateKey(yest);
 
   if (uniqueDates[0] !== todayStr && uniqueDates[0] !== yestStr) return 0;
 
   let streak = 1;
   for (let i = 1; i < uniqueDates.length; i++) {
-    const prev = new Date(uniqueDates[i - 1] + "T00:00:00Z");
-    const curr = new Date(uniqueDates[i] + "T00:00:00Z");
+    const prev = new Date(uniqueDates[i - 1] + "T00:00:00");
+    const curr = new Date(uniqueDates[i] + "T00:00:00");
     const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86_400_000);
     if (diffDays === 1) streak++;
     else break;
@@ -74,15 +73,14 @@ function computeStreak(dates: string[]): number {
 function hasPerfectWeek(isoDates: string[]): boolean {
   const weeks: Record<string, Set<string>> = {};
   for (const d of isoDates) {
-    const date = new Date(d);
-    if (isNaN(date.getTime())) continue;
+    const dayKey = getLocalDateKey(d);
+    const date = new Date(`${dayKey}T12:00:00`);
     const day = date.getDay();
     const ws = new Date(date);
     ws.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
-    ws.setHours(0, 0, 0, 0);
-    const key = ws.toISOString().slice(0, 10);
+    const key = getLocalDateKey(ws);
     if (!weeks[key]) weeks[key] = new Set();
-    weeks[key].add(d.split("T")[0]);
+    weeks[key].add(dayKey);
   }
   return Object.values(weeks).some((days) => days.size >= 5);
 }

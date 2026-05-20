@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Plus, Pencil, Check, X, Zap } from "lucide-react";
 import Link from "next/link";
 
+import { getLocalDateKey } from "@/lib/date-utils";
 import type { Season } from "@/lib/seasons";
 
 type FormState = {
@@ -21,8 +22,8 @@ const DEFAULT_FORM: FormState = {
   description: "",
   color: "#B6FF00",
   xp_multiplier: "1.0",
-  start_date: new Date().toISOString().slice(0, 10),
-  end_date: new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10),
+  start_date: getLocalDateKey(new Date()),
+  end_date: getLocalDateKey(new Date(Date.now() + 90 * 86_400_000)),
   is_active: false,
 };
 
@@ -47,7 +48,9 @@ export default function AdminSeasonsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { loadSeasons(); }, []);
+  useEffect(() => {
+    void Promise.resolve().then(loadSeasons);
+  }, []);
 
   function startCreate() {
     setEditingId(null);

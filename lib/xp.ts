@@ -5,6 +5,7 @@ import {
   type AchievementStats,
 } from "@/lib/achievements";
 import { calculateLongestActivityStreak } from "@/lib/competition-progress";
+import { getLocalDateKey } from "@/lib/date-utils";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 
 export type XPRank = "rookie" | "bronze" | "silver" | "gold" | "platinum" | "elite";
@@ -269,21 +270,21 @@ function hasFiveSessionsInAWeek(workouts: WorkoutRow[]) {
   const weeks: Record<string, Set<string>> = {};
 
   for (const workout of workouts) {
-    const date = new Date(workout.created_at);
-    if (Number.isNaN(date.getTime())) continue;
+    const dayKey = getLocalDateKey(workout.created_at);
+    const date = new Date(`${dayKey}T12:00:00`);
 
     const weekKey = `${date.getFullYear()}-${getWeekNumber(date)}`;
     weeks[weekKey] ??= new Set();
-    weeks[weekKey].add(date.toISOString().slice(0, 10));
+    weeks[weekKey].add(dayKey);
   }
 
   return Object.values(weeks).some((days) => days.size >= 5);
 }
 
 function getWeekNumber(date: Date) {
-  const copy = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const day = copy.getUTCDay() || 7;
-  copy.setUTCDate(copy.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(copy.getUTCFullYear(), 0, 1));
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+  const day = copy.getDay() || 7;
+  copy.setDate(copy.getDate() + 4 - day);
+  const yearStart = new Date(copy.getFullYear(), 0, 1, 12);
   return Math.ceil(((copy.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
 }

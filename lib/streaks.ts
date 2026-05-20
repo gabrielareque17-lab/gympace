@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getLocalDateKey } from "@/lib/date-utils";
 
 export type StreakType = "run" | "gym" | "hybrid" | "general";
 
@@ -19,14 +20,12 @@ export type UserStreaks = {
 /** Consecutive days ending on today or yesterday */
 function computeCurrentStreak(dates: string[]): number {
   if (dates.length === 0) return 0;
-  const unique = [...new Set(dates.map((d) => d.slice(0, 10)))].sort().reverse();
+  const unique = [...new Set(dates.map(getLocalDateKey))].sort().reverse();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().slice(0, 10);
-  const yest = new Date(today);
-  yest.setDate(today.getDate() - 1);
-  const yestStr = yest.toISOString().slice(0, 10);
+  const todayStr = getLocalDateKey(new Date());
+  const yest = new Date(`${todayStr}T12:00:00`);
+  yest.setDate(yest.getDate() - 1);
+  const yestStr = getLocalDateKey(yest);
 
   if (unique[0] !== todayStr && unique[0] !== yestStr) return 0;
 
@@ -43,7 +42,7 @@ function computeCurrentStreak(dates: string[]): number {
 
 /** Longest historical consecutive-day streak */
 function computeBestStreak(dates: string[]): number {
-  const days = [...new Set(dates.map((d) => d.slice(0, 10)))].sort();
+  const days = [...new Set(dates.map(getLocalDateKey))].sort();
   if (days.length === 0) return 0;
 
   let best = 1;
@@ -74,13 +73,13 @@ export async function syncStreaksForUser(
   const runDates: string[] = (runsRes.data ?? []).map((r: { created_at: string }) => r.created_at);
   const gymDates: string[] = (workoutsRes.data ?? []).map((w: { created_at: string }) => w.created_at);
 
-  const runDaySet = new Set(runDates.map((d) => d.slice(0, 10)));
-  const gymDaySet = new Set(gymDates.map((d) => d.slice(0, 10)));
+  const runDaySet = new Set(runDates.map(getLocalDateKey));
+  const gymDaySet = new Set(gymDates.map(getLocalDateKey));
 
   // Hybrid: days where the user did BOTH a run AND a workout
   const hybridDateStrs = [...runDaySet].filter((d) => gymDaySet.has(d));
   // General: any activity day
-  const allDateStrs = [...new Set([...runDates.map((d) => d.slice(0, 10)), ...gymDates.map((d) => d.slice(0, 10))])];
+  const allDateStrs = [...new Set([...runDates.map(getLocalDateKey), ...gymDates.map(getLocalDateKey)])];
 
   const latest = (arr: string[]) =>
     arr.length > 0 ? [...arr].sort().reverse()[0] : null;
@@ -90,13 +89,13 @@ export async function syncStreaksForUser(
       streakType: "run",
       currentStreak: computeCurrentStreak(runDates),
       bestStreak: computeBestStreak(runDates),
-      lastActivityDate: latest(runDates.map((d) => d.slice(0, 10))),
+      lastActivityDate: latest(runDates.map(getLocalDateKey)),
     },
     gym: {
       streakType: "gym",
       currentStreak: computeCurrentStreak(gymDates),
       bestStreak: computeBestStreak(gymDates),
-      lastActivityDate: latest(gymDates.map((d) => d.slice(0, 10))),
+      lastActivityDate: latest(gymDates.map(getLocalDateKey)),
     },
     hybrid: {
       streakType: "hybrid",
@@ -174,24 +173,26 @@ export async function checkHybridBonusToday(
   supabase: SupabaseClient,
   userId: string
 ): Promise<boolean> {
-  const todayStr = new Date().toISOString().slice(0, 10);
-
   const [runsRes, workoutsRes] = await Promise.all([
     supabase
       .from("runs")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", `${todayStr}T00:00:00.000Z`)
-      .lt("created_at", `${todayStr}T23:59:59.999Z`),
+      .select("created_at")
+      .eq("user_id", userId),
     supabase
       .from("workouts")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", `${todayStr}T00:00:00.000Z`)
-      .lt("created_at", `${todayStr}T23:59:59.999Z`),
+      .select("created_at")
+      .eq("user_id", userId),
   ]);
 
-  return (runsRes.count ?? 0) > 0 && (workoutsRes.count ?? 0) > 0;
+  const todayStr = getLocalDateKey(new Date());
+  const hasRunToday = ((runsRes.data ?? []) as { created_at: string }[]).some(
+    (run) => getLocalDateKey(run.created_at) === todayStr
+  );
+  const hasWorkoutToday = ((workoutsRes.data ?? []) as { created_at: string }[]).some(
+    (workout) => getLocalDateKey(workout.created_at) === todayStr
+  );
+
+  return hasRunToday && hasWorkoutToday;
 }
 
 /** Milestone streak values that trigger feed events */

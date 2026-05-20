@@ -1,4 +1,5 @@
 import type { AchievementCardData } from "@/components/profile/achievement-grid";
+import { getLocalDateKey } from "@/lib/date-utils";
 
 type Activity = {
   created_at: string;
@@ -67,15 +68,14 @@ function firstPerfectWeekDate(workouts: WorkoutActivity[]): string | undefined {
   const weeks: Record<string, Activity[]> = {};
 
   for (const workout of workouts) {
-    const date = new Date(workout.created_at);
-    if (Number.isNaN(date.getTime())) continue;
+    const dayKey = getLocalDateKey(workout.created_at);
+    const date = new Date(`${dayKey}T12:00:00`);
 
     const day = date.getDay();
     const weekStart = new Date(date);
     weekStart.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
-    weekStart.setHours(0, 0, 0, 0);
 
-    const key = weekStart.toISOString().slice(0, 10);
+    const key = getLocalDateKey(weekStart);
     weeks[key] ??= [];
     weeks[key].push(workout);
   }
@@ -86,7 +86,7 @@ function firstPerfectWeekDate(workouts: WorkoutActivity[]): string | undefined {
         new Map(
           weekWorkouts
             .sort((a, b) => timeOf(a) - timeOf(b))
-            .map((workout) => [workout.created_at.slice(0, 10), workout])
+            .map((workout) => [getLocalDateKey(workout.created_at), workout])
         ).values()
       );
       return uniqueDays[4]?.created_at;
@@ -100,7 +100,7 @@ function firstStreakDate(activities: Activity[], targetDays: number): string | u
   const dayMap = new Map<string, Activity>();
 
   for (const activity of [...activities].sort((a, b) => timeOf(a) - timeOf(b))) {
-    const day = activity.created_at.slice(0, 10);
+    const day = getLocalDateKey(activity.created_at);
     if (!dayMap.has(day)) dayMap.set(day, activity);
   }
 

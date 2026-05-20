@@ -15,6 +15,7 @@ import {
   PageHeader,
   SectionCard,
 } from "@/components/ui/page-layout";
+import { getLocalDateKey } from "@/lib/date-utils";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -35,19 +36,15 @@ const TARGET_PACE_SECONDS = 300;
 const MONTHLY_KM_GOAL = 200;
 
 function getWeekStart(): Date {
-  const date = new Date();
+  const date = new Date(`${getLocalDateKey(new Date())}T12:00:00`);
   const day = date.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   date.setDate(date.getDate() + diff);
-  date.setHours(0, 0, 0, 0);
   return date;
 }
 
-function getMonthStart(): Date {
-  const date = new Date();
-  date.setDate(1);
-  date.setHours(0, 0, 0, 0);
-  return date;
+function getMonthStartKey(): string {
+  return `${getLocalDateKey(new Date()).slice(0, 8)}01`;
 }
 
 function parsePaceToSeconds(value: string | null): number | null {
@@ -78,26 +75,27 @@ async function getGoalsData(): Promise<Goal[]> {
     if (!user) return buildEmptyGoals();
 
     const weekStart = getWeekStart();
-    const monthStart = getMonthStart();
+    const weekStartKey = getLocalDateKey(weekStart);
+    const monthStartKey = getMonthStartKey();
 
     const [weekResult, monthResult] = await Promise.all([
       supabase
         .from("runs")
         .select("distance,pace,created_at")
         .eq("user_id", user.id)
-        .gte("created_at", weekStart.toISOString()),
+        .gte("created_at", new Date(weekStart.getTime() - 36 * 60 * 60 * 1000).toISOString()),
       supabase
         .from("runs")
-        .select("distance")
+        .select("distance, created_at")
         .eq("user_id", user.id)
-        .gte("created_at", monthStart.toISOString()),
+        .gte("created_at", `${monthStartKey}T00:00:00.000Z`),
     ]);
 
     if (weekResult.error) throw weekResult.error;
     if (monthResult.error) throw monthResult.error;
 
-    const weekRuns = weekResult.data ?? [];
-    const monthRuns = monthResult.data ?? [];
+    const weekRuns = (weekResult.data ?? []).filter((run) => getLocalDateKey(run.created_at) >= weekStartKey);
+    const monthRuns = (monthResult.data ?? []).filter((run) => getLocalDateKey(run.created_at) >= monthStartKey);
 
     const weekKm = weekRuns.reduce((sum, r) => sum + Number(r.distance ?? 0), 0);
     const monthKm = monthRuns.reduce((sum, r) => sum + Number(r.distance ?? 0), 0);

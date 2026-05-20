@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { getLocalDateKey } from "@/lib/date-utils";
+
 export type LeaderboardEntry = {
   userId: string;
   username: string | null;
@@ -16,15 +18,19 @@ export type LeaderboardEntry = {
 
 export type LeaderboardCategory = "xp" | "km" | "workouts" | "streak";
 
-/** ISO string for the start of the current calendar week (Monday 00:00 UTC) */
-function weekStart(): string {
-  const now = new Date();
-  const day = now.getUTCDay(); // 0 = Sun
-  const diff = day === 0 ? 6 : day - 1; // days since Monday
-  const monday = new Date(now);
-  monday.setUTCDate(now.getUTCDate() - diff);
-  monday.setUTCHours(0, 0, 0, 0);
-  return monday.toISOString();
+function currentWeekStartKey(): string {
+  const todayKey = getLocalDateKey(new Date());
+  const today = new Date(`${todayKey}T12:00:00`);
+  const day = today.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - diff);
+  return getLocalDateKey(monday);
+}
+
+function weekStartQuerySince(): string {
+  const mondayNoon = new Date(`${currentWeekStartKey()}T12:00:00`);
+  return new Date(mondayNoon.getTime() - 36 * 60 * 60 * 1000).toISOString();
 }
 
 /**
@@ -35,7 +41,8 @@ export async function getGlobalLeaderboard(
   supabase: SupabaseClient,
   category: LeaderboardCategory = "xp"
 ): Promise<LeaderboardEntry[]> {
-  const since = weekStart();
+  const since = weekStartQuerySince();
+  const sinceKey = currentWeekStartKey();
 
   const [profilesRes, runsRes, workoutsRes, streaksRes] = await Promise.all([
     supabase
@@ -45,11 +52,11 @@ export async function getGlobalLeaderboard(
       .limit(200),
     supabase
       .from("runs")
-      .select("user_id, distance")
+      .select("user_id, distance, created_at")
       .gte("created_at", since),
     supabase
       .from("workouts")
-      .select("user_id")
+      .select("user_id, created_at")
       .gte("created_at", since),
     supabase
       .from("streaks")
@@ -69,13 +76,15 @@ export async function getGlobalLeaderboard(
 
   // Aggregate weekly km per user
   const weeklyKmMap: Record<string, number> = {};
-  for (const r of (runsRes.data ?? []) as { user_id: string; distance: number | null }[]) {
+  for (const r of (runsRes.data ?? []) as { user_id: string; distance: number | null; created_at: string }[]) {
+    if (getLocalDateKey(r.created_at) < sinceKey) continue;
     weeklyKmMap[r.user_id] = (weeklyKmMap[r.user_id] ?? 0) + Number(r.distance ?? 0);
   }
 
   // Aggregate weekly workout count
   const weeklyWorkoutMap: Record<string, number> = {};
-  for (const w of (workoutsRes.data ?? []) as { user_id: string }[]) {
+  for (const w of (workoutsRes.data ?? []) as { user_id: string; created_at: string }[]) {
+    if (getLocalDateKey(w.created_at) < sinceKey) continue;
     weeklyWorkoutMap[w.user_id] = (weeklyWorkoutMap[w.user_id] ?? 0) + 1;
   }
 
@@ -133,7 +142,8 @@ export async function getFriendsLeaderboard(
 
   const friendIds = [userId, ...((followData ?? []) as { following_id: string }[]).map((f) => f.following_id)];
 
-  const since = weekStart();
+  const since = weekStartQuerySince();
+  const sinceKey = currentWeekStartKey();
 
   const [profilesRes, runsRes, workoutsRes, streaksRes] = await Promise.all([
     supabase
@@ -142,12 +152,12 @@ export async function getFriendsLeaderboard(
       .in("user_id", friendIds),
     supabase
       .from("runs")
-      .select("user_id, distance")
+      .select("user_id, distance, created_at")
       .in("user_id", friendIds)
       .gte("created_at", since),
     supabase
       .from("workouts")
-      .select("user_id")
+      .select("user_id, created_at")
       .in("user_id", friendIds)
       .gte("created_at", since),
     supabase
@@ -168,11 +178,13 @@ export async function getFriendsLeaderboard(
   }[];
 
   const weeklyKmMap: Record<string, number> = {};
-  for (const r of (runsRes.data ?? []) as { user_id: string; distance: number | null }[]) {
+  for (const r of (runsRes.data ?? []) as { user_id: string; distance: number | null; created_at: string }[]) {
+    if (getLocalDateKey(r.created_at) < sinceKey) continue;
     weeklyKmMap[r.user_id] = (weeklyKmMap[r.user_id] ?? 0) + Number(r.distance ?? 0);
   }
   const weeklyWorkoutMap: Record<string, number> = {};
-  for (const w of (workoutsRes.data ?? []) as { user_id: string }[]) {
+  for (const w of (workoutsRes.data ?? []) as { user_id: string; created_at: string }[]) {
+    if (getLocalDateKey(w.created_at) < sinceKey) continue;
     weeklyWorkoutMap[w.user_id] = (weeklyWorkoutMap[w.user_id] ?? 0) + 1;
   }
   const streakMap: Record<string, number> = {};

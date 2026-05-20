@@ -1,6 +1,7 @@
 "use client";
 
 import type { StreakData } from "@/lib/streaks";
+import { getLocalDateKey } from "@/lib/date-utils";
 
 const STREAK_CONFIG = {
   run: {
@@ -43,7 +44,7 @@ function getLastSevenDays(): string[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
+    return getLocalDateKey(d);
   });
 }
 
@@ -136,7 +137,7 @@ export function StreakCard({ data, activeDays = [] }: Props) {
 
       {/* Mini 7-day timeline */}
       <div className="flex items-center gap-1.5">
-        {lastSeven.map((date, i) => {
+        {lastSeven.map((date) => {
           const active = activeSet.has(date);
           const dayIdx = getDayIndex(date);
           return (

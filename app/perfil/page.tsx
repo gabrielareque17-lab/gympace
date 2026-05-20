@@ -10,6 +10,7 @@ import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
 import { getLevelProgress } from "@/lib/xp";
 import { getUserStreaks } from "@/lib/streaks";
+import { getLocalDateKey } from "@/lib/date-utils";
 import {
   ACHIEVEMENT_REGISTRY,
   CATEGORIES,
@@ -81,21 +82,19 @@ function getNickname(email: string): string {
 
 function computeStreak(isoDates: string[]): number {
   if (isoDates.length === 0) return 0;
-  const unique = Array.from(new Set(isoDates.map((d) => d.split("T")[0]))).sort().reverse();
+  const unique = Array.from(new Set(isoDates.map(getLocalDateKey))).sort().reverse();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().split("T")[0];
-  const yest = new Date(today);
-  yest.setDate(today.getDate() - 1);
-  const yestStr = yest.toISOString().split("T")[0];
+  const todayStr = getLocalDateKey(new Date());
+  const yest = new Date(`${todayStr}T12:00:00`);
+  yest.setDate(yest.getDate() - 1);
+  const yestStr = getLocalDateKey(yest);
 
   if (unique[0] !== todayStr && unique[0] !== yestStr) return 0;
 
   let streak = 1;
   for (let i = 1; i < unique.length; i++) {
-    const prev = new Date(unique[i - 1] + "T00:00:00Z");
-    const curr = new Date(unique[i] + "T00:00:00Z");
+    const prev = new Date(unique[i - 1] + "T00:00:00");
+    const curr = new Date(unique[i] + "T00:00:00");
     const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86_400_000);
     if (diffDays === 1) streak++;
     else break;
@@ -106,15 +105,14 @@ function computeStreak(isoDates: string[]): number {
 function hasPerfectWeek(isoDates: string[]): boolean {
   const weeks: Record<string, Set<string>> = {};
   for (const d of isoDates) {
-    const date = new Date(d);
-    if (isNaN(date.getTime())) continue;
+    const dayKey = getLocalDateKey(d);
+    const date = new Date(`${dayKey}T12:00:00`);
     const day = date.getDay();
     const ws = new Date(date);
     ws.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
-    ws.setHours(0, 0, 0, 0);
-    const key = ws.toISOString().slice(0, 10);
+    const key = getLocalDateKey(ws);
     if (!weeks[key]) weeks[key] = new Set();
-    weeks[key].add(d.split("T")[0]);
+    weeks[key].add(dayKey);
   }
   return Object.values(weeks).some((days) => days.size >= 5);
 }
@@ -122,12 +120,11 @@ function hasPerfectWeek(isoDates: string[]): boolean {
 function buildHeatmap(runs: Run[]): { date: string; km: number; isFuture: boolean }[][] {
   const dayKm = new Map<string, number>();
   for (const r of runs) {
-    const d = r.created_at.split("T")[0];
+    const d = getLocalDateKey(r.created_at);
     dayKm.set(d, (dayKm.get(d) ?? 0) + r.distance);
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(`${getLocalDateKey(new Date())}T12:00:00`);
   const todayMs = today.getTime();
 
   // Start from the Monday 15 full weeks before this week's Monday (= 16 weeks total)
@@ -141,7 +138,7 @@ function buildHeatmap(runs: Run[]): { date: string; km: number; isFuture: boolea
   for (let w = 0; w < 16; w++) {
     const week: { date: string; km: number; isFuture: boolean }[] = [];
     for (let d = 0; d < 7; d++) {
-      const ds = cur.toISOString().split("T")[0];
+      const ds = getLocalDateKey(cur);
       week.push({ date: ds, km: dayKm.get(ds) ?? 0, isFuture: cur.getTime() > todayMs });
       cur.setDate(cur.getDate() + 1);
     }
@@ -339,8 +336,8 @@ export default async function PerfilPage() {
   const heatmapWeeks = buildHeatmap(runs);
 
   // Streak active-day sets for mini-timelines
-  const runActiveDays = runs.map((r) => r.created_at.slice(0, 10));
-  const gymActiveDays = workouts.map((w) => w.created_at.slice(0, 10));
+  const runActiveDays = runs.map((r) => getLocalDateKey(r.created_at));
+  const gymActiveDays = workouts.map((w) => getLocalDateKey(w.created_at));
   const gymDaySet = new Set(gymActiveDays);
   const hybridActiveDays = runActiveDays.filter((d) => gymDaySet.has(d));
   const allActiveDays = [...new Set([...runActiveDays, ...gymActiveDays])];

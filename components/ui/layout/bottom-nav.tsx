@@ -8,6 +8,7 @@ import {
   Rss,
   Swords,
   Timer,
+  UserRound,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -19,12 +20,12 @@ import { cn } from "@/lib/utils";
 
 const LEFT_NAV = [
   { label: "Início",  href: "/",       icon: Home  },
-  { label: "Treinos", href: "/treinos", icon: Dumbbell },
+  { label: "Feed",    href: "/feed",   icon: Rss   },
 ] as const;
 
 const RIGHT_NAV = [
   { label: "Ranking", href: "/social", icon: Medal },
-  { label: "Feed",   href: "/feed",  icon: Rss      },
+  { label: "Perfil",  href: "/perfil", icon: UserRound },
 ] as const;
 
 const ACTIONS = [

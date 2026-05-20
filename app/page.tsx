@@ -3,7 +3,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { XPCard } from "@/components/xp/xp-card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { cn } from "@/lib/utils";
-import { formatDateLabel } from "@/lib/date-utils";
+import { formatDateLabel, getLocalDateKey } from "@/lib/date-utils";
 import { getMuscleGroupLabel } from "@/lib/muscles";
 import {
   Activity,
@@ -156,6 +156,7 @@ async function getDashboardMetrics(): Promise<Metric[]> {
   try {
     const supabase = await createSupabaseServerClient();
     const weekStart = getWeekStartDate();
+    const weekStartKey = getLocalDateKey(weekStart);
 
     const {
       data: { user },
@@ -169,13 +170,18 @@ async function getDashboardMetrics(): Promise<Metric[]> {
       .from("runs")
       .select("distance,pace,created_at")
       .eq("user_id", user.id)
-      .gte("created_at", weekStart.toISOString());
+      .gte("created_at", new Date(weekStart.getTime() - 36 * 60 * 60 * 1000).toISOString());
 
     if (error) {
       throw error;
     }
 
-    return buildMetrics((data ?? []) as RunMetric[]);
+    const weekRuns = ((data ?? []) as RunMetric[]).filter(
+      (run): run is RunMetric & { created_at: string } =>
+        typeof run.created_at === "string" && getLocalDateKey(run.created_at) >= weekStartKey
+    );
+
+    return buildMetrics(weekRuns);
   } catch {
     return fallbackMetrics;
   }
@@ -242,11 +248,11 @@ function buildMetrics(runs: RunMetric[]): Metric[] {
 }
 
 function getWeekStartDate() {
-  const date = new Date();
+  const todayKey = getLocalDateKey(new Date());
+  const date = new Date(`${todayKey}T12:00:00`);
   const day = date.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   date.setDate(date.getDate() + diff);
-  date.setHours(0, 0, 0, 0);
   return date;
 }
 
@@ -263,9 +269,8 @@ async function getWeeklyChartData(): Promise<{ week: string; km: number; pace: n
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 42);
-    cutoff.setHours(0, 0, 0, 0);
+    const cutoffKey = getLocalDateKey(new Date(Date.now() - 42 * 86_400_000));
+    const cutoff = new Date(`${cutoffKey}T12:00:00`);
 
     const { data, error } = await supabase
       .from("runs")
@@ -278,12 +283,12 @@ async function getWeeklyChartData(): Promise<{ week: string; km: number; pace: n
 
     const weekMap = new Map<string, { km: number; paceSeconds: number[] }>();
     for (const run of data) {
-      const d = new Date(run.created_at);
+      const runKey = getLocalDateKey(run.created_at);
+      const d = new Date(`${runKey}T12:00:00`);
       const day = d.getDay();
       const ws = new Date(d);
       ws.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
-      ws.setHours(0, 0, 0, 0);
-      const key = ws.toISOString();
+      const key = getLocalDateKey(ws);
       if (!weekMap.has(key)) weekMap.set(key, { km: 0, paceSeconds: [] });
       const entry = weekMap.get(key)!;
       entry.km += Number(run.distance ?? 0);
@@ -310,17 +315,15 @@ async function getWeeklyChartData(): Promise<{ week: string; km: number; pace: n
 }
 
 function buildEmptyWeek(): DayActivity[] {
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const weekStart = new Date(today);
+  const todayStr = getLocalDateKey(new Date());
+  const weekStart = new Date(`${todayStr}T12:00:00`);
   const dow = weekStart.getDay();
   weekStart.setDate(weekStart.getDate() + (dow === 0 ? -6 : 1 - dow));
-  weekStart.setHours(0, 0, 0, 0);
   const labels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = getLocalDateKey(d);
     return { label: labels[i], isoDate: iso, isToday: iso === todayStr, isFuture: iso > todayStr, hasRun: false, hasWorkout: false };
   });
 }
@@ -331,30 +334,34 @@ async function getWeekConsistency(): Promise<DayActivity[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return buildEmptyWeek();
 
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
-    const weekStart = new Date(today);
+    const todayStr = getLocalDateKey(new Date());
+    const weekStart = new Date(`${todayStr}T12:00:00`);
     const dow = weekStart.getDay();
     weekStart.setDate(weekStart.getDate() + (dow === 0 ? -6 : 1 - dow));
-    weekStart.setHours(0, 0, 0, 0);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
+    const weekStartKey = getLocalDateKey(weekStart);
+    const weekEndKey = getLocalDateKey(weekEnd);
 
     const [runsRes, workoutsRes] = await Promise.all([
       supabase.from("runs").select("created_at").eq("user_id", user.id)
-        .gte("created_at", weekStart.toISOString()).lt("created_at", weekEnd.toISOString()),
+        .gte("created_at", new Date(weekStart.getTime() - 36 * 60 * 60 * 1000).toISOString()),
       supabase.from("workouts").select("created_at").eq("user_id", user.id)
-        .gte("created_at", weekStart.toISOString()).lt("created_at", weekEnd.toISOString()),
+        .gte("created_at", new Date(weekStart.getTime() - 36 * 60 * 60 * 1000).toISOString()),
     ]);
 
-    const runDays = new Set((runsRes.data ?? []).map((r) => r.created_at.slice(0, 10)));
-    const workoutDays = new Set((workoutsRes.data ?? []).map((w) => w.created_at.slice(0, 10)));
+    const runDays = new Set((runsRes.data ?? [])
+      .map((r) => getLocalDateKey(r.created_at))
+      .filter((key) => key >= weekStartKey && key < weekEndKey));
+    const workoutDays = new Set((workoutsRes.data ?? [])
+      .map((w) => getLocalDateKey(w.created_at))
+      .filter((key) => key >= weekStartKey && key < weekEndKey));
 
     const labels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      const iso = d.toISOString().slice(0, 10);
+      const iso = getLocalDateKey(d);
       return {
         label: labels[i],
         isoDate: iso,

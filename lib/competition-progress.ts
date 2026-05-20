@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { getLocalDateKey } from "@/lib/date-utils";
+
 export type CompetitionType = "corrida" | "academia" | "streak" | "hibrido";
 
 export type CompetitionProgressUpdate = {
@@ -161,12 +163,14 @@ async function fetchRunsInWindow(
   start: string,
   end: string
 ): Promise<RunActivity[]> {
+  const startQuery = new Date(new Date(start).getTime() - 36 * 60 * 60 * 1000).toISOString();
+  const endQuery = new Date(new Date(end).getTime() + 36 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("runs")
     .select("distance, created_at")
     .eq("user_id", userId)
-    .gte("created_at", start)
-    .lte("created_at", end);
+    .gte("created_at", startQuery)
+    .lte("created_at", endQuery);
 
   if (error) throw error;
   return (data ?? []) as RunActivity[];
@@ -178,12 +182,14 @@ async function fetchWorkoutsInWindow(
   start: string,
   end: string
 ): Promise<WorkoutActivity[]> {
+  const startQuery = new Date(new Date(start).getTime() - 36 * 60 * 60 * 1000).toISOString();
+  const endQuery = new Date(new Date(end).getTime() + 36 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
     .from("workouts")
     .select("created_at")
     .eq("user_id", userId)
-    .gte("created_at", start)
-    .lte("created_at", end);
+    .gte("created_at", startQuery)
+    .lte("created_at", endQuery);
 
   if (error) {
     const missingTable = error.code === "42P01" || error.message.toLowerCase().includes("workouts");
@@ -195,8 +201,10 @@ async function fetchWorkoutsInWindow(
 }
 
 function isWithin(value: string, start: string, end: string) {
-  const time = new Date(value).getTime();
-  return time >= new Date(start).getTime() && time <= new Date(end).getTime();
+  const valueKey = getLocalDateKey(value);
+  const startKey = getLocalDateKey(start);
+  const endKey = getLocalDateKey(end);
+  return valueKey >= startKey && valueKey <= endKey;
 }
 
 function minIso(values: string[]) {
@@ -212,5 +220,5 @@ function roundMetric(value: number) {
 }
 
 function toDateKey(value: string) {
-  return new Date(value).toISOString().slice(0, 10);
+  return getLocalDateKey(value);
 }

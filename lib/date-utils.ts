@@ -6,8 +6,9 @@
 
 export const APP_TZ = "America/Manaus";
 
-/** Returns "YYYY-MM-DD" for a Date in the app timezone. */
-function localDateKey(date: Date): string {
+/** Returns "YYYY-MM-DD" for a date in the app timezone. */
+export function getLocalDateKey(dateValue: string | Date): string {
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: APP_TZ,
     year:  "numeric",
@@ -15,6 +16,8 @@ function localDateKey(date: Date): string {
     day:   "2-digit",
   }).format(date);
 }
+
+const localDateKey = getLocalDateKey;
 
 function parts(dateStr: string, opts: Intl.DateTimeFormatOptions) {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: APP_TZ, ...opts })

@@ -1,5 +1,6 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 import { getMuscleGroupLabel, normalizeMuscleGroups } from "@/lib/muscles";
+import { getLocalDateKey } from "@/lib/date-utils";
 
 export type WeeklyVolumePoint = { label: string; km: number; runs: number };
 
@@ -81,17 +82,21 @@ function paceToSeconds(pace: string | null): number | null {
   return m * 60 + s;
 }
 
-function toDateKey(iso: string): string {
-  return new Date(iso).toISOString().slice(0, 10);
-}
+const toDateKey = getLocalDateKey;
 
-function getWeekStart(base: Date, offsetWeeks: number): Date {
-  const d = new Date(base);
+function getWeekStartKey(base: Date, offsetWeeks: number): string {
+  const baseKey = getLocalDateKey(base);
+  const d = new Date(`${baseKey}T12:00:00`);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff + offsetWeeks * 7);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return getLocalDateKey(d);
+}
+
+function addDaysToKey(key: string, days: number): string {
+  const d = new Date(`${key}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return getLocalDateKey(d);
 }
 
 function calculateCurrentStreak(dates: string[]): number {
@@ -124,13 +129,12 @@ function computeWeeklyVolume(runs: RunRow[]): WeeklyVolumePoint[] {
   const today = new Date();
   return Array.from({ length: 8 }, (_, i) => {
     const offset = -(7 - i);
-    const weekStart = getWeekStart(today, offset);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
+    const weekStartKey = getWeekStartKey(today, offset);
+    const weekEndKey = addDaysToKey(weekStartKey, 7);
 
     const weekRuns = runs.filter((r) => {
-      const d = new Date(r.created_at);
-      return d >= weekStart && d < weekEnd;
+      const key = toDateKey(r.created_at);
+      return key >= weekStartKey && key < weekEndKey;
     });
 
     const km = weekRuns.reduce((sum, r) => sum + Number(r.distance ?? 0), 0);
@@ -169,8 +173,7 @@ function computePaceTrends(runs: RunRow[]): PaceTrendPoint[] {
 }
 
 function computeHeatmap(runs: RunRow[], workouts: WorkoutRow[]): HeatmapDay[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(`${getLocalDateKey(new Date())}T12:00:00`);
 
   const runDays = new Set(runs.map((r) => toDateKey(r.created_at)));
   const workoutDays = new Set(workouts.map((w) => toDateKey(w.created_at)));
@@ -178,7 +181,7 @@ function computeHeatmap(runs: RunRow[], workouts: WorkoutRow[]): HeatmapDay[] {
   return Array.from({ length: 84 }, (_, i) => {
     const date = new Date(today);
     date.setDate(date.getDate() - (83 - i));
-    const key = date.toISOString().slice(0, 10);
+    const key = getLocalDateKey(date);
 
     const hasRun = runDays.has(key);
     const hasWorkout = workoutDays.has(key);
@@ -215,13 +218,12 @@ function computeWeeklyWorkoutMinutes(workouts: WorkoutRow[]): WeeklyWorkoutPoint
   const today = new Date();
   return Array.from({ length: 8 }, (_, i) => {
     const offset = -(7 - i);
-    const weekStart = getWeekStart(today, offset);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
+    const weekStartKey = getWeekStartKey(today, offset);
+    const weekEndKey = addDaysToKey(weekStartKey, 7);
 
     const weekWorkouts = workouts.filter((w) => {
-      const d = new Date(w.created_at);
-      return d >= weekStart && d < weekEnd;
+      const key = toDateKey(w.created_at);
+      return key >= weekStartKey && key < weekEndKey;
     });
 
     return {
@@ -332,7 +334,7 @@ export function buildEmptyAnalytics(): AnalyticsData {
       const d = new Date(today);
       d.setDate(d.getDate() - (83 - i));
       return {
-        date: d.toISOString().slice(0, 10),
+        date: getLocalDateKey(d),
         hasRun: false,
         hasWorkout: false,
         level: 0 as const,

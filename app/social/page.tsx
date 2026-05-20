@@ -10,6 +10,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getUserStreaks } from "@/lib/streaks";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
 import { getGlobalLeaderboard, getFriendsLeaderboard } from "@/lib/leaderboard";
+import { getLocalDateKey } from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +60,8 @@ export default async function SocialPage() {
   } | null;
 
   // Build active-day sets for streak mini-timelines
-  const runActiveDays = new Set((runsRes.data ?? []).map((r: { created_at: string }) => r.created_at.slice(0, 10)));
-  const gymActiveDays = new Set((workoutsRes.data ?? []).map((w: { created_at: string }) => w.created_at.slice(0, 10)));
+  const runActiveDays = new Set((runsRes.data ?? []).map((r: { created_at: string }) => getLocalDateKey(r.created_at)));
+  const gymActiveDays = new Set((workoutsRes.data ?? []).map((w: { created_at: string }) => getLocalDateKey(w.created_at)));
   const allActiveDays = new Set([...runActiveDays, ...gymActiveDays]);
   const hybridDays = new Set([...runActiveDays].filter((d) => gymActiveDays.has(d)));
 
