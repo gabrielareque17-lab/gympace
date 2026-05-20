@@ -81,6 +81,19 @@ export default async function SocialPage() {
     getFriendsLeaderboard(supabase, user.id, "xp"),
   ]);
 
+  // Garantir que a entrada do usuário atual no leaderboard reflita o XP recém-sincronizado.
+  // profiles.total_xp pode estar defasado; xpFeedback.totalXp é a fonte de verdade.
+  const myUserId = user.id;
+  function patchCurrentUser<T extends { userId: string; totalXp: number; currentLevel: number; rank: string | null }>(entries: T[]): T[] {
+    const idx = entries.findIndex((e) => e.userId === myUserId);
+    if (idx === -1) return entries;
+    const patched = [...entries];
+    patched[idx] = { ...patched[idx], totalXp: xpFeedback.totalXp, currentLevel: xpFeedback.currentLevel, rank: xpFeedback.rank };
+    return patched.sort((a, b) => b.totalXp - a.totalXp);
+  }
+  const patchedGlobal = patchCurrentUser(globalEntries);
+  const patchedFriends = patchCurrentUser(friendsEntries);
+
   const rankColor = RANK_COLORS[profile?.rank ?? "rookie"] ?? "#94A3B8";
   const seasonDays = activeSeason ? daysRemaining(activeSeason) : 0;
   const seasonPct = activeSeason ? seasonProgress(activeSeason) : 0;
@@ -250,8 +263,8 @@ export default async function SocialPage() {
             </div>
             <div className="p-4">
               <WeeklyLeaderboard
-                globalEntries={globalEntries}
-                friendsEntries={friendsEntries}
+                globalEntries={patchedGlobal}
+                friendsEntries={patchedFriends}
                 currentUserId={user.id}
               />
             </div>
