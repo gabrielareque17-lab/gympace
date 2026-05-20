@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { FeedCard } from "@/components/feed/FeedCard";
 import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
@@ -44,6 +44,7 @@ export function FeedList({ initialEvents, initialHasMore }: Props) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { markFeedSeen } = useNavBadgeContext();
   const seenRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Mark feed as seen when component mounts
   useEffect(() => {
@@ -76,7 +77,23 @@ export function FeedList({ initialEvents, initialHasMore }: Props) {
     }
   }, [events, hasMore, isLoadingMore]);
 
-  const groups = groupEvents(events);
+  // IntersectionObserver — auto-load when sentinel scrolls into view
+  const loadMoreRef = useRef(loadMore);
+  useEffect(() => { loadMoreRef.current = loadMore; });
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) loadMoreRef.current(); },
+      { rootMargin: "300px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore]);
+
+  const groups = useMemo(() => groupEvents(events), [events]);
 
   return (
     <div className="space-y-5">
@@ -96,9 +113,9 @@ export function FeedList({ initialEvents, initialHasMore }: Props) {
         </section>
       ))}
 
-      {/* Load more */}
+      {/* Load more sentinel + button */}
       {hasMore && (
-        <div className="flex justify-center pb-2 pt-1">
+        <div ref={sentinelRef} className="flex justify-center pb-2 pt-1">
           <button
             type="button"
             onClick={loadMore}
@@ -117,7 +134,7 @@ export function FeedList({ initialEvents, initialHasMore }: Props) {
         </div>
       )}
 
-      {isLoadingMore && <FeedSkeleton count={3} />}
+      {isLoadingMore && <FeedSkeleton count={2} />}
     </div>
   );
 }

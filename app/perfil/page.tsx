@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Dumbbell, Flame, Medal, Timer, Trophy } from "lucide-react";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
-import { AvatarSelector } from "@/components/ui/avatar/avatar-selector";
+import { AvatarSelectorLazy } from "@/components/profile/avatar-selector-lazy";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
 import { StreakCard } from "@/components/social/StreakCard";
 import { AppShell } from "@/components/ui/layout/app-shell";
@@ -607,7 +607,7 @@ export default async function PerfilPage() {
               <p className="mt-0.5 text-xs text-[#F5F5F5]/35">Representa seu estilo de treino.</p>
             </div>
             <div className="p-5">
-              <AvatarSelector initialAvatarId={profile?.avatar_id ?? null} />
+              <AvatarSelectorLazy initialAvatarId={profile?.avatar_id ?? null} />
             </div>
           </section>
 

@@ -15,8 +15,9 @@ import {
   Calendar,
 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { ReactionButton } from "@/components/feed/ReactionButton";
@@ -24,7 +25,11 @@ import type { FeedEvent, FeedProfile } from "@/lib/feed";
 import { getMuscleGroupLabel } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatTimeAgo } from "@/lib/date-utils";
-import { CommentsDrawer } from "@/components/feed/CommentsDrawer";
+
+const CommentsDrawer = dynamic(
+  () => import("@/components/feed/CommentsDrawer").then((m) => ({ default: m.CommentsDrawer })),
+  { ssr: false }
+);
 
 // ── Labels & styles ──────────────────────────────────────────────────────────
 
@@ -530,7 +535,7 @@ function getCommentContext(event: FeedEvent, name: string, color: string) {
   }
 }
 
-export function FeedCard({ event }: { event: FeedEvent }) {
+function FeedCardComponent({ event }: { event: FeedEvent }) {
   const { event_type: type, payload, created_at, profile } = event;
   const name = profile?.display_name ?? profile?.username ?? "Atleta";
   const profileHref = profile?.username ? `/perfil/${profile.username}` : undefined;
@@ -645,3 +650,5 @@ export function FeedCard({ event }: { event: FeedEvent }) {
     </>
   );
 }
+
+export const FeedCard = memo(FeedCardComponent);
