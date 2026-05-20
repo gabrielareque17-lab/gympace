@@ -347,7 +347,7 @@ function UpdatePreview({
       <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-2.5">
         <div className="flex items-center gap-2">
           <Bell className="size-3 text-[#F5F5F5]/25" strokeWidth={1.8} />
-          <span className="text-[11px] font-semibold text-[#F5F5F5]/35">Atualizacoes</span>
+          <span className="text-[11px] font-semibold text-[#F5F5F5]/35">Atualizações</span>
         </div>
         <span className="rounded bg-[#B6FF00]/75 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-[#080808]">
           PREVIEW

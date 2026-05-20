@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { createFeedEvent } from "@/lib/feed";
 import { normalizeMuscleGroups, VALID_MUSCLE_DETAILS, VALID_MUSCLE_GROUPS } from "@/lib/muscles";
+import { isRateLimited } from "@/lib/security";
 import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { awardXP } from "@/lib/xp";
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_INTENSITIES = ["leve", "moderado", "intenso"] as const;
 const VALID_SPLITS = ["push", "pull", "legs", "upper", "lower", "full-body", "custom"] as const;
+const MAX_WORKOUT_DURATION_MINUTES = 360;
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -58,6 +60,16 @@ export async function POST(req: Request) {
       ? [...new Set((b.muscle_details as unknown[]).map((g) => String(g).trim()).filter(Boolean))]
       : [];
 
+    if (await isRateLimited(supabase, {
+      table: "workouts",
+      userColumn: "user_id",
+      userId: user.id,
+      max: 5,
+      windowSeconds: 60,
+    })) {
+      return NextResponse.json({ error: "Muitos treinos registrados em pouco tempo." }, { status: 429 });
+    }
+
     if (!title) return NextResponse.json({ error: "Nome do treino é obrigatório" }, { status: 400 });
     if (muscleGroups.length === 0 || !muscleGroups.every((g) => VALID_MUSCLE_GROUPS.has(g))) {
       return NextResponse.json({ error: "Grupo muscular inválido" }, { status: 400 });
@@ -68,7 +80,7 @@ export async function POST(req: Request) {
     if (!VALID_SPLITS.includes(workoutSplit as (typeof VALID_SPLITS)[number])) {
       return NextResponse.json({ error: "Divisão de treino inválida" }, { status: 400 });
     }
-    if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    if (!Number.isFinite(durationMinutes) || durationMinutes <= 0 || durationMinutes > MAX_WORKOUT_DURATION_MINUTES) {
       return NextResponse.json({ error: "Duração inválida" }, { status: 400 });
     }
 

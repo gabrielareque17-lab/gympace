@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createFeedEvent } from "@/lib/feed";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendPushNotification } from "@/lib/send-push";
 
@@ -90,7 +91,8 @@ export async function PATCH(
 
     const myName = myProfile?.display_name || myProfile?.username || "Alguém";
 
-    await supabase.from("notifications").insert({
+    const adminSupabase = createSupabaseAdminClient();
+    await adminSupabase.from("notifications").insert({
       user_id: notifyUserId,
       type: "challenge_accepted",
       title: "Desafio aceito!",
@@ -98,7 +100,7 @@ export async function PATCH(
       data: { challenge_id: id },
     });
 
-    const { data: creatorProfile } = await supabase
+    const { data: creatorProfile } = await adminSupabase
       .from("profiles")
       .select("onesignal_player_id")
       .eq("user_id", notifyUserId)

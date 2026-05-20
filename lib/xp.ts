@@ -7,6 +7,7 @@ import {
 import { calculateLongestActivityStreak } from "@/lib/competition-progress";
 import { getLocalDateKey } from "@/lib/date-utils";
 import { normalizeMuscleGroups } from "@/lib/muscles";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type XPRank = "rookie" | "bronze" | "silver" | "gold" | "platinum" | "elite";
 
@@ -81,7 +82,8 @@ export async function syncUserXP(
   const rank = getRankForLevel(currentLevel);
   const levelState = getLevelProgress(totalXp);
 
-  const { error } = await supabase
+  const adminSupabase = createSupabaseAdminClient();
+  const { error } = await adminSupabase
     .from("profiles")
     .upsert(
       {
@@ -118,6 +120,7 @@ export async function awardXP(
   input: AwardXPInput
 ): Promise<XPFeedback> {
   const feedback = await syncUserXP(supabase, input.userId);
+  const adminSupabase = createSupabaseAdminClient();
 
   if (feedback.gainedXp > 0 || feedback.leveledUp) {
     console.info("[xp] awarded", {
@@ -127,6 +130,19 @@ export async function awardXP(
       gainedXp: feedback.gainedXp,
       totalXp: feedback.totalXp,
       level: feedback.currentLevel,
+    });
+    await adminSupabase.from("admin_events").insert({
+      admin_id: null,
+      event_type: "xp_awarded",
+      target_user_id: input.userId,
+      payload: {
+        source: input.source,
+        source_id: input.sourceId ?? null,
+        reason: input.reason ?? null,
+        gained_xp: feedback.gainedXp,
+        total_xp: feedback.totalXp,
+        current_level: feedback.currentLevel,
+      },
     });
   }
 

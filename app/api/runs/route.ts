@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { createFeedEvent } from "@/lib/feed";
 import { checkAndUpdatePersonalRecords, PR_LABELS } from "@/lib/personal-records";
+import { isRateLimited } from "@/lib/security";
 import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { awardXP } from "@/lib/xp";
@@ -11,7 +12,9 @@ import { awardXP } from "@/lib/xp";
 export const dynamic = "force-dynamic";
 
 const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo"] as const;
-const MAX_ROUTE_POINTS = 5000;
+const MAX_ROUTE_POINTS = 2000;
+const MAX_RUN_DISTANCE_KM = 200;
+const MAX_RUN_DURATION_SECONDS = 24 * 60 * 60;
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
@@ -56,11 +59,27 @@ export async function POST(req: Request) {
     const rawPoints = Array.isArray(b?.route_points) ? b.route_points : null;
     const routePoints = rawPoints && rawPoints.length <= MAX_ROUTE_POINTS ? rawPoints : null;
 
-    if (!Number.isFinite(distance) || distance <= 0) {
+    if (await isRateLimited(supabase, {
+      table: "runs",
+      userColumn: "user_id",
+      userId: user.id,
+      max: 4,
+      windowSeconds: 60,
+    })) {
+      return NextResponse.json({ error: "Muitas corridas registradas em pouco tempo." }, { status: 429 });
+    }
+
+    if (!Number.isFinite(distance) || distance <= 0 || distance > MAX_RUN_DISTANCE_KM) {
       return NextResponse.json({ error: "Distância inválida" }, { status: 400 });
     }
     if (!pace || !duration) {
       return NextResponse.json({ error: "Pace e duração são obrigatórios" }, { status: 400 });
+    }
+    if (Number.isFinite(durationSeconds) && (durationSeconds! <= 0 || durationSeconds! > MAX_RUN_DURATION_SECONDS)) {
+      return NextResponse.json({ error: "Duração inválida" }, { status: 400 });
+    }
+    if (Number.isFinite(avgSpeed) && (avgSpeed! <= 0 || avgSpeed! > 45)) {
+      return NextResponse.json({ error: "Velocidade média inválida" }, { status: 400 });
     }
 
     const { data, error } = await supabase

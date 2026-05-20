@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendPushNotification } from "@/lib/send-push";
 import { GOAL_CONFIG, type GoalType } from "@/lib/challenge-progress";
+import { isRateLimited } from "@/lib/security";
 
 const VALID_GOAL_TYPES = Object.keys(GOAL_CONFIG) as GoalType[];
 const MAX_DURATION = 90;
@@ -60,6 +62,16 @@ export async function POST(request: Request) {
       { status: 400 }
     );
 
+  if (await isRateLimited(supabase, {
+    table: "challenges",
+    userColumn: "creator_id",
+    userId: user.id,
+    max: 5,
+    windowSeconds: 60,
+  })) {
+    return NextResponse.json({ error: "Muitas tentativas. Tente novamente em instantes." }, { status: 429 });
+  }
+
   // ── Insert ───────────────────────────────────────────────────────────────────
   const { data: challenge, error } = await supabase
     .from("challenges")
@@ -94,7 +106,8 @@ export async function POST(request: Request) {
   const creatorName =
     creatorProfile?.display_name || creatorProfile?.username || "Alguém";
 
-  await supabase.from("notifications").insert({
+  const adminSupabase = createSupabaseAdminClient();
+  await adminSupabase.from("notifications").insert({
     user_id: challenged_id,
     type: "challenge_received",
     title: "Novo desafio!",
@@ -106,7 +119,7 @@ export async function POST(request: Request) {
     },
   });
 
-  const { data: challengedProfile } = await supabase
+  const { data: challengedProfile } = await adminSupabase
     .from("profiles")
     .select("onesignal_player_id")
     .eq("user_id", challenged_id)

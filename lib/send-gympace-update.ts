@@ -44,6 +44,13 @@ export async function sendGymPaceUpdate({
   if (updateInsertError) {
     return { sent: 0, error: updateInsertError.message };
   }
+  if (createdBy) {
+    await supabase.from("admin_events").insert({
+      admin_id: createdBy,
+      event_type: "send_update",
+      payload: { title, update_type: updateType },
+    });
+  }
 
   const { data: profiles, error: fetchError } = await supabase
     .from("profiles")

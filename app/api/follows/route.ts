@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createSupabaseAdminClient } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { sendPushNotification } from '@/lib/send-push'
 
@@ -43,7 +44,8 @@ export async function POST(request: Request) {
   const followerName =
     followerProfile?.display_name || followerProfile?.username || 'Alguém'
 
-  await supabase.from('notifications').insert({
+  const adminSupabase = createSupabaseAdminClient()
+  await adminSupabase.from('notifications').insert({
     user_id: following_id,
     type: 'new_follower',
     title: 'Novo seguidor',
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
   })
 
   // Send push notification if the followed user has a player ID saved
-  const { data: targetProfile } = await supabase
+  const { data: targetProfile } = await adminSupabase
     .from('profiles')
     .select('onesignal_player_id')
     .eq('user_id', following_id)

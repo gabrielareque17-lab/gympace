@@ -35,11 +35,22 @@ export async function POST(req: Request, { params }: Params) {
 
   const { data: comp } = await supabase
     .from('competitions')
-    .select('id')
+    .select('id, created_by')
     .eq('id', id)
     .maybeSingle()
 
   if (!comp) return NextResponse.json({ error: 'Competição não encontrada' }, { status: 404 })
+
+  const { data: inviterParticipant } = await supabase
+    .from('competition_participants')
+    .select('user_id')
+    .eq('competition_id', id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (comp.created_by !== user.id && !inviterParticipant) {
+    return NextResponse.json({ error: 'Apenas participantes podem convidar atletas' }, { status: 403 })
+  }
 
   const { data: alreadyIn } = await supabase
     .from('competition_participants')

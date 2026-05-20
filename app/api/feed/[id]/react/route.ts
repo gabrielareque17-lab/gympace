@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isRateLimited } from "@/lib/security";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,22 @@ export async function POST(_req: Request, { params }: Params) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (await isRateLimited(supabase, {
+    table: "feed_reactions",
+    userColumn: "user_id",
+    userId: user.id,
+    max: 30,
+    windowSeconds: 60,
+  })) {
+    return NextResponse.json({ error: "Muitas reações em pouco tempo." }, { status: 429 });
+  }
+
+  const { data: feedEvent } = await supabase
+    .from("activities_feed")
+    .select("id")
+    .eq("id", feedEventId)
+    .maybeSingle();
+  if (!feedEvent) return NextResponse.json({ error: "Publicação não encontrada" }, { status: 404 });
 
   // Check if already reacted
   const { data: existing } = await supabase
@@ -32,9 +49,10 @@ export async function POST(_req: Request, { params }: Params) {
   }
 
   // Like
-  await supabase
+  const { error: insertError } = await supabase
     .from("feed_reactions")
     .insert({ feed_event_id: feedEventId, user_id: user.id, reaction_type: "like" });
+  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 
   return NextResponse.json({ reacted: true });
 }

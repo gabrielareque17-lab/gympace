@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isRateLimited } from "@/lib/security";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +74,23 @@ export async function POST(req: Request, { params }: Params) {
   if (!content || content.length > 500) {
     return NextResponse.json({ error: "Comentário inválido (1–500 caracteres)" }, { status: 400 });
   }
+  if (await isRateLimited(supabase, {
+    table: "feed_comments",
+    userColumn: "user_id",
+    userId: user.id,
+    max: 6,
+    windowSeconds: 60,
+  })) {
+    return NextResponse.json({ error: "Muitos comentários em pouco tempo." }, { status: 429 });
+  }
+
+  const { data: feedEvent } = await supabase
+    .from("activities_feed")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!feedEvent) return NextResponse.json({ error: "Publicação não encontrada" }, { status: 404 });
 
   const { data, error } = await supabase
     .from("feed_comments")
@@ -112,9 +130,9 @@ export async function PATCH(req: Request, { params }: Params) {
 
   const commentId = String((body as Record<string, unknown>)?.commentId ?? "");
   const content = String((body as Record<string, unknown>)?.content ?? "").trim();
-  if (!commentId) return NextResponse.json({ error: "ComentÃ¡rio nÃ£o informado" }, { status: 400 });
+  if (!commentId) return NextResponse.json({ error: "Comentário não informado" }, { status: 400 });
   if (!content || content.length > 500) {
-    return NextResponse.json({ error: "ComentÃ¡rio invÃ¡lido (1â€“500 caracteres)" }, { status: 400 });
+    return NextResponse.json({ error: "Comentário inválido (1–500 caracteres)" }, { status: 400 });
   }
 
   const { data, error } = await supabase
@@ -127,7 +145,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json({ error: "ComentÃ¡rio nÃ£o encontrado" }, { status: 404 });
+  if (!data) return NextResponse.json({ error: "Comentário não encontrado" }, { status: 404 });
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -158,7 +176,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const commentId = String((body as Record<string, unknown>)?.commentId ?? "");
-  if (!commentId) return NextResponse.json({ error: "ComentÃ¡rio nÃ£o informado" }, { status: 400 });
+  if (!commentId) return NextResponse.json({ error: "Comentário não informado" }, { status: 400 });
 
   const { error } = await supabase
     .from("feed_comments")

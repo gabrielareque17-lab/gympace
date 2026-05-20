@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isRateLimited } from "@/lib/security";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendGymPaceUpdate } from "@/lib/send-gympace-update";
 
@@ -69,6 +70,15 @@ export async function POST(request: Request) {
       { error: `Detalhes muito longos (max ${MAX_FEATURES_LEN} chars)` },
       { status: 400 }
     );
+  }
+  if (await isRateLimited(supabase, {
+    table: "app_updates",
+    userColumn: "created_by",
+    userId: user.id,
+    max: 3,
+    windowSeconds: 300,
+  })) {
+    return NextResponse.json({ error: "Muitos updates enviados em pouco tempo" }, { status: 429 });
   }
 
   const result = await sendGymPaceUpdate({

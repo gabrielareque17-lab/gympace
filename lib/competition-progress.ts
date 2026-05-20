@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getLocalDateKey } from "@/lib/date-utils";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type CompetitionType = "corrida" | "academia" | "streak" | "hibrido";
 
@@ -81,6 +82,7 @@ export async function updateActiveCompetitionProgressForUser(
   ]);
 
   const updates: CompetitionProgressUpdate[] = [];
+  const writeSupabase = createSupabaseAdminClient();
 
   for (const row of activeRows) {
     const competition = row.competitions!;
@@ -94,7 +96,7 @@ export async function updateActiveCompetitionProgressForUser(
 
     if (Math.abs(nextProgress - previousProgress) < 0.001) continue;
 
-    const { error: updateErr } = await supabase
+    const { error: updateErr } = await writeSupabase
       .from("competition_participants")
       .update({ progress: nextProgress })
       .eq("competition_id", competition.id)

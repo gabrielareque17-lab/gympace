@@ -9,6 +9,7 @@ import { syncUserXP } from "@/lib/xp";
 type Params = { params: Promise<{ id: string }> };
 
 const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo"] as const;
+const MAX_RUN_DISTANCE_KM = 200;
 
 async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/");
@@ -71,7 +72,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   if (body.distance !== undefined) {
     const dist = Number(body.distance);
-    if (!Number.isFinite(dist) || dist <= 0) {
+    if (!Number.isFinite(dist) || dist <= 0 || dist > MAX_RUN_DISTANCE_KM) {
       return NextResponse.json({ error: "Distância inválida" }, { status: 400 });
     }
     updates.distance = dist;

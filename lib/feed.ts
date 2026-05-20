@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+
 export type FeedEventType =
   | "run"
   | "workout"
@@ -54,10 +56,11 @@ export async function createFeedEvent(
   supabase: SupabaseClient,
   input: CreateFeedEventInput
 ): Promise<{ id: string } | null> {
+  const writeSupabase = createSupabaseAdminClient();
   const dedupeKey = input.dedupeKey ?? getPayloadDedupeKey(input.payload);
 
   if (dedupeKey) {
-    const { data: existing, error: existingError } = await supabase
+    const { data: existing, error: existingError } = await writeSupabase
       .from("activities_feed")
       .select("id")
       .eq("user_id", input.userId)
@@ -75,7 +78,7 @@ export async function createFeedEvent(
     ? { ...input.payload, dedupe_key: dedupeKey }
     : input.payload;
 
-  const { data, error } = await supabase
+  const { data, error } = await writeSupabase
     .from("activities_feed")
     .insert({
       user_id: input.userId,
@@ -115,7 +118,8 @@ export async function deleteFeedEvent(
   eventType: FeedEventType,
   activityId: string
 ): Promise<void> {
-  const { error } = await supabase
+  const writeSupabase = createSupabaseAdminClient();
+  const { error } = await writeSupabase
     .from("activities_feed")
     .delete()
     .eq("user_id", userId)

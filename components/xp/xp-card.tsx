@@ -44,7 +44,7 @@ export function XPCard() {
       <div className="relative">
         <div className="mb-4 flex items-center justify-between gap-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F5F5F5]/38">
-            ProgressÃ£o XP
+            Progressão XP
           </p>
           <div
             className="grid size-8 place-items-center rounded-lg transition-all duration-200 group-hover:scale-110"
@@ -60,9 +60,9 @@ export function XPCard() {
               className="font-display text-xl font-bold leading-none tracking-tight sm:text-2xl"
               style={{ color: rankStyle.color }}
             >
-              NÃ­vel {level}
+              Nível {level}
             </span>
-            <span className="text-sm font-bold text-[#F5F5F5]/18">Â·</span>
+            <span className="text-sm font-bold text-[#F5F5F5]/18">·</span>
             <span
               className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
               style={{ background: rankStyle.color + '18', color: rankStyle.color }}

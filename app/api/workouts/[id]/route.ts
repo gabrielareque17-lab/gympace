@@ -12,6 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 
 const VALID_INTENSITIES = ["leve", "moderado", "intenso"] as const;
 const VALID_SPLITS = ["push", "pull", "legs", "upper", "lower", "full-body", "custom"] as const;
+const MAX_WORKOUT_DURATION_MINUTES = 360;
 
 async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/");
@@ -119,7 +120,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   if (body.duration_minutes !== undefined) {
     const duration = Number(body.duration_minutes);
-    if (!Number.isFinite(duration) || duration <= 0) {
+    if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_WORKOUT_DURATION_MINUTES) {
       return NextResponse.json({ error: "Duração inválida" }, { status: 400 });
     }
     updates.duration_minutes = duration;
