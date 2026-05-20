@@ -20,24 +20,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useNavBadgeContext } from "@/components/providers/nav-badge-provider";
-import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
-import { getLocalDateKey } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 
-const rankStyles: Record<string, { label: string; color: string }> = {
-  rookie:   { label: "Rookie",   color: "#94A3B8" },
-  bronze:   { label: "Bronze",   color: "#CD7F32" },
-  silver:   { label: "Silver",   color: "#A1A1AA" },
-  gold:     { label: "Gold",     color: "#EAB308" },
-  platinum: { label: "Platinum", color: "#22D3EE" },
-  elite:    { label: "Elite",    color: "#B6FF00" },
-};
 
 type NavItem = { label: string; href: string; icon: LucideIcon; badgeKey?: "feed" | "challenges" | "trophies" | "competitions" };
 type NavGroup = { label: string | null; items: NavItem[] };
@@ -74,39 +64,11 @@ function buildNavGroups(isAdmin: boolean): NavGroup[] {
   ];
 }
 
-export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?: string }) {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile } = useProfile();
   const { badges } = useNavBadgeContext();
-  const initials = email ? email[0].toUpperCase() : "?";
-  const [weeklyProgress, setWeeklyProgress] = useState(0);
   const navGroups = buildNavGroups(Boolean(profile?.isAdmin));
-
-  useEffect(() => {
-    const supabase = createSupabaseBrowserClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      const todayKey = getLocalDateKey(new Date());
-      const weekStart = new Date(`${todayKey}T12:00:00`);
-      const day = weekStart.getDay();
-      weekStart.setDate(weekStart.getDate() + (day === 0 ? -6 : 1 - day));
-      const weekStartKey = getLocalDateKey(weekStart);
-      const { data } = await supabase
-        .from("runs")
-        .select("distance, created_at")
-        .eq("user_id", user.id)
-        .gte("created_at", new Date(weekStart.getTime() - 36 * 60 * 60 * 1000).toISOString());
-      if (!data) return;
-      const totalKm = data
-        .filter((r) => getLocalDateKey(r.created_at) >= weekStartKey)
-        .reduce((sum, r) => sum + Number(r.distance ?? 0), 0);
-      setWeeklyProgress(Math.min(Math.round((totalKm / 50) * 100), 100));
-    });
-  }, []);
-
-  const rankKey = profile?.rank ?? "rookie";
-  const rankColor = rankStyles[rankKey]?.color ?? "#B6FF00";
-  const rankLabel = rankStyles[rankKey]?.label ?? "Rookie";
 
   return (
     <aside
@@ -185,85 +147,6 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
         className="shrink-0 space-y-1.5 border-t border-white/[0.05] px-2.5 pt-3"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
       >
-        {/* User card */}
-        {profileLoading ? (
-          <div className="flex items-center gap-2.5 rounded-2xl px-2.5 py-2">
-            <div className="size-8 shrink-0 animate-pulse rounded-full bg-white/[0.06]" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-2.5 w-3/4 animate-pulse rounded bg-white/[0.06]" />
-              <div className="h-2 w-1/2 animate-pulse rounded bg-white/[0.04]" />
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.025] p-2.5">
-            {/* Avatar + name row */}
-            <div className="flex items-center gap-2.5">
-              <AvatarDisplay
-                avatarId={profile?.avatarId ?? null}
-                initials={initials}
-                size="sm"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[11.5px] font-semibold leading-tight text-[#F5F5F5]/72">
-                  {email || "—"}
-                </p>
-                <p
-                  className="text-[10px] font-semibold leading-tight"
-                  style={{ color: rankColor }}
-                >
-                  Nível {profile?.currentLevel ?? profile?.level ?? 1} · {rankLabel}
-                </p>
-              </div>
-            </div>
-
-            {/* Stats: XP + Meta semanal */}
-            <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-              <div>
-                <div className="mb-[5px] flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/22">
-                    XP
-                  </span>
-                  <span
-                    className="text-[9.5px] font-bold tabular-nums"
-                    style={{ color: rankColor }}
-                  >
-                    {profile?.totalXp ?? 0}
-                  </span>
-                </div>
-                <div className="h-[2.5px] overflow-hidden rounded-full bg-white/[0.07]">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${profile?.levelProgress ?? 0}%`,
-                      background: rankColor,
-                      boxShadow: `0 0 6px ${rankColor}55`,
-                    }}
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="mb-[5px] flex items-center justify-between">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/22">
-                    Meta
-                  </span>
-                  <span className="text-[9.5px] font-bold tabular-nums text-[#B6FF00]/65">
-                    {weeklyProgress}%
-                  </span>
-                </div>
-                <div className="h-[2.5px] overflow-hidden rounded-full bg-white/[0.07]">
-                  <div
-                    className="h-full rounded-full bg-[#B6FF00] transition-all duration-700"
-                    style={{
-                      width: `${weeklyProgress}%`,
-                      boxShadow: "0 0 6px rgba(182,255,0,0.38)",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Logout */}
         <SidebarLogout />
 

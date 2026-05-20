@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flame, Trophy } from "lucide-react";
+import { Dumbbell, Flame, Timer, Trophy } from "lucide-react";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { AvatarSelector } from "@/components/ui/avatar/avatar-selector";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
@@ -10,7 +10,7 @@ import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
 import { getLevelProgress } from "@/lib/xp";
 import { getUserStreaks } from "@/lib/streaks";
-import { getLocalDateKey } from "@/lib/date-utils";
+import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
   ACHIEVEMENT_REGISTRY,
   CATEGORIES,
@@ -335,6 +335,23 @@ export default async function PerfilPage() {
 
   const heatmapWeeks = buildHeatmap(runs);
 
+  // Recent activities (runs + workouts combined, latest 8)
+  type RecentActivity =
+    | { kind: "run"; date: string; distance: number; pace: string | null }
+    | { kind: "workout"; date: string; muscles: string[] };
+
+  const recentActivities: RecentActivity[] = [
+    ...runs.map((r) => ({ kind: "run" as const, date: r.created_at, distance: r.distance, pace: r.pace })),
+    ...workouts.map((w) => ({
+      kind: "workout" as const,
+      date: w.created_at,
+      muscles: (w.muscle_groups?.length ? w.muscle_groups : w.muscle_group ? [w.muscle_group] : [])
+        .map((m) => m.charAt(0).toUpperCase() + m.slice(1)),
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 8);
+
   // Streak active-day sets for mini-timelines
   const runActiveDays = runs.map((r) => getLocalDateKey(r.created_at));
   const gymActiveDays = workouts.map((w) => getLocalDateKey(w.created_at));
@@ -344,8 +361,8 @@ export default async function PerfilPage() {
 
   return (
     <AppShell>
-      <div className="min-w-0 flex-1 p-6 sm:p-8 lg:p-10">
-        <header className="mb-6">
+      <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10">
+        <header className="mb-5">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Atleta
           </p>
@@ -368,19 +385,18 @@ export default async function PerfilPage() {
               />
             )}
 
-            <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
-              {/* Avatar */}
-              <div className="shrink-0">
-                <AvatarDisplay
-                  avatarId={profile?.avatar_id ?? null}
-                  initials={initials}
-                  size="lg"
-                />
-              </div>
+            <div className="relative p-4 sm:p-6">
+              {/* Avatar + info row */}
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="shrink-0">
+                  <AvatarDisplay
+                    avatarId={profile?.avatar_id ?? null}
+                    initials={initials}
+                    size="md"
+                  />
+                </div>
 
-              {/* Info */}
-              <div className="flex min-w-0 flex-1 flex-col gap-4">
-                <div className="space-y-2">
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
                   <EditProfileForm
                     initialDisplayName={profile?.display_name ?? null}
                     initialBio={profile?.bio ?? null}
@@ -388,9 +404,9 @@ export default async function PerfilPage() {
                     fallbackName={nickname}
                     fallbackBio={athleteBio}
                   />
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                     <span
-                      className="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                      className="rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em]"
                       style={{
                         borderColor: (avatarDef?.accentColor ?? "#B6FF00") + "40",
                         color: avatarDef?.accentColor ?? "#B6FF00",
@@ -400,33 +416,33 @@ export default async function PerfilPage() {
                       {athleteLabel}
                     </span>
 
-                    {/* Follower / following counts */}
                     {profile?.username ? (
                       <>
                         <Link
                           href={`/perfil/${profile.username}/seguidores`}
                           prefetch
-                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
+                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2 py-1.5 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
                         >
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
-                          seguidores
+                          {" "}seg.
                         </Link>
                         <span className="text-[10px] text-[#F5F5F5]/15">·</span>
                         <Link
                           href={`/perfil/${profile.username}/seguindo`}
                           prefetch
-                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
+                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2 py-1.5 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
                         >
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
-                          seguindo
+                          {" "}seguindo
                         </Link>
+                        <span className="text-[10px] text-[#F5F5F5]/15">·</span>
                         <Link
                           href={`/perfil/${profile.username}/trofeus`}
                           prefetch
-                          className="mobile-tap inline-flex items-center gap-1.5 rounded-lg border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2.5 py-2 text-xs font-bold text-[#EAB308]/85 transition-transform duration-100 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-[0.97] active:opacity-80"
+                          className="mobile-tap inline-flex items-center gap-1 rounded-lg border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2 py-1.5 text-xs font-bold text-[#EAB308]/85 transition-transform duration-100 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-[0.97] active:opacity-80"
                         >
-                          <Trophy className="size-3.5" strokeWidth={2} />
-                          Ver troféus
+                          <Trophy className="size-3" strokeWidth={2} />
+                          Troféus
                         </Link>
                       </>
                     ) : (
@@ -444,56 +460,74 @@ export default async function PerfilPage() {
                     )}
                   </div>
                 </div>
-
-                {/* XP Level bar */}
-                <div className="max-w-xs">
-                  <div className="mb-1.5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
-                        style={{ background: rankStyle.color + "20", color: rankStyle.color }}
-                      >
-                        Nível {dbLevel}
-                      </span>
-                      <span className="text-xs font-semibold text-[#F5F5F5]/70">
-                        {rankStyle.label}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-[#F5F5F5]/30">
-                      {xpIntoLevel} / {xpForNextLevel ?? '∞'} XP
-                    </span>
-                  </div>
-                  <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.07]">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${xpLevelProgress}%`,
-                        background: rankStyle.color,
-                        boxShadow: `0 0 10px ${rankStyle.color}55`,
-                      }}
-                    />
-                  </div>
-                  {xpForNextLevel !== null && (
-                    <p className="mt-1 text-[10px] text-[#F5F5F5]/28">
-                      {xpForNextLevel - xpIntoLevel} XP para o próximo nível ·{" "}
-                      {dbTotalXp.toLocaleString("pt-BR")} XP total
-                    </p>
-                  )}
-                </div>
               </div>
 
-              {/* Quick stats */}
-              <div className="flex shrink-0 flex-row gap-3 sm:flex-col sm:items-end">
-                <QuickStat label="Total km" value={formatDecimal(totalKm)} unit="km" />
-                <QuickStat label="Treinos" value={String(totalRuns)} unit="sessões" />
+              {/* XP bar — full width below avatar row */}
+              <div className="mt-4">
+                <div className="mb-1.5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
+                      style={{ background: rankStyle.color + "20", color: rankStyle.color }}
+                    >
+                      Nível {dbLevel}
+                    </span>
+                    <span className="text-xs font-semibold text-[#F5F5F5]/70">
+                      {rankStyle.label}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#F5F5F5]/30">
+                    {xpIntoLevel} / {xpForNextLevel ?? "∞"} XP
+                  </span>
+                </div>
+                <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.07]">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${xpLevelProgress}%`,
+                      background: rankStyle.color,
+                      boxShadow: `0 0 10px ${rankStyle.color}55`,
+                    }}
+                  />
+                </div>
+                {xpForNextLevel !== null && (
+                  <p className="mt-1 text-[10px] text-[#F5F5F5]/28">
+                    {xpForNextLevel - xpIntoLevel} XP para o próximo nível ·{" "}
+                    {dbTotalXp.toLocaleString("pt-BR")} XP total
+                  </p>
+                )}
+              </div>
+
+              {/* Quick stats grid */}
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <QuickStat label="km" value={formatDecimal(totalKm)} unit="km" />
+                <QuickStat label="Treinos" value={String(totalRuns)} unit="" />
                 <QuickStat
-                  label="Pace médio"
+                  label="Pace"
                   value={avgPaceSeconds ? formatPace(avgPaceSeconds) : "—"}
                   unit={avgPaceSeconds ? "/km" : ""}
                 />
               </div>
             </div>
           </section>
+
+          {/* ── Recent Activities ── */}
+          {recentActivities.length > 0 && (
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+              <div className="relative border-b border-white/[0.05] px-5 py-4">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
+                  Histórico
+                </p>
+                <h2 className="font-display text-base font-semibold">Últimas atividades</h2>
+              </div>
+              <div className="divide-y divide-white/[0.04]">
+                {recentActivities.map((activity, i) => (
+                  <RecentActivityRow key={i} activity={activity} />
+                ))}
+              </div>
+            </section>
+          )}
 
           <LatestTrophiesSection
             achievements={achievementCards}
@@ -728,6 +762,43 @@ function QuickStat({
           <span className="ml-1 text-xs font-bold text-[#B6FF00]/80">{unit}</span>
         )}
       </p>
+    </div>
+  );
+}
+
+type RecentActivityItem =
+  | { kind: "run"; date: string; distance: number; pace: string | null }
+  | { kind: "workout"; date: string; muscles: string[] };
+
+function RecentActivityRow({ activity }: { activity: RecentActivityItem }) {
+  if (activity.kind === "run") {
+    return (
+      <div className="flex items-center gap-3 px-5 py-3">
+        <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#B6FF00]/10">
+          <Timer className="size-4 text-[#B6FF00]/80" strokeWidth={1.8} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[#F5F5F5]/80">{activity.distance} km</p>
+          {activity.pace && (
+            <p className="text-xs text-[#F5F5F5]/35">{activity.pace}/km</p>
+          )}
+        </div>
+        <p className="shrink-0 text-[10px] text-[#F5F5F5]/30">{formatDateLabel(activity.date)}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3 px-5 py-3">
+      <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#22D3EE]/10">
+        <Dumbbell className="size-4 text-[#22D3EE]/80" strokeWidth={1.8} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-[#F5F5F5]/80">Academia</p>
+        {activity.muscles.length > 0 && (
+          <p className="truncate text-xs text-[#F5F5F5]/35">{activity.muscles.slice(0, 3).join(", ")}</p>
+        )}
+      </div>
+      <p className="shrink-0 text-[10px] text-[#F5F5F5]/30">{formatDateLabel(activity.date)}</p>
     </div>
   );
 }

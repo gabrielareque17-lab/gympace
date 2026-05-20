@@ -11,6 +11,7 @@ import { getUserStreaks } from "@/lib/streaks";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
 import { getGlobalLeaderboard, getFriendsLeaderboard } from "@/lib/leaderboard";
 import { getLocalDateKey } from "@/lib/date-utils";
+import { syncUserXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,13 @@ export default async function SocialPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [streaks, activeSeason, profileRes, runsRes, workoutsRes] = await Promise.all([
+  const [streaks, activeSeason, xpFeedback, profileRes, runsRes, workoutsRes] = await Promise.all([
     getUserStreaks(supabase, user.id),
     getActiveSeason(supabase),
+    syncUserXP(supabase, user.id),
     supabase
       .from("profiles")
-      .select("username, display_name, avatar_id, rank, current_level, total_xp")
+      .select("username, display_name, avatar_id")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -50,14 +52,23 @@ export default async function SocialPage() {
       .limit(60),
   ]);
 
-  const profile = profileRes.data as {
+  const profileMeta = profileRes.data as {
     username: string | null;
     display_name: string | null;
     avatar_id: string | null;
-    rank: string | null;
-    current_level: number | null;
-    total_xp: number | null;
   } | null;
+
+  const profile = profileMeta ? {
+    username: profileMeta.username,
+    display_name: profileMeta.display_name,
+    avatar_id: profileMeta.avatar_id,
+    rank: xpFeedback.rank,
+    current_level: xpFeedback.currentLevel,
+    total_xp: xpFeedback.totalXp,
+    xp_into_level: xpFeedback.xpIntoLevel,
+    xp_for_next_level: xpFeedback.xpForNextLevel,
+    level_progress: xpFeedback.levelProgress,
+  } : null;
 
   // Build active-day sets for streak mini-timelines
   const runActiveDays = new Set((runsRes.data ?? []).map((r: { created_at: string }) => getLocalDateKey(r.created_at)));
@@ -184,9 +195,12 @@ export default async function SocialPage() {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-mono text-lg font-bold text-[#B6FF00]">
-                {(profile?.total_xp ?? 0).toLocaleString("pt-BR")}
+                {(profile?.xp_into_level ?? 0).toLocaleString("pt-BR")}
+                {profile?.xp_for_next_level ? (
+                  <span className="text-[#F5F5F5]/30 text-sm">/{profile.xp_for_next_level}</span>
+                ) : null}
               </p>
-              <p className="text-[9px] text-[#F5F5F5]/28">XP Total</p>
+              <p className="text-[9px] text-[#F5F5F5]/28">XP</p>
             </div>
           </section>
 

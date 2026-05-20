@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { AVATAR_REGISTRY, type AvatarType } from '@/lib/avatar-registry'
 import type { ProfilePatch } from '@/lib/profile'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { getLevelProgress } from '@/lib/xp'
+import { syncUserXP } from '@/lib/xp'
 
 const VALID_TYPES: AvatarType[] = ['runner', 'gym_rat', 'hybrid_athlete', 'power_athlete']
 
@@ -31,11 +31,16 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, current_level, total_xp, rank, is_admin, timezone, created_at')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  const [profileResult, xpFeedback] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, current_level, total_xp, rank, is_admin, timezone, created_at')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    syncUserXP(supabase, user.id),
+  ])
+
+  const { data: profile, error: profileError } = profileResult
 
   const { data: fallbackProfile } = profileError
     ? await supabase
@@ -64,10 +69,6 @@ export async function GET() {
     if (resolvedProfile) resolvedProfile.username = base
   }
 
-  const totalXp = Number(resolvedProfile?.total_xp ?? 0)
-  const currentLevel = Number(resolvedProfile?.current_level ?? resolvedProfile?.level ?? 1)
-  const levelProgress = getLevelProgress(totalXp)
-
   return NextResponse.json({
     userId: user.id,
     username: resolvedProfile?.username ?? null,
@@ -75,11 +76,13 @@ export async function GET() {
     bio: resolvedProfile?.bio ?? null,
     avatarId: resolvedProfile?.avatar_id ?? null,
     avatarType: (resolvedProfile?.avatar_type as AvatarType) ?? null,
-    level: currentLevel,
-    currentLevel,
-    totalXp,
-    ...levelProgress,
-    rank: resolvedProfile?.rank ?? 'rookie',
+    level: xpFeedback.currentLevel,
+    currentLevel: xpFeedback.currentLevel,
+    totalXp: xpFeedback.totalXp,
+    levelProgress: xpFeedback.levelProgress,
+    xpIntoLevel: xpFeedback.xpIntoLevel,
+    xpForNextLevel: xpFeedback.xpForNextLevel,
+    rank: xpFeedback.rank,
     isAdmin: Boolean(resolvedProfile?.is_admin),
     timezone: resolvedProfile?.timezone ?? 'America/Manaus',
     createdAt: resolvedProfile?.created_at ?? null,

@@ -7,7 +7,6 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { NavBadgeProvider } from "@/components/providers/nav-badge-provider";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
-import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "./bottom-nav";
 import { PageTransition } from "./page-transition";
@@ -15,15 +14,8 @@ import { Sidebar } from "./sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
   const [bottomNavHidden, setBottomNavHidden] = useState(false);
   const playerIdSynced = useRef(false);
-
-  useEffect(() => {
-    createSupabaseBrowserClient()
-      .auth.getUser()
-      .then(({ data }) => setEmail(data.user?.email ?? ""));
-  }, []);
 
   // Sync OneSignal player ID once per session for the authenticated user.
   // Runs here (not in root layout) so the user is guaranteed to be logged in,
@@ -71,7 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-dvh bg-[#0D0D0D] text-[#F5F5F5]">
         {/* Desktop sidebar */}
         <div className="hidden md:flex">
-          <Sidebar email={email} />
+          <Sidebar />
         </div>
 
         {/* Mobile backdrop */}
@@ -91,14 +83,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
           style={{ transition: "transform 360ms cubic-bezier(0.32, 0.72, 0, 1)" }}
         >
-          <Sidebar email={email} onClose={() => setOpen(false)} />
+          <Sidebar onClose={() => setOpen(false)} />
         </div>
 
         {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Mobile top bar */}
           <header
-            className="flex shrink-0 items-center border-b border-white/[0.06] bg-[#090909]/95 px-4 backdrop-blur-xl md:hidden"
+            className="sticky top-0 z-30 flex shrink-0 items-center border-b border-white/[0.06] bg-[#090909]/95 px-4 backdrop-blur-xl md:hidden"
             style={{
               paddingTop: "env(safe-area-inset-top, 0px)",
               minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
