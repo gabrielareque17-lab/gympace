@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { createFeedEvent } from "@/lib/feed";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendPushNotification } from "@/lib/send-push";
 
@@ -110,6 +112,13 @@ export async function PATCH(
         data: { type: "challenge_accepted", challenge_id: id },
       });
     }
+
+    await createFeedEvent(supabase, {
+      userId: user.id,
+      eventType: "challenge_accepted",
+      dedupeKey: `challenge_accepted:${id}`,
+      payload: { challenge_id: id },
+    });
   }
 
   return NextResponse.json({ ok: true });

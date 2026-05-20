@@ -7,7 +7,13 @@ export type FeedEventType =
   | "streak"
   | "personal_record"
   | "streak_milestone"
-  | "hybrid_bonus";
+  | "hybrid_bonus"
+  | "challenge_accepted"
+  | "challenge_won"
+  | "competition_joined"
+  | "exclusive_trophy"
+  | "rank_reached"
+  | "season_started";
 
 export type FeedProfile = {
   user_id: string;
@@ -29,6 +35,63 @@ export type FeedEvent = {
   user_has_reacted: boolean;
 };
 
+export type CreateFeedEventInput = {
+  userId: string;
+  eventType: FeedEventType;
+  payload: Record<string, unknown>;
+  createdAt?: string;
+  dedupeKey?: string;
+};
+
+/**
+ * Central feed engine.
+ * All social events should pass through here so payloads, timestamps and
+ * de-duplication stay consistent across workouts, runs, trophies and social.
+ */
+export async function createFeedEvent(
+  supabase: SupabaseClient,
+  input: CreateFeedEventInput
+): Promise<{ id: string } | null> {
+  const dedupeKey = input.dedupeKey ?? getPayloadDedupeKey(input.payload);
+
+  if (dedupeKey) {
+    const { data: existing, error: existingError } = await supabase
+      .from("activities_feed")
+      .select("id")
+      .eq("user_id", input.userId)
+      .eq("event_type", input.eventType)
+      .filter("payload->>dedupe_key", "eq", dedupeKey)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error("[feed] dedupe lookup error:", existingError.message);
+    }
+    if (existing?.id) return { id: existing.id as string };
+  }
+
+  const payload = dedupeKey
+    ? { ...input.payload, dedupe_key: dedupeKey }
+    : input.payload;
+
+  const { data, error } = await supabase
+    .from("activities_feed")
+    .insert({
+      user_id: input.userId,
+      event_type: input.eventType,
+      payload,
+      ...(input.createdAt ? { created_at: input.createdAt } : {}),
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("[feed] create event error:", error.message);
+    return null;
+  }
+
+  return data as { id: string };
+}
+
 export async function insertFeedEvent(
   supabase: SupabaseClient,
   userId: string,
@@ -36,10 +99,12 @@ export async function insertFeedEvent(
   payload: Record<string, unknown>,
   createdAt?: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from("activities_feed")
-    .insert({ user_id: userId, event_type: eventType, payload, ...(createdAt ? { created_at: createdAt } : {}) });
-  if (error) console.error("[feed] insert error:", error.message);
+  await createFeedEvent(supabase, {
+    userId,
+    eventType,
+    payload,
+    createdAt,
+  });
 }
 
 export async function deleteFeedEvent(
@@ -55,6 +120,13 @@ export async function deleteFeedEvent(
     .eq("event_type", eventType)
     .filter("payload->>id", "eq", activityId);
   if (error) console.error("[feed] delete error:", error.message);
+}
+
+function getPayloadDedupeKey(payload: Record<string, unknown>): string | undefined {
+  const id = payload.id ?? payload.run_id ?? payload.workout_id ?? payload.trophy_id ?? payload.challenge_id ?? payload.competition_id;
+  if (typeof id === "string" && id.trim()) return id;
+  if (typeof id === "number" && Number.isFinite(id)) return String(id);
+  return undefined;
 }
 
 export async function getFeedEvents(

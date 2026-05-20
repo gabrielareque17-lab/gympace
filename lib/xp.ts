@@ -23,6 +23,24 @@ export type XPFeedback = {
   xpForNextLevel: number | null;
 };
 
+export type AwardXPSource =
+  | "run"
+  | "workout"
+  | "challenge"
+  | "competition"
+  | "streak"
+  | "hybrid_bonus"
+  | "season"
+  | "trophy"
+  | "manual";
+
+export type AwardXPInput = {
+  userId: string;
+  source: AwardXPSource;
+  sourceId?: string;
+  reason?: string;
+};
+
 type RunRow = {
   distance: number | null;
   pace: string | null;
@@ -88,6 +106,31 @@ export async function syncUserXP(
     rank,
     ...levelState,
   };
+}
+
+/**
+ * Central XP engine.
+ * Today XP is derived from persisted activity state to avoid duplicate awards.
+ * This wrapper is the single integration point for all flows that can affect XP.
+ */
+export async function awardXP(
+  supabase: SupabaseClient,
+  input: AwardXPInput
+): Promise<XPFeedback> {
+  const feedback = await syncUserXP(supabase, input.userId);
+
+  if (feedback.gainedXp > 0 || feedback.leveledUp) {
+    console.info("[xp] awarded", {
+      userId: input.userId,
+      source: input.source,
+      sourceId: input.sourceId,
+      gainedXp: feedback.gainedXp,
+      totalXp: feedback.totalXp,
+      level: feedback.currentLevel,
+    });
+  }
+
+  return feedback;
 }
 
 export async function calculateTotalXPForUser(

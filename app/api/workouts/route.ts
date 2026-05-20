@@ -2,11 +2,11 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
-import { insertFeedEvent } from "@/lib/feed";
+import { createFeedEvent } from "@/lib/feed";
 import { normalizeMuscleGroups, VALID_MUSCLE_DETAILS, VALID_MUSCLE_GROUPS } from "@/lib/muscles";
 import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { syncUserXP } from "@/lib/xp";
+import { awardXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     }
 
     let progressUpdates: Awaited<ReturnType<typeof updateActiveCompetitionProgressForUser>> = [];
-    let xpFeedback: Awaited<ReturnType<typeof syncUserXP>> | null = null;
+    let xpFeedback: Awaited<ReturnType<typeof awardXP>> | null = null;
     let streakMilestone: number | null = null;
     let hybridBonus = false;
 
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      xpFeedback = await syncUserXP(supabase, user.id);
+      xpFeedback = await awardXP(supabase, { userId: user.id, source: "workout", sourceId: data.id });
     } catch (err) {
       console.error("[workouts] xp sync failed:", err);
     }
@@ -131,36 +131,55 @@ export async function POST(req: Request) {
       console.error("[workouts] hybrid bonus check failed:", err);
     }
 
-    await insertFeedEvent(supabase, user.id, "workout", {
-      id: data.id,
-      title: data.title ?? undefined,
-      muscle_group: data.muscle_group ?? undefined,
-      muscle_groups: (data.muscle_groups as string[] | null)?.length ? data.muscle_groups : undefined,
-      muscle_details: (data.muscle_details as string[] | null)?.length ? data.muscle_details : undefined,
-      workout_split: data.workout_split ?? undefined,
-      duration_minutes: data.duration_minutes ?? undefined,
-      intensity: data.intensity ?? undefined,
+    await createFeedEvent(supabase, {
+      userId: user.id,
+      eventType: "workout",
+      payload: {
+        id: data.id,
+        title: data.title ?? undefined,
+        muscle_group: data.muscle_group ?? undefined,
+        muscle_groups: (data.muscle_groups as string[] | null)?.length ? data.muscle_groups : undefined,
+        muscle_details: (data.muscle_details as string[] | null)?.length ? data.muscle_details : undefined,
+        workout_split: data.workout_split ?? undefined,
+        duration_minutes: data.duration_minutes ?? undefined,
+        intensity: data.intensity ?? undefined,
+      },
     });
 
     if (xpFeedback?.leveledUp) {
-      await insertFeedEvent(supabase, user.id, "level_up", {
-        new_level: xpFeedback.currentLevel,
-        new_rank: xpFeedback.rank,
-        total_xp: xpFeedback.totalXp,
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "level_up",
+        dedupeKey: `level:${xpFeedback.currentLevel}`,
+        payload: {
+          new_level: xpFeedback.currentLevel,
+          new_rank: xpFeedback.rank,
+          total_xp: xpFeedback.totalXp,
+        },
       });
     }
 
     if (streakMilestone !== null) {
-      await insertFeedEvent(supabase, user.id, "streak_milestone", {
-        streak_days: streakMilestone,
-        streak_type: "general",
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "streak_milestone",
+        dedupeKey: `streak:general:${streakMilestone}`,
+        payload: {
+          streak_days: streakMilestone,
+          streak_type: "general",
+        },
       });
     }
 
     if (hybridBonus) {
-      await insertFeedEvent(supabase, user.id, "hybrid_bonus", {
-        workout_id: data.id,
-        workout_title: data.title,
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "hybrid_bonus",
+        dedupeKey: `hybrid:${data.id}`,
+        payload: {
+          workout_id: data.id,
+          workout_title: data.title,
+        },
       });
     }
 

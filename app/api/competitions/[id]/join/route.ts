@@ -2,8 +2,9 @@ import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 import { updateActiveCompetitionProgressForUser } from '@/lib/competition-progress'
+import { createFeedEvent } from '@/lib/feed'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { syncUserXP } from '@/lib/xp'
+import { awardXP } from '@/lib/xp'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -30,17 +31,25 @@ export async function POST(_req: Request, { params }: Params) {
 
   if (error) {
     if (error.code === '23505') {
-      const xpFeedback = await syncUserXP(supabase, user.id)
+      const xpFeedback = await awardXP(supabase, { userId: user.id, source: 'competition', sourceId: id })
       return NextResponse.json({ ok: true, xpFeedback })
     }
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   await updateActiveCompetitionProgressForUser(supabase, user.id)
-  const xpFeedback = await syncUserXP(supabase, user.id)
+  const xpFeedback = await awardXP(supabase, { userId: user.id, source: 'competition', sourceId: id })
+
+  await createFeedEvent(supabase, {
+    userId: user.id,
+    eventType: 'competition_joined',
+    dedupeKey: `competition_joined:${id}`,
+    payload: { competition_id: id },
+  })
 
   revalidatePath('/competicoes')
   revalidatePath(`/competicoes/${id}`)
+  revalidatePath('/feed')
 
   return NextResponse.json({ ok: true, xpFeedback })
 }

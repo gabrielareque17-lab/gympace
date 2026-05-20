@@ -2,11 +2,11 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
-import { insertFeedEvent } from "@/lib/feed";
+import { createFeedEvent } from "@/lib/feed";
 import { checkAndUpdatePersonalRecords, PR_LABELS } from "@/lib/personal-records";
 import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { syncUserXP } from "@/lib/xp";
+import { awardXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     console.log("[runs] inserted:", data.id, "distance:", data.distance, "km");
 
     let progressUpdates: Awaited<ReturnType<typeof updateActiveCompetitionProgressForUser>> = [];
-    let xpFeedback: Awaited<ReturnType<typeof syncUserXP>> | null = null;
+    let xpFeedback: Awaited<ReturnType<typeof awardXP>> | null = null;
     let newPersonalRecords: string[] = [];
     let streakMilestone: number | null = null;
     let hybridBonus = false;
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      xpFeedback = await syncUserXP(supabase, user.id);
+      xpFeedback = await awardXP(supabase, { userId: user.id, source: "run", sourceId: data.id });
     } catch (err) {
       console.error("[runs] xp sync failed:", err);
     }
@@ -143,44 +143,68 @@ export async function POST(req: Request) {
 
     // ── Feed events ──────────────────────────────────────────────────────────
 
-    await insertFeedEvent(supabase, user.id, "run", {
-      id: data.id,
-      distance: data.distance,
-      pace: data.pace ?? undefined,
-      duration: data.duration ?? undefined,
-      avg_speed: (data.avg_speed as number | null) ?? undefined,
-      calories: (data.calories as number | null) ?? undefined,
-      run_type: data.run_type ?? undefined,
+    await createFeedEvent(supabase, {
+      userId: user.id,
+      eventType: "run",
+      payload: {
+        id: data.id,
+        distance: data.distance,
+        pace: data.pace ?? undefined,
+        duration: data.duration ?? undefined,
+        avg_speed: (data.avg_speed as number | null) ?? undefined,
+        calories: (data.calories as number | null) ?? undefined,
+        run_type: data.run_type ?? undefined,
+      },
     });
 
     if (xpFeedback?.leveledUp) {
-      await insertFeedEvent(supabase, user.id, "level_up", {
-        new_level: xpFeedback.currentLevel,
-        new_rank: xpFeedback.rank,
-        total_xp: xpFeedback.totalXp,
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "level_up",
+        dedupeKey: `level:${xpFeedback.currentLevel}`,
+        payload: {
+          new_level: xpFeedback.currentLevel,
+          new_rank: xpFeedback.rank,
+          total_xp: xpFeedback.totalXp,
+        },
       });
     }
 
     for (const prType of newPersonalRecords) {
-      await insertFeedEvent(supabase, user.id, "personal_record", {
-        record_type: prType,
-        label: PR_LABELS[prType as keyof typeof PR_LABELS],
-        distance: data.distance,
-        pace: data.pace ?? undefined,
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "personal_record",
+        dedupeKey: `pr:${prType}:${data.id}`,
+        payload: {
+          record_type: prType,
+          label: PR_LABELS[prType as keyof typeof PR_LABELS],
+          distance: data.distance,
+          pace: data.pace ?? undefined,
+        },
       });
     }
 
     if (streakMilestone !== null) {
-      await insertFeedEvent(supabase, user.id, "streak_milestone", {
-        streak_days: streakMilestone,
-        streak_type: "general",
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "streak_milestone",
+        dedupeKey: `streak:general:${streakMilestone}`,
+        payload: {
+          streak_days: streakMilestone,
+          streak_type: "general",
+        },
       });
     }
 
     if (hybridBonus) {
-      await insertFeedEvent(supabase, user.id, "hybrid_bonus", {
-        run_id: data.id,
-        distance: data.distance,
+      await createFeedEvent(supabase, {
+        userId: user.id,
+        eventType: "hybrid_bonus",
+        dedupeKey: `hybrid:${data.id}`,
+        payload: {
+          run_id: data.id,
+          distance: data.distance,
+        },
       });
     }
 
