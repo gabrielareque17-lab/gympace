@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Flame, Trophy, Zap, Dumbbell, Calendar, ChevronRight } from "lucide-react";
+import { Flame, Medal, Trophy, Zap, Dumbbell, Calendar, ChevronRight } from "lucide-react";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
@@ -9,11 +9,9 @@ import { WeeklyLeaderboard } from "@/components/social/WeeklyLeaderboard";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getUserStreaks } from "@/lib/streaks";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
-import { getGlobalLeaderboard, getFriendsLeaderboard, type LeaderboardCategory } from "@/lib/leaderboard";
+import { getGlobalLeaderboard, getFriendsLeaderboard } from "@/lib/leaderboard";
 
 export const dynamic = "force-dynamic";
-
-const CATEGORIES: LeaderboardCategory[] = ["xp", "km", "workouts", "streak"];
 
 const RANK_COLORS: Record<string, string> = {
   rookie:   "#94A3B8",
@@ -66,14 +64,10 @@ export default async function SocialPage() {
   const allActiveDays = new Set([...runActiveDays, ...gymActiveDays]);
   const hybridDays = new Set([...runActiveDays].filter((d) => gymActiveDays.has(d)));
 
-  // Fetch leaderboard data for all categories (server side)
-  const [globalAll, friendsAll] = await Promise.all([
-    Promise.all(CATEGORIES.map((cat) => getGlobalLeaderboard(supabase, cat))),
-    Promise.all(CATEGORIES.map((cat) => getFriendsLeaderboard(supabase, user.id, cat))),
+  const [globalEntries, friendsEntries] = await Promise.all([
+    getGlobalLeaderboard(supabase, "xp"),
+    getFriendsLeaderboard(supabase, user.id, "xp"),
   ]);
-
-  const globalEntries = Object.fromEntries(CATEGORIES.map((cat, i) => [cat, globalAll[i]])) as Record<LeaderboardCategory, Awaited<ReturnType<typeof getGlobalLeaderboard>>>;
-  const friendsEntries = Object.fromEntries(CATEGORIES.map((cat, i) => [cat, friendsAll[i]])) as Record<LeaderboardCategory, Awaited<ReturnType<typeof getFriendsLeaderboard>>>;
 
   const rankColor = RANK_COLORS[profile?.rank ?? "rookie"] ?? "#94A3B8";
   const seasonDays = activeSeason ? daysRemaining(activeSeason) : 0;
@@ -89,9 +83,9 @@ export default async function SocialPage() {
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Comunidade
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Social</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight">Ranking</h1>
           <p className="mt-2 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
-            Rankings, sequências e conquistas da comunidade.
+            Ranking por XP, sequências e conquistas da comunidade.
           </p>
         </header>
 
@@ -235,7 +229,7 @@ export default async function SocialPage() {
                 Ranking
               </p>
               <h2 className="font-display text-base font-semibold flex items-center gap-2">
-                <Trophy className="size-4 text-[#EAB308]" strokeWidth={2} />
+                <Medal className="size-4 text-[#EAB308]" strokeWidth={2} />
                 Leaderboard
               </h2>
             </div>
@@ -251,10 +245,10 @@ export default async function SocialPage() {
           {/* ── Quick Links ────────────────────────────────────────────────── */}
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { href: "/corridas",   icon: Zap,      label: "Corridas",   color: "#B6FF00" },
-              { href: "/academia",   icon: Dumbbell,  label: "Academia",   color: "#22D3EE" },
-              { href: "/desafios",   icon: Trophy,    label: "Desafios",   color: "#FB923C" },
-              { href: "/competicoes",icon: Calendar,   label: "Competições",color: "#A78BFA" },
+              { href: "/treinos", icon: Zap, label: "Treinos", color: "#B6FF00" },
+              { href: "/academia", icon: Dumbbell, label: "Musculação", color: "#22D3EE" },
+              { href: "/desafios-competicoes", icon: Trophy, label: "Desafios", color: "#FB923C" },
+              { href: "/desafios-competicoes", icon: Calendar, label: "Competições", color: "#A78BFA" },
             ].map(({ href, icon: Icon, label, color }) => (
               <Link
                 key={href}

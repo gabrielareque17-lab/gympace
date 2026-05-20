@@ -2,20 +2,19 @@
 
 import {
   BarChart3,
-  Bell,
   Compass,
   Dumbbell,
   LayoutDashboard,
   LogOut,
   LucideIcon,
+  Medal,
   Rss,
+  Shield,
   Settings2,
   Swords,
   Target,
-  Timer,
   Trophy,
   UserRound,
-  Users,
   X,
   Zap,
 } from "lucide-react";
@@ -41,48 +40,44 @@ const rankStyles: Record<string, { label: string; color: string }> = {
 type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string | null; items: NavItem[] };
 
-const NAV_GROUPS: NavGroup[] = [
+function buildNavGroups(isAdmin: boolean): NavGroup[] {
+  return [
   {
     label: null,
     items: [
-      { label: "Dashboard",    href: "/",             icon: LayoutDashboard },
+      { label: "Início",       href: "/",             icon: LayoutDashboard },
+      { label: "Treinos",      href: "/treinos",      icon: Dumbbell       },
+      { label: "Ranking",      href: "/social",        icon: Medal          },
+      { label: "Desafios & Competições", href: "/desafios-competicoes", icon: Trophy },
       { label: "Feed",         href: "/feed",          icon: Rss            },
       { label: "Perfil",       href: "/perfil",        icon: UserRound      },
-      { label: "Explorar",     href: "/explorar",      icon: Compass        },
     ],
   },
   {
-    label: "Atividades",
+    label: "Extras",
     items: [
-      { label: "Corridas",     href: "/corridas",      icon: Timer          },
-      { label: "Academia",     href: "/academia",      icon: Dumbbell       },
       { label: "Metas",        href: "/metas",         icon: Target         },
       { label: "Evolução",     href: "/evolucao",      icon: BarChart3      },
-    ],
-  },
-  {
-    label: "Social",
-    items: [
-      { label: "Hub Social",   href: "/social",        icon: Users          },
       { label: "Explorar",     href: "/explorar",      icon: Compass        },
-      { label: "Desafios",     href: "/desafios",      icon: Swords         },
-      { label: "Competições",  href: "/competicoes",   icon: Trophy         },
-      { label: "Convites",     href: "/convites",      icon: Bell           },
+      { label: "Convites",     href: "/convites",      icon: Swords         },
     ],
   },
   {
     label: null,
     items: [
       { label: "Configurações", href: "/configuracoes", icon: Settings2     },
+      ...(isAdmin ? [{ label: "Admin", href: "/admin", icon: Shield }] : []),
     ],
   },
-];
+  ];
+}
 
 export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?: string }) {
   const pathname = usePathname();
   const { profile, isLoading: profileLoading } = useProfile();
   const initials = email ? email[0].toUpperCase() : "?";
   const [weeklyProgress, setWeeklyProgress] = useState(0);
+  const navGroups = buildNavGroups(Boolean(profile?.isAdmin));
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -151,7 +146,7 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
         className="flex-1 overflow-y-auto overscroll-contain px-2.5 pb-2"
         aria-label="Navegação principal"
       >
-        {NAV_GROUPS.map((group, gi) => (
+        {navGroups.map((group, gi) => (
           <div key={gi} className={gi > 0 ? "mt-0.5" : ""}>
             {group.label && (
               <p className="mb-1 ml-2.5 mt-3.5 text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/20">

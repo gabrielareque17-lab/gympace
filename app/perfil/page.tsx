@@ -6,6 +6,7 @@ import { EditProfileForm } from "@/components/profile/edit-profile-form";
 import { StreakCard } from "@/components/social/StreakCard";
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
 import { getLevelProgress } from "@/lib/xp";
 import { getUserStreaks } from "@/lib/streaks";
@@ -294,12 +295,12 @@ export default async function PerfilPage() {
     bestPaceSeconds,
     gymTotalSessions: workouts.length,
     gymChestSessions: workouts.filter((w) => {
-      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
+      const keys = normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []));
       return keys.includes("peito");
     }).length,
     gymLegSessions: workouts.filter((w) => {
-      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
-      return keys.includes("pernas");
+      const keys = normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []));
+      return keys.some((key) => ["quadriceps", "posterior-coxa", "gluteos", "panturrilhas"].includes(key));
     }).length,
     gymStreak: computeStreak(workouts.map((w) => w.created_at)),
     gymHasPersonalRecord: false,
@@ -749,4 +750,3 @@ function PersonalBestRow({
     </div>
   );
 }
-

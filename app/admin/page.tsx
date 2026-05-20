@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart2, Bell, Flag, Megaphone, Shield, Trophy, Users, Zap } from "lucide-react";
+import { ArrowLeft, BarChart2, Bell, Flag, Megaphone, Shield, Trophy, Users, Zap } from "lucide-react";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +41,14 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
+      <Link
+        href="/feed"
+        className="mb-8 inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-bold text-[#F5F5F5]/55 transition hover:text-[#F5F5F5]/85"
+      >
+        <ArrowLeft className="size-3.5" />
+        Voltar ao app
+      </Link>
+
       {/* Stats grid */}
       <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatCard
@@ -81,13 +89,12 @@ export default async function AdminDashboardPage() {
             glow="rgba(182,255,0,0.08)"
           />
           <QuickAction
-            href="#"
+            href="/admin/social"
             icon={Users}
             label="Gerenciar Usuários"
-            description="Em breve"
-            color="#F5F5F5"
-            glow="rgba(255,255,255,0.04)"
-            disabled
+            description="Usuários, troféus e updates direcionados"
+            color="#22D3EE"
+            glow="rgba(34,211,238,0.08)"
           />
         </div>
       </div>

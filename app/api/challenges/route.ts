@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendPushNotification } from "@/lib/send-push";
 import { GOAL_CONFIG, type GoalType } from "@/lib/challenge-progress";
@@ -119,6 +120,9 @@ export async function POST(request: Request) {
       data: { type: "challenge_received", challenge_id: challenge.id },
     });
   }
+
+  revalidatePath("/desafios-competicoes");
+  revalidatePath("/desafios");
 
   return NextResponse.json({ id: challenge.id }, { status: 201 });
 }

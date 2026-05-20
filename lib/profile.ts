@@ -14,6 +14,8 @@ export interface ProfileData {
   xpForNextLevel: number | null
   levelProgress: number
   rank: string
+  isAdmin: boolean
+  timezone: string
   createdAt: string | null
 }
 
@@ -23,4 +25,5 @@ export interface ProfilePatch {
   username?: string | null
   avatarId?: string
   avatarType?: string
+  timezone?: string
 }

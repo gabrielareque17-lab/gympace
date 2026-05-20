@@ -1,4 +1,5 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
+import { getMuscleGroupLabel, normalizeMuscleGroups } from "@/lib/muscles";
 
 export type WeeklyVolumePoint = { label: string; km: number; runs: number };
 
@@ -70,19 +71,6 @@ export type ProfileRow = {
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const MUSCLE_LABELS: Record<string, string> = {
-  peito: "Peito",
-  costas: "Costas",
-  pernas: "Pernas",
-  ombros: "Ombros",
-  bracos: "Braços",
-  abdomen: "Abdômen",
-  "full-body": "Full Body",
-  biceps: "Bíceps",
-  triceps: "Tríceps",
-  cardio: "Cardio",
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -204,7 +192,7 @@ function computeWorkoutGroups(workouts: WorkoutRow[]): WorkoutGroup[] {
   const groups: Record<string, { sessions: number; minutes: number }> = {};
 
   for (const w of workouts) {
-    const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : ["unknown"]);
+    const keys = normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : ["unknown"]));
     const mins = Number(w.duration_minutes ?? 0);
     for (const key of keys) {
       groups[key] ??= { sessions: 0, minutes: 0 };
@@ -216,7 +204,7 @@ function computeWorkoutGroups(workouts: WorkoutRow[]): WorkoutGroup[] {
   return Object.entries(groups)
     .map(([key, { sessions, minutes }]) => ({
       key,
-      label: MUSCLE_LABELS[key] ?? key,
+      label: getMuscleGroupLabel(key),
       sessions,
       minutes,
     }))

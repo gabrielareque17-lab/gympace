@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Shield,
+  Star,
   Trophy,
   Users,
   Zap,
@@ -18,6 +19,8 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { label: "Dashboard",     href: "/admin",         icon: LayoutDashboard },
   { label: "Enviar Update", href: "/admin/updates",  icon: Megaphone       },
+  { label: "Temporadas",    href: "/admin/seasons",  icon: Trophy          },
+  { label: "Social",        href: "/admin/social",   icon: Star            },
 ];
 
 const FUTURE_ITEMS = [

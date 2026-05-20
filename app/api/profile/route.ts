@@ -18,6 +18,8 @@ type ProfileRow = {
   current_level?: number | null
   total_xp?: number | null
   rank: string | null
+  is_admin?: boolean | null
+  timezone?: string | null
   created_at: string | null
 }
 
@@ -31,14 +33,14 @@ export async function GET() {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, current_level, total_xp, rank, created_at')
+    .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, current_level, total_xp, rank, is_admin, timezone, created_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
   const { data: fallbackProfile } = profileError
     ? await supabase
         .from('profiles')
-        .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, rank, created_at')
+        .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, rank, is_admin, created_at')
         .eq('user_id', user.id)
         .maybeSingle()
     : { data: null }
@@ -78,6 +80,8 @@ export async function GET() {
     totalXp,
     ...levelProgress,
     rank: resolvedProfile?.rank ?? 'rookie',
+    isAdmin: Boolean(resolvedProfile?.is_admin),
+    timezone: resolvedProfile?.timezone ?? 'America/Manaus',
     createdAt: resolvedProfile?.created_at ?? null,
   })
 }
@@ -142,6 +146,13 @@ export async function PATCH(request: Request) {
       }
     }
     update.username = u ?? null
+  }
+
+  if (patch.timezone !== undefined) {
+    if (!['America/Manaus', 'America/Sao_Paulo'].includes(patch.timezone)) {
+      return NextResponse.json({ error: 'Fuso horário inválido' }, { status: 400 })
+    }
+    update.timezone = patch.timezone
   }
 
   const fieldsToUpdate = Object.keys(update).filter((k) => k !== 'user_id')

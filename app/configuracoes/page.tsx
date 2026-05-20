@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   Bell,
   ChevronRight,
+  Clock3,
   ExternalLink,
   Link2,
   LogOut,
@@ -25,6 +26,22 @@ async function logoutAction() {
   redirect("/login");
 }
 
+async function timezoneAction(formData: FormData) {
+  "use server";
+  const timezone = String(formData.get("timezone") ?? "America/Manaus");
+  if (!["America/Manaus", "America/Sao_Paulo"].includes(timezone)) return;
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  await supabase
+    .from("profiles")
+    .upsert({ user_id: user.id, timezone }, { onConflict: "user_id" });
+}
+
 export default async function ConfiguracoesPage() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -32,6 +49,14 @@ export default async function ConfiguracoesPage() {
   } = await supabase.auth.getUser();
 
   const email = user?.email ?? "—";
+  const { data: profileWithTimezone, error: timezoneError } = user
+    ? await supabase
+        .from("profiles")
+        .select("timezone")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null, error: null };
+  const timezone = timezoneError ? "America/Manaus" : profileWithTimezone?.timezone ?? "America/Manaus";
 
   return (
     <AppShell>
@@ -80,6 +105,35 @@ export default async function ConfiguracoesPage() {
                 </form>
               </div>
             </div>
+          </SectionCard>
+
+          <SectionCard label="Localização" title="Fuso horário">
+            <form action={timezoneAction} className="space-y-3 p-5">
+              <p className="text-sm leading-6 text-[#F5F5F5]/40">
+                Manaus fica como padrão do GymPace. Use Brasília se quiser que datas e lembretes sigam UTC-3.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <TimezoneOption
+                  value="America/Manaus"
+                  title="Manaus"
+                  description="UTC-4 · padrão"
+                  checked={timezone === "America/Manaus"}
+                />
+                <TimezoneOption
+                  value="America/Sao_Paulo"
+                  title="Brasília"
+                  description="UTC-3"
+                  checked={timezone === "America/Sao_Paulo"}
+                />
+              </div>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] transition active:scale-[0.98]"
+              >
+                <Clock3 className="size-4" />
+                Salvar fuso horário
+              </button>
+            </form>
           </SectionCard>
 
           {/* ── Aparência ── */}
@@ -239,6 +293,34 @@ function AccountRow({
         <p className="truncate text-sm font-medium text-[#F5F5F5]/70">{value}</p>
       </div>
     </div>
+  );
+}
+
+function TimezoneOption({
+  value,
+  title,
+  description,
+  checked,
+}: {
+  value: string;
+  title: string;
+  description: string;
+  checked: boolean;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 transition hover:bg-white/[0.04]">
+      <input
+        type="radio"
+        name="timezone"
+        value={value}
+        defaultChecked={checked}
+        className="size-4 accent-[#B6FF00]"
+      />
+      <div>
+        <p className="text-sm font-semibold text-[#F5F5F5]/80">{title}</p>
+        <p className="text-xs text-[#F5F5F5]/35">{description}</p>
+      </div>
+    </label>
   );
 }
 

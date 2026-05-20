@@ -13,9 +13,11 @@ const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova
 async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/");
   revalidatePath("/corridas");
+  revalidatePath("/treinos");
   revalidatePath("/feed");
   revalidatePath("/metas");
   revalidatePath("/competicoes");
+  revalidatePath("/desafios-competicoes");
   for (const id of competitionIds) {
     revalidatePath(`/competicoes/${id}`);
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 const VALID_TYPES = ['corrida', 'academia', 'streak', 'hibrido'] as const
@@ -37,5 +38,7 @@ export async function POST(req: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  revalidatePath('/desafios-competicoes')
+  revalidatePath('/competicoes')
   return NextResponse.json({ id: data.id })
 }

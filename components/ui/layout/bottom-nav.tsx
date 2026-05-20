@@ -1,15 +1,13 @@
 "use client";
 
 import {
-  Compass,
   Dumbbell,
-  FileText,
   Home,
+  Medal,
   Plus,
   Rss,
   Swords,
   Timer,
-  UserRound,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -21,12 +19,12 @@ import { cn } from "@/lib/utils";
 
 const LEFT_NAV = [
   { label: "Início",  href: "/",       icon: Home  },
-  { label: "Social",  href: "/social", icon: Users },
+  { label: "Treinos", href: "/treinos", icon: Dumbbell },
 ] as const;
 
 const RIGHT_NAV = [
+  { label: "Ranking", href: "/social", icon: Medal },
   { label: "Feed",   href: "/feed",  icon: Rss      },
-  { label: "Perfil", href: "/perfil", icon: UserRound },
 ] as const;
 
 const ACTIONS = [
@@ -40,7 +38,7 @@ const ACTIONS = [
     border:"rgba(182,255,0,0.14)",
   },
   {
-    label: "Registrar academia",
+    label: "Registrar musculação",
     desc:  "Adicione um treino",
     href:  "/academia",
     icon:  Dumbbell,
@@ -58,10 +56,10 @@ const ACTIONS = [
     border:"rgba(251,146,60,0.14)",
   },
   {
-    label: "Explorar atletas",
-    desc:  "Descubra a comunidade",
-    href:  "/explorar",
-    icon:  Compass,
+    label: "Criar competição",
+    desc:  "Grupo com ranking",
+    href:  "/competicoes/criar",
+    icon:  Users,
     color: "#A78BFA",
     bg:    "rgba(167,139,250,0.06)",
     border:"rgba(167,139,250,0.14)",
@@ -123,7 +121,10 @@ export function BottomNav() {
   const [mounted, setMounted]           = useState(false);
   const initialHeight = useRef(0);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Hide nav when software keyboard is open
   useEffect(() => {

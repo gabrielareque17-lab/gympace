@@ -5,6 +5,7 @@ import {
   type AchievementStats,
 } from "@/lib/achievements";
 import { calculateLongestActivityStreak } from "@/lib/competition-progress";
+import { normalizeMuscleGroups } from "@/lib/muscles";
 
 export type XPRank = "rookie" | "bronze" | "silver" | "gold" | "platinum" | "elite";
 
@@ -187,12 +188,12 @@ function buildAchievementStats(
     bestPaceSeconds: paces.length > 0 ? Math.min(...paces) : null,
     gymTotalSessions: workouts.length,
     gymChestSessions: workouts.filter((w) => {
-      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
+      const keys = normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []));
       return keys.includes("peito");
     }).length,
     gymLegSessions: workouts.filter((w) => {
-      const keys = w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []);
-      return keys.includes("pernas");
+      const keys = normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []));
+      return keys.some((key) => ["quadriceps", "posterior-coxa", "gluteos", "panturrilhas"].includes(key));
     }).length,
     gymStreak: calculateLongestActivityStreak(gymDates),
     gymHasPersonalRecord: false,

@@ -4,6 +4,7 @@ import { XPCard } from "@/components/xp/xp-card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { cn } from "@/lib/utils";
 import { formatDateLabel } from "@/lib/date-utils";
+import { getMuscleGroupLabel } from "@/lib/muscles";
 import {
   Activity,
   CalendarCheck,
@@ -45,16 +46,6 @@ const RUN_TYPE_LABELS: Record<string, string> = {
   regenerativo: "Regenerativo",
   prova: "Prova",
   ritmo: "Ritmo",
-};
-
-const MUSCLE_GROUP_LABELS: Record<string, string> = {
-  peito: "Peito",
-  costas: "Costas",
-  pernas: "Pernas",
-  ombros: "Ombros",
-  bracos: "Braços",
-  abdomen: "Abdômen",
-  "full-body": "Full Body",
 };
 
 type Metric = {
@@ -535,7 +526,7 @@ function ActivityRow({ activity }: { activity: RecentActivity }) {
   const isRun = activity.type === "run";
   const typeTag = isRun
     ? RUN_TYPE_LABELS[activity.run_type ?? ""] ?? null
-    : MUSCLE_GROUP_LABELS[activity.muscle_group ?? ""] ?? null;
+    : activity.muscle_group ? getMuscleGroupLabel(activity.muscle_group) : null;
 
   return (
     <div className="group flex items-center gap-3 px-4 py-3 transition-colors duration-150 hover:bg-white/[0.02] sm:gap-4 sm:px-5 sm:py-3.5">
@@ -617,7 +608,7 @@ function ActivityRow({ activity }: { activity: RecentActivity }) {
                 Grupo
               </p>
               <p className="font-mono text-sm font-semibold text-[#F5F5F5]/80">
-                {MUSCLE_GROUP_LABELS[activity.muscle_group ?? ""] ?? "—"}
+                {activity.muscle_group ? getMuscleGroupLabel(activity.muscle_group) : "—"}
               </p>
             </div>
           </>

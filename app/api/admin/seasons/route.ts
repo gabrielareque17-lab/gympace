@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { sendGymPaceUpdate } from "@/lib/send-gympace-update";
 import { getAllSeasons } from "@/lib/seasons";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +72,13 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  if (isActive) {
+    await sendGymPaceUpdate({
+      title: "Nova temporada aberta",
+      message: `${name} começou. Entre no GymPace e acompanhe seu ranking.`,
+    });
+  }
+
   revalidatePath("/social");
   revalidatePath("/admin/seasons");
   return NextResponse.json({ season: data }, { status: 201 });
@@ -113,6 +121,13 @@ export async function PATCH(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (Boolean(b.is_active)) {
+    await sendGymPaceUpdate({
+      title: "Temporada ativada",
+      message: `${data.name} está ativa no GymPace.`,
+    });
+  }
 
   revalidatePath("/social");
   revalidatePath("/admin/seasons");

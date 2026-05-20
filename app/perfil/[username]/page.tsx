@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { Flame, Medal, Swords } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { FollowButton } from "@/components/social/follow-button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/profile/achievement-grid";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getLevelProgress } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
@@ -114,6 +115,8 @@ export default async function PublicProfilePage({ params }: Props) {
     { data: followRow },
     { count: followersCount },
     { count: followingCount },
+    { data: publicStreaks },
+    trophiesResult,
   ] = await Promise.all([
     currentUser && !isOwnProfile
       ? supabase
@@ -131,6 +134,15 @@ export default async function PublicProfilePage({ params }: Props) {
       .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("follower_id", profile.user_id),
+    adminSupabase
+      .from("streaks")
+      .select("streak_type,current_streak,best_streak,last_activity_date")
+      .eq("user_id", profile.user_id),
+    adminSupabase
+      .from("user_trophies")
+      .select("id,awarded_at,awarded_by,note,exclusive_trophies(name,description,rarity,visual)")
+      .eq("user_id", profile.user_id)
+      .order("awarded_at", { ascending: false }),
   ])
 
   const isFollowing = !!followRow
@@ -184,8 +196,11 @@ export default async function PublicProfilePage({ params }: Props) {
     currentStreak,
     bestPaceSeconds,
     gymTotalSessions: workouts.length,
-    gymChestSessions: workouts.filter((w) => w.muscle_group === "peito").length,
-    gymLegSessions: workouts.filter((w) => w.muscle_group === "pernas").length,
+    gymChestSessions: workouts.filter((w) => normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : [])).includes("peito")).length,
+    gymLegSessions: workouts.filter((w) => {
+      const groups = normalizeMuscleGroups(w.muscle_groups?.length ? w.muscle_groups : (w.muscle_group ? [w.muscle_group] : []));
+      return groups.some((g) => ["quadriceps", "posterior-coxa", "gluteos", "panturrilhas"].includes(g));
+    }).length,
     gymStreak: computeStreak(workouts.map((w) => w.created_at)),
     gymHasPersonalRecord: false,
     hasPerfectWeek: hasPerfectWeek(workouts.map((w) => w.created_at)),
@@ -210,6 +225,8 @@ export default async function PublicProfilePage({ params }: Props) {
   }));
 
   const accentColor = avatarDef?.accentColor ?? "#B6FF00";
+  const exclusiveTrophies = trophiesResult.error ? [] : (trophiesResult.data ?? []);
+  const streakRows = publicStreaks ?? [];
 
   return (
     <AppShell>
@@ -248,21 +265,20 @@ export default async function PublicProfilePage({ params }: Props) {
                   )}
 
                   {/* Follower / following counts */}
-                  <div className="mt-2 flex items-center gap-1">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Link
                       href={`/perfil/${profile.username}/seguidores`}
-                      className="group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-95 active:opacity-60"
+                      className="group inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#B6FF00]/25 hover:bg-[#B6FF00]/[0.06] hover:text-[#B6FF00]"
                     >
                       <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
-                      seguidores
+                      Ver seguidores
                     </Link>
-                    <span className="text-[10px] text-[#F5F5F5]/15">·</span>
                     <Link
                       href={`/perfil/${profile.username}/seguindo`}
-                      className="group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-95 active:opacity-60"
+                      className="group inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#22D3EE]/25 hover:bg-[#22D3EE]/[0.06] hover:text-[#22D3EE]"
                     >
                       <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
-                      seguindo
+                      Ver seguindo
                     </Link>
                   </div>
 
@@ -347,6 +363,70 @@ export default async function PublicProfilePage({ params }: Props) {
             </div>
           </section>
 
+          {/* ── Troféus exclusivos ── */}
+          <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+            <div className="relative border-b border-white/[0.05] px-5 py-4">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
+                    Perfil
+                  </p>
+                  <h2 className="flex items-center gap-2 font-display text-base font-semibold">
+                    <Medal className="size-4 text-[#EAB308]" />
+                    Troféus exclusivos
+                  </h2>
+                </div>
+                <span className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-xs font-semibold tabular-nums text-[#F5F5F5]/50">
+                  {exclusiveTrophies.length}
+                </span>
+              </div>
+            </div>
+            {exclusiveTrophies.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-[#F5F5F5]/30">Nenhum troféu exclusivo ainda.</p>
+            ) : (
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                {exclusiveTrophies.map((grant) => {
+                  const trophy = Array.isArray(grant.exclusive_trophies)
+                    ? grant.exclusive_trophies[0]
+                    : grant.exclusive_trophies;
+                  if (!trophy) return null;
+                  return (
+                    <article key={grant.id} className="rounded-2xl border border-[#EAB308]/20 bg-[#EAB308]/[0.05] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#EAB308]/70">{trophy.rarity}</p>
+                      <h3 className="mt-1 font-display text-base font-bold text-[#F5F5F5]/90">{trophy.name}</h3>
+                      {trophy.description && <p className="mt-1 text-xs leading-5 text-[#F5F5F5]/42">{trophy.description}</p>}
+                      <p className="mt-3 text-[10px] text-[#F5F5F5]/25">Entregue em {new Date(grant.awarded_at).toLocaleDateString("pt-BR")}</p>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* ── Streaks públicas ── */}
+          <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+            <div className="relative border-b border-white/[0.05] px-5 py-4">
+              <h2 className="flex items-center gap-2 font-display text-base font-semibold">
+                <Flame className="size-4 text-[#FB923C]" />
+                Streaks públicas
+              </h2>
+            </div>
+            {streakRows.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-[#F5F5F5]/30">Nenhuma sequência registrada ainda.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
+                {streakRows.map((streak) => (
+                  <div key={streak.streak_type} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#F5F5F5]/30">{streak.streak_type}</p>
+                    <p className="mt-2 font-display text-2xl font-bold text-[#FB923C]">{streak.current_streak ?? 0}</p>
+                    <p className="text-xs text-[#F5F5F5]/35">melhor: {streak.best_streak ?? 0}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* ── Conquistas ── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             <div className="relative border-b border-white/[0.05] px-5 py-4">
@@ -371,4 +451,3 @@ export default async function PublicProfilePage({ params }: Props) {
     </AppShell>
   );
 }
-

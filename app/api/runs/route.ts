@@ -186,9 +186,11 @@ export async function POST(req: Request) {
 
     revalidatePath("/");
     revalidatePath("/corridas");
+    revalidatePath("/treinos");
     revalidatePath("/feed");
     revalidatePath("/metas");
     revalidatePath("/competicoes");
+    revalidatePath("/desafios-competicoes");
     revalidatePath("/social");
     revalidatePath("/perfil");
     for (const update of progressUpdates) {

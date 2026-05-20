@@ -9,6 +9,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getFeedEvents, type FeedEvent, type FeedProfile } from "@/lib/feed";
+import { getMuscleDetailLabel, getMuscleGroupLabel } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
 import {
   formatDateTime,
@@ -44,19 +45,6 @@ const RUN_TYPE_LABELS: Record<string, string> = {
   regenerativo: "Regenerativo",
   prova: "Prova",
   ritmo: "Ritmo",
-};
-
-const MUSCLE_GROUP_LABELS: Record<string, string> = {
-  peito: "Peito",
-  costas: "Costas",
-  pernas: "Pernas",
-  ombros: "Ombros",
-  bracos: "Braços",
-  abdomen: "Abdômen",
-  "full-body": "Full Body",
-  biceps: "Bíceps",
-  triceps: "Tríceps",
-  cardio: "Cardio",
 };
 
 const INTENSITY_LABELS: Record<string, string> = {
@@ -199,9 +187,9 @@ function FeedCard({ event }: { event: FeedEvent }) {
       </>
     );
   } else if (type === "workout") {
-    const p = payload as { title?: string; muscle_group?: string; muscle_groups?: string[]; duration_minutes?: number; intensity?: string };
+    const p = payload as { title?: string; muscle_group?: string; muscle_groups?: string[]; muscle_details?: string[]; duration_minutes?: number; intensity?: string };
     const muscleKeys = p.muscle_groups?.length ? p.muscle_groups : (p.muscle_group ? [p.muscle_group] : []);
-    const muscle = muscleKeys.length ? muscleKeys.map((k) => MUSCLE_GROUP_LABELS[k] ?? k).join(" + ") : "academia";
+    const muscle = muscleKeys.length ? muscleKeys.map(getMuscleGroupLabel).join(" • ") : "musculação";
     const intensityColorMap: Record<string, TagColor> = { leve: "lime", moderado: "amber", intenso: "orange" };
     const intensityColor: TagColor = intensityColorMap[p.intensity ?? ""] ?? "neutral";
     action = (
@@ -215,6 +203,9 @@ function FeedCard({ event }: { event: FeedEvent }) {
         {p.title && <Tag color="neutral">{p.title}</Tag>}
         {p.duration_minutes != null && <Tag color="blue">{p.duration_minutes} min</Tag>}
         {p.intensity && <Tag color={intensityColor}>{INTENSITY_LABELS[p.intensity] ?? p.intensity}</Tag>}
+        {p.muscle_details?.slice(0, 3).map((detail) => (
+          <Tag key={detail} color="neutral">{getMuscleDetailLabel(detail)}</Tag>
+        ))}
       </>
     );
   } else if (type === "level_up") {
