@@ -74,7 +74,7 @@ export async function syncUserXP(
       { onConflict: "user_id" }
     );
 
-  if (error) throw error;
+  if (error) console.error("[xp] profile upsert error:", error.code, error.message, error.details);
 
   return {
     previousXp,
@@ -206,7 +206,12 @@ async function fetchRuns(supabase: SupabaseClient, userId: string): Promise<RunR
     .select("distance, pace, created_at")
     .eq("user_id", userId);
 
-  if (error) throw error;
+  if (error) {
+    const missing = error.code === "42P01" || error.message?.toLowerCase().includes("runs");
+    if (missing) return [];
+    console.error("[xp] fetchRuns error:", error.code, error.message);
+    return [];
+  }
   return (data ?? []) as RunRow[];
 }
 
@@ -237,7 +242,12 @@ async function fetchCompetitionParticipants(
     .select("progress, competitions(type, end_date)")
     .eq("user_id", userId);
 
-  if (error) throw error;
+  if (error) {
+    const missing = error.code === "42P01" || error.message?.toLowerCase().includes("competition_participants");
+    if (missing) return [];
+    console.error("[xp] fetchCompetitionParticipants error:", error.code, error.message);
+    return [];
+  }
 
   return ((data ?? []) as unknown as CompetitionParticipantRow[]).map((row) => ({
     ...row,

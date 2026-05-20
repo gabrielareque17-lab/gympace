@@ -51,7 +51,12 @@ export async function updateActiveCompetitionProgressForUser(
     .select("competition_id, progress, competitions(id, title, type, start_date, end_date)")
     .eq("user_id", userId);
 
-  if (participantErr) throw participantErr;
+  if (participantErr) {
+    // Gracefully handle missing table (not yet migrated)
+    const missing = participantErr.code === "42P01" || participantErr.message?.toLowerCase().includes("competition_participants");
+    if (missing) return [];
+    throw participantErr;
+  }
 
   const rows: ParticipantRow[] = ((participantRows ?? []) as unknown as ParticipantRow[]).map((row) => ({
     ...row,
@@ -93,7 +98,10 @@ export async function updateActiveCompetitionProgressForUser(
       .eq("competition_id", competition.id)
       .eq("user_id", userId);
 
-    if (updateErr) throw updateErr;
+    if (updateErr) {
+      console.error("[competition-progress] update failed:", updateErr.code, updateErr.message);
+      continue;
+    }
 
     updates.push({
       competitionId: competition.id,

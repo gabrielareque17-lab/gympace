@@ -68,10 +68,27 @@ export async function POST(req: Request) {
     .select("id,title,muscle_group,muscle_groups,duration_minutes,intensity,notes,created_at")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[workouts] insert error:", error.code, error.message, error.details);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
-  const xpFeedback = await syncUserXP(supabase, user.id);
+  console.log("[workouts] inserted workout:", data.id);
+
+  let progressUpdates: Awaited<ReturnType<typeof updateActiveCompetitionProgressForUser>> = [];
+  let xpFeedback: Awaited<ReturnType<typeof syncUserXP>> | null = null;
+
+  try {
+    progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
+  } catch (err) {
+    console.error("[workouts] competition progress update failed:", err);
+  }
+
+  try {
+    xpFeedback = await syncUserXP(supabase, user.id);
+  } catch (err) {
+    console.error("[workouts] xp sync failed:", err);
+  }
 
   await insertFeedEvent(supabase, user.id, "workout", {
     id: data.id,
@@ -81,7 +98,7 @@ export async function POST(req: Request) {
     duration_minutes: data.duration_minutes ?? undefined,
     intensity: data.intensity ?? undefined,
   });
-  if (xpFeedback.leveledUp) {
+  if (xpFeedback?.leveledUp) {
     await insertFeedEvent(supabase, user.id, "level_up", {
       new_level: xpFeedback.currentLevel,
       new_rank: xpFeedback.rank,
