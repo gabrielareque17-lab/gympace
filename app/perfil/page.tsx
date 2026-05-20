@@ -8,7 +8,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
-import { getLevelProgress } from "@/lib/xp";
+import { getLevelProgress, syncUserXP } from "@/lib/xp";
 import { getUserStreaks } from "@/lib/streaks";
 import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
@@ -41,17 +41,6 @@ type Workout = {
   muscle_groups: string[] | null;
   created_at: string;
 };
-
-// ─── Level system ────────────────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const LEVELS = [
-  { name: "Iniciante",     threshold: 0,   next: 25,       color: "#71717A" },
-  { name: "Amador",        threshold: 25,  next: 100,      color: "#60A5FA" },
-  { name: "Intermediário", threshold: 100, next: 300,      color: "#A78BFA" },
-  { name: "Avançado",      threshold: 300, next: 600,      color: "#FB923C" },
-  { name: "Elite",         threshold: 600, next: Infinity, color: "#B6FF00" },
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -184,13 +173,23 @@ export default async function PerfilPage() {
   const nickname = email ? getNickname(email) : "Atleta";
   const initials = email ? email[0].toUpperCase() : "?";
 
-  const { data: profile } = user
-    ? await supabase
-        .from("profiles")
-        .select("avatar_id, avatar_type, username, display_name, bio, total_xp, current_level, rank")
-        .eq("user_id", user.id)
-        .maybeSingle()
-    : { data: null };
+  const [profileRes, xpSync] = await Promise.all([
+    user
+      ? supabase
+          .from("profiles")
+          .select("avatar_id, avatar_type, username, display_name, bio")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    user ? syncUserXP(supabase, user.id) : Promise.resolve(null),
+  ]);
+  const profile = profileRes.data as {
+    avatar_id: string | null;
+    avatar_type: string | null;
+    username: string | null;
+    display_name: string | null;
+    bio: string | null;
+  } | null;
 
   const [
     { data: rawRuns },
@@ -269,11 +268,11 @@ export default async function PerfilPage() {
 
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const dbTotalXp = Number((profile as { total_xp?: number } | null)?.total_xp ?? 0)
-  const dbLevel = Number((profile as { current_level?: number } | null)?.current_level ?? 1)
-  const dbRank = (profile as { rank?: string } | null)?.rank ?? 'rookie'
-  const rankStyle = RANK_STYLES[dbRank] ?? RANK_STYLES.rookie
-  const { levelProgress: xpLevelProgress, xpIntoLevel, xpForNextLevel } = getLevelProgress(dbTotalXp)
+  const dbTotalXp = xpSync?.totalXp ?? 0;
+  const dbLevel = xpSync?.currentLevel ?? 1;
+  const dbRank = xpSync?.rank ?? "rookie";
+  const rankStyle = RANK_STYLES[dbRank] ?? RANK_STYLES.rookie;
+  const { levelProgress: xpLevelProgress, xpIntoLevel, xpForNextLevel } = getLevelProgress(dbTotalXp);
 
   const avatarDef = profile?.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteType = profile?.avatar_type ?? "runner";
@@ -361,18 +360,18 @@ export default async function PerfilPage() {
 
   return (
     <AppShell>
-      <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10">
-        <header className="mb-5">
+      <div className="min-w-0 flex-1 px-3.5 pb-4 pt-4 sm:p-6 lg:p-10">
+        <header className="mb-4">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Atleta
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Perfil</h1>
-          <p className="mt-2 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Perfil</h1>
+          <p className="mt-1.5 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
             Identidade, marcas pessoais e evolução de treinos.
           </p>
         </header>
 
-        <div className="space-y-4 max-w-4xl">
+        <div className="max-w-4xl space-y-3.5 sm:space-y-4">
           {/* ── Hero Card ── */}
           <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             {/* Top shimmer */}
@@ -385,7 +384,7 @@ export default async function PerfilPage() {
               />
             )}
 
-            <div className="relative p-4 sm:p-6">
+            <div className="relative p-3.5 sm:p-6">
               {/* Avatar + info row */}
               <div className="flex items-start gap-3 sm:gap-4">
                 <div className="shrink-0">
@@ -404,7 +403,7 @@ export default async function PerfilPage() {
                     fallbackName={nickname}
                     fallbackBio={athleteBio}
                   />
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span
                       className="rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em]"
                       style={{
@@ -421,7 +420,7 @@ export default async function PerfilPage() {
                         <Link
                           href={`/perfil/${profile.username}/seguidores`}
                           prefetch
-                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2 py-1.5 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
+                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2 py-1.5 text-xs text-[#F5F5F5]/50 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
                         >
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
                           {" "}seg.
@@ -430,7 +429,7 @@ export default async function PerfilPage() {
                         <Link
                           href={`/perfil/${profile.username}/seguindo`}
                           prefetch
-                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2 py-1.5 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
+                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2 py-1.5 text-xs text-[#F5F5F5]/50 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
                         >
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
                           {" "}seguindo
@@ -439,7 +438,7 @@ export default async function PerfilPage() {
                         <Link
                           href={`/perfil/${profile.username}/trofeus`}
                           prefetch
-                          className="mobile-tap inline-flex items-center gap-1 rounded-lg border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2 py-1.5 text-xs font-bold text-[#EAB308]/85 transition-transform duration-100 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-[0.97] active:opacity-80"
+                          className="mobile-tap inline-flex items-center gap-1 rounded-lg border border-[#EAB308]/25 bg-[#EAB308]/[0.08] px-2.5 py-1.5 text-xs font-bold text-[#EAB308]/90 shadow-[0_0_18px_rgba(234,179,8,0.08)] transition-transform duration-100 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-[0.97] active:opacity-80"
                         >
                           <Trophy className="size-3" strokeWidth={2} />
                           Troféus
@@ -463,8 +462,8 @@ export default async function PerfilPage() {
               </div>
 
               {/* XP bar — full width below avatar row */}
-              <div className="mt-4">
-                <div className="mb-1.5 flex items-center justify-between gap-4">
+              <div className="mt-3 rounded-xl border border-white/[0.055] bg-white/[0.025] p-3">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5">
                     <span
                       className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
@@ -476,11 +475,11 @@ export default async function PerfilPage() {
                       {rankStyle.label}
                     </span>
                   </div>
-                  <span className="text-[10px] text-[#F5F5F5]/30">
+                  <span className="shrink-0 text-[10px] text-[#F5F5F5]/34">
                     {xpIntoLevel} / {xpForNextLevel ?? "∞"} XP
                   </span>
                 </div>
-                <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="h-[4px] overflow-hidden rounded-full bg-white/[0.07]">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
@@ -491,7 +490,7 @@ export default async function PerfilPage() {
                   />
                 </div>
                 {xpForNextLevel !== null && (
-                  <p className="mt-1 text-[10px] text-[#F5F5F5]/28">
+                  <p className="mt-1.5 text-[10px] text-[#F5F5F5]/30">
                     {xpForNextLevel - xpIntoLevel} XP para o próximo nível ·{" "}
                     {dbTotalXp.toLocaleString("pt-BR")} XP total
                   </p>
@@ -499,7 +498,7 @@ export default async function PerfilPage() {
               </div>
 
               {/* Quick stats grid */}
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">
                 <QuickStat label="km" value={formatDecimal(totalKm)} unit="km" />
                 <QuickStat label="Treinos" value={String(totalRuns)} unit="" />
                 <QuickStat
@@ -752,14 +751,14 @@ function QuickStat({
   unit: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] px-3.5 py-2.5 text-right">
-      <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#F5F5F5]/30">
+    <div className="min-w-0 rounded-xl border border-white/[0.055] bg-white/[0.025] px-2.5 py-2 text-right sm:px-3.5 sm:py-2.5">
+      <p className="truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/32 sm:text-[10px]">
         {label}
       </p>
-      <p className="font-display text-xl font-bold leading-tight tracking-tight">
+      <p className="font-display text-lg font-bold leading-tight tracking-tight sm:text-xl">
         {value}
         {unit && (
-          <span className="ml-1 text-xs font-bold text-[#B6FF00]/80">{unit}</span>
+          <span className="ml-0.5 text-[10px] font-bold text-[#B6FF00]/80 sm:ml-1 sm:text-xs">{unit}</span>
         )}
       </p>
     </div>
@@ -773,32 +772,32 @@ type RecentActivityItem =
 function RecentActivityRow({ activity }: { activity: RecentActivityItem }) {
   if (activity.kind === "run") {
     return (
-      <div className="flex items-center gap-3 px-5 py-3">
-        <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#B6FF00]/10">
+      <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3">
+        <div className="grid size-8 shrink-0 place-items-center rounded-lg border border-[#B6FF00]/10 bg-[#B6FF00]/10">
           <Timer className="size-4 text-[#B6FF00]/80" strokeWidth={1.8} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-[#F5F5F5]/80">{activity.distance} km</p>
+          <p className="text-sm font-bold leading-tight text-[#F5F5F5]/84">{activity.distance} km</p>
           {activity.pace && (
             <p className="text-xs text-[#F5F5F5]/35">{activity.pace}/km</p>
           )}
         </div>
-        <p className="shrink-0 text-[10px] text-[#F5F5F5]/30">{formatDateLabel(activity.date)}</p>
+        <p className="shrink-0 rounded-full bg-white/[0.035] px-2 py-1 text-[10px] text-[#F5F5F5]/34">{formatDateLabel(activity.date)}</p>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-3 px-5 py-3">
-      <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#22D3EE]/10">
+    <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3">
+      <div className="grid size-8 shrink-0 place-items-center rounded-lg border border-[#22D3EE]/10 bg-[#22D3EE]/10">
         <Dumbbell className="size-4 text-[#22D3EE]/80" strokeWidth={1.8} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-[#F5F5F5]/80">Academia</p>
+        <p className="text-sm font-bold leading-tight text-[#F5F5F5]/84">Academia</p>
         {activity.muscles.length > 0 && (
           <p className="truncate text-xs text-[#F5F5F5]/35">{activity.muscles.slice(0, 3).join(", ")}</p>
         )}
       </div>
-      <p className="shrink-0 text-[10px] text-[#F5F5F5]/30">{formatDateLabel(activity.date)}</p>
+      <p className="shrink-0 rounded-full bg-white/[0.035] px-2 py-1 text-[10px] text-[#F5F5F5]/34">{formatDateLabel(activity.date)}</p>
     </div>
   );
 }

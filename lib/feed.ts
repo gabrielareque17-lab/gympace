@@ -22,6 +22,7 @@ export type FeedProfile = {
   avatar_id: string | null;
   rank: string | null;
   current_level: number | null;
+  total_xp: number | null;
 };
 
 export type FeedEvent = {
@@ -164,7 +165,7 @@ export async function getFeedEvents(
   const [profilesRes, reactionsRes, userReactionsRes, commentsRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("user_id,username,display_name,avatar_id,rank,current_level")
+      .select("user_id,username,display_name,avatar_id,rank,current_level,total_xp")
       .in("user_id", uniqueUserIds),
     supabase
       .from("feed_reactions")

@@ -7,7 +7,6 @@ import {
   Flame,
   MessageCircle,
   Swords,
-  Timer,
   Trophy,
   Users,
   Zap,
@@ -72,6 +71,20 @@ const SPLIT_LABELS: Record<string, string> = {
   custom: "Personalizado",
 };
 
+const SIMPLE_EVENT_TYPES = new Set([
+  "level_up",
+  "streak",
+  "personal_record",
+  "streak_milestone",
+  "hybrid_bonus",
+  "challenge_accepted",
+  "challenge_won",
+  "competition_joined",
+  "exclusive_trophy",
+  "rank_reached",
+  "season_started",
+]);
+
 // ── Tag component ─────────────────────────────────────────────────────────────
 
 type TagColor = "lime" | "blue" | "cyan" | "amber" | "orange" | "purple" | "red" | "neutral";
@@ -89,7 +102,7 @@ const TAG_STYLES: Record<TagColor, string> = {
 
 function Tag({ children, color }: { children: ReactNode; color: TagColor }) {
   return (
-    <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-tight", TAG_STYLES[color])}>
+    <span className={cn("inline-flex min-h-5 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none tracking-tight", TAG_STYLES[color])}>
       {children}
     </span>
   );
@@ -111,7 +124,7 @@ function StatItem({ label, value, color }: { label: string; value: string; color
 function StatsRow({ children, color }: { children: ReactNode; color: string }) {
   return (
     <div
-      className="mt-2.5 grid auto-cols-fr grid-flow-col gap-px overflow-hidden rounded-xl"
+      className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-xl sm:auto-cols-fr sm:grid-flow-col sm:grid-cols-none"
       style={{ border: `1px solid ${color}18`, background: `${color}06` }}
     >
       {children}
@@ -121,7 +134,7 @@ function StatsRow({ children, color }: { children: ReactNode; color: string }) {
 
 function StatsCell({ label, value, color, last }: { label: string; value: string; color?: string; last?: boolean }) {
   return (
-    <div className={cn("flex flex-col gap-[3px] px-3 py-2.5", !last && "border-r border-white/[0.05]")}>
+    <div className={cn("flex min-w-0 flex-col gap-[3px] border-white/[0.05] px-2.5 py-2", !last && "sm:border-r")}>
       <StatItem label={label} value={value} color={color} />
     </div>
   );
@@ -336,9 +349,10 @@ function WorkoutContent({ payload, color }: { payload: Record<string, unknown>; 
   );
 }
 
-function LevelUpContent({ payload, color }: { payload: Record<string, unknown>; color: string }) {
-  const p = payload as { new_level?: number; new_rank?: string; total_xp?: number };
+function LevelUpContent({ payload, color, profile }: { payload: Record<string, unknown>; color: string; profile?: FeedProfile }) {
+  const p = payload as { new_level?: number; new_rank?: string };
   const rankColor = p.new_rank ? (RANK_COLORS[p.new_rank] ?? color) : color;
+  const liveXp = profile?.total_xp;
   return (
     <>
       <p className="mt-0.5 text-sm text-[#F5F5F5]/55">
@@ -354,7 +368,7 @@ function LevelUpContent({ payload, color }: { payload: Record<string, unknown>; 
             {RANK_LABELS[p.new_rank] ?? p.new_rank}
           </span>
         )}
-        {p.total_xp != null && <Tag color="amber">{p.total_xp} XP total</Tag>}
+        {liveXp != null && <Tag color="amber">{liveXp.toLocaleString("pt-BR")} XP total</Tag>}
       </div>
     </>
   );
@@ -407,7 +421,7 @@ function HybridBonusContent({ color }: { color: string }) {
   );
 }
 
-function ChallengeAcceptedContent({ payload, color }: { payload: Record<string, unknown>; color: string }) {
+function ChallengeAcceptedContent({ color }: { color: string }) {
   return (
     <p className="mt-0.5 text-sm text-[#F5F5F5]/55">
       aceitou um{" "}
@@ -417,7 +431,7 @@ function ChallengeAcceptedContent({ payload, color }: { payload: Record<string, 
   );
 }
 
-function ChallengeWonContent({ payload, color }: { payload: Record<string, unknown>; color: string }) {
+function ChallengeWonContent({ color }: { color: string }) {
   return (
     <p className="mt-0.5 text-sm text-[#F5F5F5]/55">
       <span className="font-bold" style={{ color }}>venceu um desafio</span>! 🏆
@@ -425,7 +439,7 @@ function ChallengeWonContent({ payload, color }: { payload: Record<string, unkno
   );
 }
 
-function CompetitionJoinedContent({ payload, color }: { payload: Record<string, unknown>; color: string }) {
+function CompetitionJoinedContent({ color }: { color: string }) {
   return (
     <p className="mt-0.5 text-sm text-[#F5F5F5]/55">
       entrou em uma{" "}
@@ -476,6 +490,46 @@ function SeasonStartedContent({ payload, color }: { payload: Record<string, unkn
 
 // ── Main FeedCard ─────────────────────────────────────────────────────────────
 
+function getCommentContext(event: FeedEvent, name: string, color: string) {
+  const payload = event.payload;
+
+  switch (event.event_type) {
+    case "run": {
+      const p = payload as { distance?: number; pace?: string; duration?: string };
+      const distance = Number(p.distance ?? 0).toFixed(2).replace(".", ",");
+      return {
+        title: `${name} completou ${distance} km`,
+        detail: [p.pace ? `${p.pace}/km` : null, p.duration ?? null].filter(Boolean).join(" · "),
+        color,
+      };
+    }
+    case "workout": {
+      const p = payload as { muscle_group?: string; muscle_groups?: string[]; duration_minutes?: number };
+      const muscleKeys = p.muscle_groups?.length ? p.muscle_groups : (p.muscle_group ? [p.muscle_group] : []);
+      const muscle = muscleKeys.length ? muscleKeys.map(getMuscleGroupLabel).join(", ") : "musculação";
+      return {
+        title: `${name} treinou ${muscle}`,
+        detail: p.duration_minutes ? `${p.duration_minutes} min` : "Treino registrado",
+        color,
+      };
+    }
+    case "level_up": {
+      const p = payload as { new_level?: number };
+      return { title: `${name} subiu de nível`, detail: `Nível ${p.new_level ?? "?"}`, color };
+    }
+    case "streak": {
+      const p = payload as { streak_days?: number };
+      return { title: `${name} manteve a sequência`, detail: `${p.streak_days ?? 0} dias`, color };
+    }
+    case "exclusive_trophy": {
+      const p = payload as { trophy_name?: string };
+      return { title: `${name} recebeu um troféu`, detail: p.trophy_name ?? "Troféu exclusivo", color };
+    }
+    default:
+      return { title: `Publicação de ${name}`, detail: "Feed GymPace", color };
+  }
+}
+
 export function FeedCard({ event }: { event: FeedEvent }) {
   const { event_type: type, payload, created_at, profile } = event;
   const name = profile?.display_name ?? profile?.username ?? "Atleta";
@@ -484,6 +538,8 @@ export function FeedCard({ event }: { event: FeedEvent }) {
   const dateDetail = formatDateTime(created_at);
   const config = EVENT_CONFIG[type] ?? EVENT_CONFIG.run;
   const { Icon, color, badgeBg, cardBorder, cardBg } = config;
+  const isSimpleEvent = SIMPLE_EVENT_TYPES.has(type);
+  const commentContext = getCommentContext(event, name, color);
 
   const [commentsOpen, setCommentsOpen] = useState(false);
 
@@ -491,14 +547,14 @@ export function FeedCard({ event }: { event: FeedEvent }) {
     switch (type) {
       case "run":            return <RunContent payload={payload} color={color} />;
       case "workout":        return <WorkoutContent payload={payload} color={color} />;
-      case "level_up":       return <LevelUpContent payload={payload} color={color} />;
+      case "level_up":       return <LevelUpContent payload={payload} color={color} profile={profile} />;
       case "streak":         return <StreakContent payload={payload} color={color} />;
       case "personal_record":return <PersonalRecordContent payload={payload} color={color} />;
       case "streak_milestone":return <StreakMilestoneContent payload={payload} color={color} />;
       case "hybrid_bonus":   return <HybridBonusContent color={color} />;
-      case "challenge_accepted": return <ChallengeAcceptedContent payload={payload} color={color} />;
-      case "challenge_won":  return <ChallengeWonContent payload={payload} color={color} />;
-      case "competition_joined": return <CompetitionJoinedContent payload={payload} color={color} />;
+      case "challenge_accepted": return <ChallengeAcceptedContent color={color} />;
+      case "challenge_won":  return <ChallengeWonContent color={color} />;
+      case "competition_joined": return <CompetitionJoinedContent color={color} />;
       case "exclusive_trophy": return <ExclusiveTrophyContent payload={payload} color={color} />;
       case "rank_reached":   return <RankReachedContent payload={payload} color={color} />;
       case "season_started": return <SeasonStartedContent payload={payload} color={color} />;
@@ -510,57 +566,59 @@ export function FeedCard({ event }: { event: FeedEvent }) {
     <>
       <article
         className={cn(
-          "group relative flex gap-3.5 rounded-2xl border p-4 transition-colors duration-100",
+          "group relative flex rounded-2xl border transition-colors duration-100",
+          isSimpleEvent ? "gap-3 p-3" : "gap-3 p-3.5 sm:p-4",
           cardBorder,
           cardBg
         )}
       >
         {/* Avatar + event type badge */}
-        <div className="relative mt-0.5 shrink-0">
+        <div className={cn("relative shrink-0", isSimpleEvent ? "mt-0" : "mt-0.5")}>
           <UserAvatar profile={profile} name={name} />
           <div
             className={cn(
-              "absolute -bottom-1 -right-1 grid size-[18px] place-items-center rounded-full",
+              "absolute -bottom-1 -right-1 grid place-items-center rounded-full ring-2 ring-[#111111]",
+              isSimpleEvent ? "size-5" : "size-[18px]",
               badgeBg
             )}
           >
-            <Icon className="size-2.5" strokeWidth={2.5} style={{ color }} />
+            <Icon className={isSimpleEvent ? "size-3" : "size-2.5"} strokeWidth={2.5} style={{ color }} />
           </div>
         </div>
 
         {/* Content */}
         <div className="min-w-0 flex-1">
           {/* Name + time */}
-          <div className="flex items-baseline justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
             {profileHref ? (
               <Link
                 href={profileHref}
                 prefetch
-                className="mobile-tap text-sm font-semibold text-[#F5F5F5] transition-colors duration-100 active:opacity-80 hover:text-[#B6FF00]"
+                className="mobile-tap min-w-0 truncate text-[13px] font-bold leading-5 text-[#F5F5F5] transition-colors duration-100 active:opacity-80 hover:text-[#B6FF00]"
               >
                 {name}
               </Link>
             ) : (
-              <span className="text-sm font-semibold text-[#F5F5F5]">{name}</span>
+              <span className="min-w-0 truncate text-[13px] font-bold leading-5 text-[#F5F5F5]">{name}</span>
             )}
-            <span className="shrink-0 text-[10px] tabular-nums text-[#F5F5F5]/28">{time}</span>
+            <span className="shrink-0 rounded-full bg-white/[0.035] px-2 py-0.5 text-[10px] font-medium tabular-nums text-[#F5F5F5]/34">{time}</span>
           </div>
 
           {/* Event content */}
           {renderContent()}
 
           {/* Footer: date + reactions + comments */}
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <p className="text-[10px] text-[#F5F5F5]/20">{dateDetail}</p>
-            <div className="flex items-center gap-1">
+          <div className={cn("flex items-center justify-between gap-2", isSimpleEvent ? "mt-2" : "mt-3")}>
+            <p className="truncate text-[10px] text-[#F5F5F5]/24">{dateDetail}</p>
+            <div className="flex shrink-0 items-center gap-1.5">
               {/* Comments button */}
               <button
                 type="button"
                 onClick={() => setCommentsOpen(true)}
                 aria-label="Comentários"
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-[#F5F5F5]/30 transition-all duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]/60 active:scale-95"
+                className="mobile-tap flex min-h-8 items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.035] px-2.5 py-1 text-xs text-[#F5F5F5]/48 transition-all duration-150 hover:bg-white/[0.06] hover:text-[#F5F5F5]/70 active:scale-95"
               >
-                <MessageCircle className="size-3.5" strokeWidth={1.5} />
+                <MessageCircle className="size-3.5" strokeWidth={1.8} />
                 {event.comment_count > 0 && (
                   <span className="font-semibold tabular-nums">{event.comment_count}</span>
                 )}
@@ -580,6 +638,7 @@ export function FeedCard({ event }: { event: FeedEvent }) {
         <CommentsDrawer
           feedEventId={event.id}
           initialCount={event.comment_count}
+          postContext={commentContext}
           onClose={() => setCommentsOpen(false)}
         />
       )}

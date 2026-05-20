@@ -44,11 +44,11 @@ export function ReactionButton({ feedEventId, initialCount, initialReacted }: Pr
       onClick={handleToggle}
       disabled={isPending}
       aria-label={reacted ? "Remover curtida" : "Curtir"}
-      className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs transition-all duration-200 active:scale-95"
+      className="mobile-tap flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold transition-all duration-200 active:scale-95 disabled:opacity-70"
       style={
         reacted
-          ? { background: "rgba(239,68,68,0.08)", color: "#EF4444" }
-          : { background: "transparent", color: "rgba(245,245,245,0.28)" }
+          ? { background: "rgba(239,68,68,0.10)", borderColor: "rgba(239,68,68,0.22)", color: "#EF4444" }
+          : { background: "rgba(255,255,255,0.035)", borderColor: "rgba(255,255,255,0.07)", color: "rgba(245,245,245,0.48)" }
       }
     >
       <Heart

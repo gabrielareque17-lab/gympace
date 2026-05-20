@@ -77,7 +77,7 @@ export function EditProfileForm({
     return (
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-2xl font-bold tracking-tight">{shownName}</h2>
+          <h2 className="font-display text-xl font-bold tracking-tight sm:text-2xl">{shownName}</h2>
           <button
             type="button"
             onClick={startEdit}
@@ -91,7 +91,7 @@ export function EditProfileForm({
           <p className="mt-0.5 text-xs font-medium text-[#F5F5F5]/30">@{username}</p>
         )}
         {shownBio && (
-          <p className="mt-1.5 text-sm leading-relaxed text-[#F5F5F5]/45">{shownBio}</p>
+          <p className="mt-1 text-sm leading-relaxed text-[#F5F5F5]/48">{shownBio}</p>
         )}
       </div>
     )

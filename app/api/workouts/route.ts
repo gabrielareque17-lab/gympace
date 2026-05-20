@@ -154,7 +154,6 @@ export async function POST(req: Request) {
         payload: {
           new_level: xpFeedback.currentLevel,
           new_rank: xpFeedback.rank,
-          total_xp: xpFeedback.totalXp,
         },
       });
     }

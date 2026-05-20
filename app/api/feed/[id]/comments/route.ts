@@ -50,6 +50,7 @@ export async function GET(req: Request, { params }: Params) {
   const enriched = comments.map((c: { id: string; user_id: string; content: string; created_at: string }) => ({
     ...c,
     profile: profileMap[c.user_id] ?? null,
+    can_manage: c.user_id === user.id,
   }));
 
   return NextResponse.json({ comments: enriched, hasMore });
@@ -91,6 +92,82 @@ export async function POST(req: Request, { params }: Params) {
     comment: {
       ...(data as { id: string; user_id: string; content: string; created_at: string }),
       profile: profile ?? null,
+      can_manage: true,
     },
   }, { status: 201 });
+}
+
+export async function PATCH(req: Request, { params }: Params) {
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const commentId = String((body as Record<string, unknown>)?.commentId ?? "");
+  const content = String((body as Record<string, unknown>)?.content ?? "").trim();
+  if (!commentId) return NextResponse.json({ error: "ComentÃ¡rio nÃ£o informado" }, { status: 400 });
+  if (!content || content.length > 500) {
+    return NextResponse.json({ error: "ComentÃ¡rio invÃ¡lido (1â€“500 caracteres)" }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("feed_comments")
+    .update({ content })
+    .eq("id", commentId)
+    .eq("feed_event_id", id)
+    .eq("user_id", user.id)
+    .select("id,user_id,content,created_at")
+    .maybeSingle();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "ComentÃ¡rio nÃ£o encontrado" }, { status: 404 });
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username,display_name,avatar_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  return NextResponse.json({
+    comment: {
+      ...(data as { id: string; user_id: string; content: string; created_at: string }),
+      profile: profile ?? null,
+      can_manage: true,
+    },
+  });
+}
+
+export async function DELETE(req: Request, { params }: Params) {
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const commentId = String((body as Record<string, unknown>)?.commentId ?? "");
+  if (!commentId) return NextResponse.json({ error: "ComentÃ¡rio nÃ£o informado" }, { status: 400 });
+
+  const { error } = await supabase
+    .from("feed_comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("feed_event_id", id)
+    .eq("user_id", user.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true });
 }

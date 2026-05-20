@@ -65,7 +65,7 @@ export function LatestTrophiesSection({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
-      <div className="relative border-b border-white/[0.05] px-5 py-4">
+      <div className="relative border-b border-white/[0.05] px-4 py-3.5 sm:px-5 sm:py-4">
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -77,15 +77,15 @@ export function LatestTrophiesSection({
               Ultimos trofeus recebidos
             </h2>
           </div>
-          <div className="grid size-9 place-items-center rounded-xl border border-[#EAB308]/20 bg-[#EAB308]/[0.06] text-[#EAB308]">
+          <div className="grid size-8 place-items-center rounded-xl border border-[#EAB308]/20 bg-[#EAB308]/[0.06] text-[#EAB308] shadow-[0_0_18px_rgba(234,179,8,0.08)] sm:size-9">
             <Sparkles className="size-4" strokeWidth={2} />
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.025] p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="grid gap-3 p-3 sm:p-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3.5 sm:p-4">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#B6FF00]/55">
                 Trofeus
@@ -102,16 +102,16 @@ export function LatestTrophiesSection({
               Nenhuma conquista desbloqueada ainda.
             </p>
           ) : (
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               {latestAchievements.map((achievement) => {
                 const rarity = RARITY_CONFIG[achievement.rarity];
                 return (
                   <article
                     key={achievement.id}
-                    className="flex min-w-0 items-center gap-3 rounded-xl border border-white/[0.05] bg-[#0B0B0B] p-3"
+                    className="flex min-w-0 items-center gap-2.5 rounded-xl border border-white/[0.05] bg-[#0B0B0B] p-2.5 sm:gap-3 sm:p-3"
                   >
                     <div
-                      className="grid size-10 shrink-0 place-items-center rounded-xl"
+                      className="grid size-9 shrink-0 place-items-center rounded-xl sm:size-10"
                       style={{
                         background: achievement.accentHex + "18",
                         color: achievement.accentHex,
@@ -143,8 +143,8 @@ export function LatestTrophiesSection({
           )}
         </div>
 
-        <div className="rounded-2xl border border-[#EAB308]/[0.12] bg-[#EAB308]/[0.035] p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="rounded-xl border border-[#EAB308]/[0.12] bg-[#EAB308]/[0.035] p-3.5 sm:p-4">
+          <div className="mb-2.5 flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#EAB308]/65">
                 Exclusivos
@@ -163,7 +163,7 @@ export function LatestTrophiesSection({
               Nenhum trofeu exclusivo recebido ainda.
             </p>
           ) : (
-            <div className="grid gap-2">
+            <div className="grid gap-1.5">
               {latestExclusiveTrophies.map((grant) => {
                 const trophy = getGrantTrophy(grant);
                 if (!trophy) return null;
@@ -171,10 +171,10 @@ export function LatestTrophiesSection({
                 return (
                   <article
                     key={grant.id}
-                    className="flex min-w-0 items-center gap-3 rounded-xl border border-[#EAB308]/15 bg-[#0B0B0B] p-3"
+                    className="flex min-w-0 items-center gap-2.5 rounded-xl border border-[#EAB308]/15 bg-[#0B0B0B] p-2.5 sm:gap-3 sm:p-3"
                   >
                     <div
-                      className="grid size-10 shrink-0 place-items-center rounded-xl"
+                      className="grid size-9 shrink-0 place-items-center rounded-xl sm:size-10"
                       style={{
                         background: rarity.color + "18",
                         color: rarity.color,

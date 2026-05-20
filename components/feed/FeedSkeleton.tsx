@@ -1,10 +1,10 @@
 export function FeedSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="flex gap-3.5 rounded-2xl border border-white/[0.06] bg-[#111111] p-4"
+          className="flex gap-3 rounded-2xl border border-white/[0.06] bg-[#111111] p-3.5"
         >
           {/* Avatar skeleton */}
           <div className="relative mt-0.5 shrink-0">
@@ -25,7 +25,7 @@ export function FeedSkeleton({ count = 4 }: { count?: number }) {
 
             {/* Stats row */}
             {i % 2 === 0 && (
-              <div className="h-10 w-full animate-pulse rounded-xl bg-white/[0.03]" style={{ animationDelay: `${i * 100}ms` }} />
+              <div className="h-16 w-full animate-pulse rounded-xl bg-white/[0.03] sm:h-10" style={{ animationDelay: `${i * 100}ms` }} />
             )}
 
             {/* Tags */}

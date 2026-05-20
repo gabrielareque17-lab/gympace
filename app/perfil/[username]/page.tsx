@@ -247,16 +247,16 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <AppShell>
-      <div className="min-w-0 flex-1 p-6 sm:p-8 lg:p-10">
-        <header className="mb-6">
+      <div className="min-w-0 flex-1 px-3.5 pb-4 pt-4 sm:p-8 lg:p-10">
+        <header className="mb-4 sm:mb-6">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Atleta
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">{displayName}</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{displayName}</h1>
           <p className="mt-1 text-sm text-[#F5F5F5]/35">@{profile.username}</p>
         </header>
 
-        <div className="max-w-3xl space-y-4">
+        <div className="max-w-3xl space-y-3.5 sm:space-y-4">
           {/* ── Hero Card ── */}
           <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
@@ -267,32 +267,32 @@ export default async function PublicProfilePage({ params }: Props) {
               />
             )}
 
-            <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
+            <div className="relative flex flex-col gap-4 p-3.5 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
               <div className="shrink-0">
                 <AvatarDisplay avatarId={profile.avatar_id} initials={initials} size="lg" />
               </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                 <div>
                   <h2 className="font-display text-2xl font-bold tracking-tight">{displayName}</h2>
                   {profile.username && (
-                    <p className="mt-0.5 text-xs font-medium text-[#F5F5F5]/30">
+                    <p className="mt-0.5 text-xs font-medium text-[#F5F5F5]/34">
                       @{profile.username}
                     </p>
                   )}
 
                   {/* Follower / following counts */}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                     <Link
                       href={`/perfil/${profile.username}/seguidores`}
-                      className="group inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#B6FF00]/25 hover:bg-[#B6FF00]/[0.06] hover:text-[#B6FF00]"
+                      className="group inline-flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#B6FF00]/25 hover:bg-[#B6FF00]/[0.06] hover:text-[#B6FF00]"
                     >
                       <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
                       Ver seguidores
                     </Link>
                     <Link
                       href={`/perfil/${profile.username}/seguindo`}
-                      className="group inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#22D3EE]/25 hover:bg-[#22D3EE]/[0.06] hover:text-[#22D3EE]"
+                      className="group inline-flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#22D3EE]/25 hover:bg-[#22D3EE]/[0.06] hover:text-[#22D3EE]"
                     >
                       <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
                       Ver seguindo
@@ -300,7 +300,7 @@ export default async function PublicProfilePage({ params }: Props) {
                   </div>
 
                   {profile.bio && (
-                    <p className="mt-2 text-sm leading-relaxed text-[#F5F5F5]/50">{profile.bio}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-[#F5F5F5]/52">{profile.bio}</p>
                   )}
                 </div>
 
@@ -334,7 +334,7 @@ export default async function PublicProfilePage({ params }: Props) {
                   )}
                   <Link
                     href={`/perfil/${profile.username}/trofeus`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-3 py-1.5 text-[11px] font-bold text-[#EAB308]/85 transition-all duration-150 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAB308]/25 bg-[#EAB308]/[0.08] px-3 py-1.5 text-[11px] font-bold text-[#EAB308]/90 shadow-[0_0_18px_rgba(234,179,8,0.08)] transition-all duration-150 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-95"
                   >
                     <Trophy className="size-3.5" strokeWidth={2} />
                     Ver troféus
@@ -342,7 +342,7 @@ export default async function PublicProfilePage({ params }: Props) {
                 </div>
 
                 {/* Level bar */}
-                <div className="max-w-xs">
+                <div className="max-w-sm rounded-xl border border-white/[0.055] bg-white/[0.025] p-3">
                   <div className="mb-1.5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-1.5">
                       <span
@@ -354,7 +354,7 @@ export default async function PublicProfilePage({ params }: Props) {
                       <span className="text-xs font-semibold text-[#F5F5F5]/70">{rankStyle.label}</span>
                     </div>
                   </div>
-                  <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.07]">
+                  <div className="h-[4px] overflow-hidden rounded-full bg-white/[0.07]">
                     <div
                       className="h-full rounded-full"
                       style={{ width: `${xpLevelProgress}%`, background: rankStyle.color }}
@@ -364,21 +364,21 @@ export default async function PublicProfilePage({ params }: Props) {
               </div>
 
               {/* Quick stats */}
-              <div className="flex shrink-0 flex-row gap-4 sm:flex-col sm:items-end">
-                <div className="text-right">
-                  <p className="font-display text-xl font-bold tabular-nums">
+              <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:flex sm:flex-col sm:items-end sm:gap-4">
+                <div className="rounded-xl border border-white/[0.055] bg-white/[0.025] px-2.5 py-2 text-right sm:border-0 sm:bg-transparent sm:p-0">
+                  <p className="font-display text-lg font-bold tabular-nums sm:text-xl">
                     {totalKm.toFixed(1)}
                   </p>
                   <p className="text-[10px] uppercase tracking-[0.1em] text-[#F5F5F5]/35">km</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-display text-xl font-bold tabular-nums">{totalRuns}</p>
+                <div className="rounded-xl border border-white/[0.055] bg-white/[0.025] px-2.5 py-2 text-right sm:border-0 sm:bg-transparent sm:p-0">
+                  <p className="font-display text-lg font-bold tabular-nums sm:text-xl">{totalRuns}</p>
                   <p className="text-[10px] uppercase tracking-[0.1em] text-[#F5F5F5]/35">
                     corridas
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="font-display text-xl font-bold tabular-nums">{currentStreak}</p>
+                <div className="rounded-xl border border-white/[0.055] bg-white/[0.025] px-2.5 py-2 text-right sm:border-0 sm:bg-transparent sm:p-0">
+                  <p className="font-display text-lg font-bold tabular-nums sm:text-xl">{currentStreak}</p>
                   <p className="text-[10px] uppercase tracking-[0.1em] text-[#F5F5F5]/35">
                     dias seguidos
                   </p>

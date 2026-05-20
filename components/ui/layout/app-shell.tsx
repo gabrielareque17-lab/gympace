@@ -123,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <PageTransition
             className={cn(
               "md:pb-0",
-              bottomNavHidden ? "pb-0" : "pb-[calc(env(safe-area-inset-bottom,0px)+68px)]"
+              bottomNavHidden ? "pb-0" : "pb-[calc(env(safe-area-inset-bottom,0px)+84px)]"
             )}
           >
             {children}

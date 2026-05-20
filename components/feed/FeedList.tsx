@@ -7,7 +7,6 @@ import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { useNavBadgeContext } from "@/components/providers/nav-badge-provider";
 import type { FeedEvent } from "@/lib/feed";
 import {
-  formatTimeAgo,
   getDateGroup,
   type DateGroup,
 } from "@/lib/date-utils";
@@ -80,16 +79,16 @@ export function FeedList({ initialEvents, initialHasMore }: Props) {
   const groups = groupEvents(events);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {groups.map(({ group, events: groupEvents }) => (
         <section key={group}>
-          <div className="mb-2 flex items-center gap-3 pb-1">
+          <div className="mb-2 flex items-center gap-3 px-0.5 pb-0.5">
             <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/30">
               {GROUP_LABELS[group]}
             </span>
             <div className="h-px flex-1 bg-white/[0.05]" />
           </div>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {groupEvents.map((event) => (
               <FeedCard key={event.id} event={event} />
             ))}
