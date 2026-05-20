@@ -33,6 +33,7 @@ export type FeedEvent = {
   profile?: FeedProfile;
   reaction_count: number;
   user_has_reacted: boolean;
+  comment_count: number;
 };
 
 export type CreateFeedEventInput = {
@@ -160,7 +161,7 @@ export async function getFeedEvents(
   const eventIds = (events as { id: string }[]).map((e) => e.id);
   const uniqueUserIds = [...new Set((events as { user_id: string }[]).map((e) => e.user_id))];
 
-  const [profilesRes, reactionsRes, userReactionsRes] = await Promise.all([
+  const [profilesRes, reactionsRes, userReactionsRes, commentsRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("user_id,username,display_name,avatar_id,rank,current_level")
@@ -174,6 +175,10 @@ export async function getFeedEvents(
       .select("feed_event_id")
       .in("feed_event_id", eventIds)
       .eq("user_id", userId),
+    supabase
+      .from("feed_comments")
+      .select("feed_event_id")
+      .in("feed_event_id", eventIds),
   ]);
 
   const profileMap = Object.fromEntries(
@@ -191,10 +196,17 @@ export async function getFeedEvents(
     ((userReactionsRes.data ?? []) as { feed_event_id: string }[]).map((r) => r.feed_event_id)
   );
 
-  return (events as Omit<FeedEvent, "profile" | "reaction_count" | "user_has_reacted">[]).map((event) => ({
+  // Count comments per event (graceful if table doesn't exist yet)
+  const commentCountMap: Record<string, number> = {};
+  for (const c of (commentsRes.data ?? []) as { feed_event_id: string }[]) {
+    commentCountMap[c.feed_event_id] = (commentCountMap[c.feed_event_id] ?? 0) + 1;
+  }
+
+  return (events as Omit<FeedEvent, "profile" | "reaction_count" | "user_has_reacted" | "comment_count">[]).map((event) => ({
     ...event,
     profile: profileMap[event.user_id],
     reaction_count: reactionCountMap[event.id] ?? 0,
     user_has_reacted: userReactedSet.has(event.id),
+    comment_count: commentCountMap[event.id] ?? 0,
   }));
 }

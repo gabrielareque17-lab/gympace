@@ -1,341 +1,16 @@
 import { redirect } from "next/navigation";
-import { Activity, Compass, Dumbbell, Flame, LucideIcon, Rss, Trophy, Zap, Star } from "lucide-react";
+import { Activity, Compass, Dumbbell, Rss } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
 
-import { ReactionButton } from "@/components/feed/ReactionButton";
-
+import { FeedList } from "@/components/feed/FeedList";
+import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
 import { AppShell } from "@/components/ui/layout/app-shell";
-import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getFeedEvents, type FeedEvent, type FeedProfile } from "@/lib/feed";
-import { getMuscleDetailLabel, getMuscleGroupLabel } from "@/lib/muscles";
-import { cn } from "@/lib/utils";
-import {
-  formatDateTime,
-  formatTimeAgo,
-  getDateGroup,
-  type DateGroup,
-} from "@/lib/date-utils";
+import { getFeedEvents } from "@/lib/feed";
 
 export const dynamic = "force-dynamic";
 
-const RANK_LABELS: Record<string, string> = {
-  rookie: "Rookie",
-  bronze: "Bronze",
-  silver: "Silver",
-  gold: "Gold",
-  platinum: "Platinum",
-  elite: "Elite",
-};
-
-const RANK_COLORS: Record<string, string> = {
-  rookie: "#94A3B8",
-  bronze: "#CD7F32",
-  silver: "#A1A1AA",
-  gold: "#EAB308",
-  platinum: "#22D3EE",
-  elite: "#B6FF00",
-};
-
-const RUN_TYPE_LABELS: Record<string, string> = {
-  leve: "Leve",
-  intervalado: "Intervalado",
-  longao: "Longão",
-  regenerativo: "Regenerativo",
-  prova: "Prova",
-  ritmo: "Ritmo",
-};
-
-const INTENSITY_LABELS: Record<string, string> = {
-  leve: "Leve",
-  moderado: "Moderado",
-  intenso: "Intenso",
-};
-
-
-const GROUP_LABELS: Record<DateGroup, string> = {
-  hoje: "Hoje",
-  ontem: "Ontem",
-  semana: "Esta semana",
-  anterior: "Anteriores",
-};
-
-const GROUP_ORDER: DateGroup[] = ["hoje", "ontem", "semana", "anterior"];
-
-function groupEvents(events: FeedEvent[]): Array<{ group: DateGroup; events: FeedEvent[] }> {
-  const map = new Map<DateGroup, FeedEvent[]>();
-  for (const event of events) {
-    const g = getDateGroup(event.created_at);
-    if (!map.has(g)) map.set(g, []);
-    map.get(g)!.push(event);
-  }
-  return GROUP_ORDER.filter((g) => map.has(g)).map((g) => ({
-    group: g,
-    events: map.get(g)!,
-  }));
-}
-
-type TagColor = "lime" | "blue" | "amber" | "orange" | "neutral";
-
-function Tag({ children, color }: { children: ReactNode; color: TagColor }) {
-  const s: Record<TagColor, string> = {
-    lime: "border-[#B6FF00]/25 bg-[#B6FF00]/[0.08] text-[#B6FF00]/80",
-    blue: "border-[#3B82F6]/25 bg-[#3B82F6]/[0.08] text-[#3B82F6]/80",
-    amber: "border-[#F59E0B]/25 bg-[#F59E0B]/[0.08] text-[#F59E0B]/80",
-    orange: "border-[#F97316]/25 bg-[#F97316]/[0.08] text-[#F97316]/80",
-    neutral: "border-white/[0.09] bg-white/[0.04] text-[#F5F5F5]/45",
-  };
-  return (
-    <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-tight", s[color])}>
-      {children}
-    </span>
-  );
-}
-
-type EventConfig = {
-  Icon: LucideIcon;
-  color: string;
-  badgeBg: string;
-  cardCn: string;
-};
-
-const EVENT_CONFIG: Record<string, EventConfig> = {
-  run: {
-    Icon: Activity,
-    color: "#B6FF00",
-    badgeBg: "bg-[#B6FF00]/20",
-    cardCn: "border-white/[0.07] hover:border-[#B6FF00]/15 hover:shadow-[0_2px_20px_rgba(182,255,0,0.05)]",
-  },
-  workout: {
-    Icon: Dumbbell,
-    color: "#3B82F6",
-    badgeBg: "bg-[#3B82F6]/20",
-    cardCn: "border-white/[0.07] hover:border-[#3B82F6]/15 hover:shadow-[0_2px_20px_rgba(59,130,246,0.05)]",
-  },
-  level_up: {
-    Icon: Trophy,
-    color: "#F59E0B",
-    badgeBg: "bg-[#F59E0B]/20",
-    cardCn: "border-[#F59E0B]/12 bg-[#F59E0B]/[0.025] hover:border-[#F59E0B]/22 hover:shadow-[0_2px_20px_rgba(245,158,11,0.07)]",
-  },
-  streak: {
-    Icon: Flame,
-    color: "#F97316",
-    badgeBg: "bg-[#F97316]/20",
-    cardCn: "border-[#F97316]/12 bg-[#F97316]/[0.025] hover:border-[#F97316]/22 hover:shadow-[0_2px_20px_rgba(249,115,22,0.07)]",
-  },
-  personal_record: {
-    Icon: Star,
-    color: "#A78BFA",
-    badgeBg: "bg-[#A78BFA]/20",
-    cardCn: "border-[#A78BFA]/15 bg-[#A78BFA]/[0.025] hover:border-[#A78BFA]/25 hover:shadow-[0_2px_20px_rgba(167,139,250,0.07)]",
-  },
-  streak_milestone: {
-    Icon: Flame,
-    color: "#FB923C",
-    badgeBg: "bg-[#FB923C]/20",
-    cardCn: "border-[#FB923C]/15 bg-[#FB923C]/[0.025] hover:border-[#FB923C]/25 hover:shadow-[0_2px_20px_rgba(251,146,60,0.07)]",
-  },
-  hybrid_bonus: {
-    Icon: Zap,
-    color: "#22D3EE",
-    badgeBg: "bg-[#22D3EE]/20",
-    cardCn: "border-[#22D3EE]/15 bg-[#22D3EE]/[0.025] hover:border-[#22D3EE]/25 hover:shadow-[0_2px_20px_rgba(34,211,238,0.07)]",
-  },
-};
-
-function UserAvatar({ profile, name }: { profile?: FeedProfile; name: string }) {
-  const initials = name[0]?.toUpperCase() ?? "A";
-  const profileHref = profile?.username ? `/perfil/${profile.username}` : undefined;
-  const avatar = (
-    <AvatarDisplay avatarId={profile?.avatar_id ?? null} initials={initials} size="sm" />
-  );
-  if (!profileHref) return <>{avatar}</>;
-  return (
-    <Link href={profileHref} prefetch className="mobile-tap block shrink-0 transition-opacity duration-100 active:opacity-80 hover:opacity-75">
-      {avatar}
-    </Link>
-  );
-}
-
-function FeedCard({ event }: { event: FeedEvent }) {
-  const { event_type: type, payload, created_at, profile } = event;
-  const name = profile?.display_name ?? profile?.username ?? "Atleta";
-  const profileHref = profile?.username ? `/perfil/${profile.username}` : undefined;
-  const time = formatTimeAgo(created_at);
-  const dateDetail = formatDateTime(created_at);
-  const config = EVENT_CONFIG[type] ?? EVENT_CONFIG.run;
-  const { Icon, color, badgeBg } = config;
-
-  let action: ReactNode = null;
-  let tags: ReactNode = null;
-
-  if (type === "run") {
-    const p = payload as { distance?: number; pace?: string; run_type?: string };
-    const dist = Number(p.distance ?? 0).toFixed(1);
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        correu{" "}
-        <span className="font-semibold" style={{ color }}>{dist} km</span>
-      </span>
-    );
-    tags = (
-      <>
-        {p.run_type && <Tag color="lime">{RUN_TYPE_LABELS[p.run_type] ?? p.run_type}</Tag>}
-        {p.pace && <Tag color="neutral">{p.pace}/km</Tag>}
-      </>
-    );
-  } else if (type === "workout") {
-    const p = payload as { title?: string; muscle_group?: string; muscle_groups?: string[]; muscle_details?: string[]; duration_minutes?: number; intensity?: string };
-    const muscleKeys = p.muscle_groups?.length ? p.muscle_groups : (p.muscle_group ? [p.muscle_group] : []);
-    const muscle = muscleKeys.length ? muscleKeys.map(getMuscleGroupLabel).join(" • ") : "musculação";
-    const intensityColorMap: Record<string, TagColor> = { leve: "lime", moderado: "amber", intenso: "orange" };
-    const intensityColor: TagColor = intensityColorMap[p.intensity ?? ""] ?? "neutral";
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        treinou{" "}
-        <span className="font-semibold" style={{ color }}>{muscle}</span>
-      </span>
-    );
-    tags = (
-      <>
-        {p.title && <Tag color="neutral">{p.title}</Tag>}
-        {p.duration_minutes != null && <Tag color="blue">{p.duration_minutes} min</Tag>}
-        {p.intensity && <Tag color={intensityColor}>{INTENSITY_LABELS[p.intensity] ?? p.intensity}</Tag>}
-        {p.muscle_details?.slice(0, 3).map((detail) => (
-          <Tag key={detail} color="neutral">{getMuscleDetailLabel(detail)}</Tag>
-        ))}
-      </>
-    );
-  } else if (type === "level_up") {
-    const p = payload as { new_level?: number; new_rank?: string };
-    const rankColor = p.new_rank ? (RANK_COLORS[p.new_rank] ?? "#F59E0B") : "#F59E0B";
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        subiu para{" "}
-        <span className="font-semibold" style={{ color }}>Nível {p.new_level ?? "?"}</span>!
-      </span>
-    );
-    tags = p.new_rank ? (
-      <span
-        className="rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-tight"
-        style={{ color: rankColor, borderColor: `${rankColor}44`, background: `${rankColor}14` }}
-      >
-        {RANK_LABELS[p.new_rank] ?? p.new_rank}
-      </span>
-    ) : null;
-  } else if (type === "streak") {
-    const p = payload as { streak_days?: number };
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        em sequência de{" "}
-        <span className="font-semibold" style={{ color }}>{p.streak_days ?? 0} dias</span>!
-      </span>
-    );
-  } else if (type === "personal_record") {
-    const p = payload as { label?: string; distance?: number; pace?: string };
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        novo recorde pessoal:{" "}
-        <span className="font-semibold" style={{ color }}>{p.label ?? "PR"}</span>!
-      </span>
-    );
-    tags = (
-      <>
-        {p.distance != null && <Tag color="neutral">{Number(p.distance).toFixed(1)} km</Tag>}
-        {p.pace && <Tag color="neutral">{p.pace}/km</Tag>}
-      </>
-    );
-  } else if (type === "streak_milestone") {
-    const p = payload as { streak_days?: number; streak_type?: string };
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        alcançou{" "}
-        <span className="font-semibold" style={{ color }}>{p.streak_days} dias</span>{" "}
-        de sequência! 🔥
-      </span>
-    );
-  } else if (type === "hybrid_bonus") {
-    action = (
-      <span className="text-[#F5F5F5]/55">
-        completou o{" "}
-        <span className="font-semibold" style={{ color }}>bônus híbrido</span>{" "}
-        — corrida + treino no mesmo dia! ⚡
-      </span>
-    );
-  }
-
-  return (
-    <article
-      className={cn(
-        "group relative flex gap-3.5 rounded-2xl border bg-[#111111] p-4 transition-colors duration-100 hover:bg-[#141414]",
-        config.cardCn
-      )}
-    >
-      {/* Avatar + event type badge */}
-      <div className="relative mt-0.5 shrink-0">
-        <UserAvatar profile={profile} name={name} />
-        <div
-          className={cn(
-            "absolute -bottom-1 -right-1 grid size-[18px] place-items-center rounded-full",
-            badgeBg
-          )}
-        >
-          <Icon className="size-2.5" strokeWidth={2.5} style={{ color }} />
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        {/* Name + relative time */}
-        <div className="flex items-baseline justify-between gap-2">
-          {profileHref ? (
-            <Link
-              href={profileHref}
-              prefetch
-              className="mobile-tap text-sm font-semibold text-[#F5F5F5] transition-colors duration-100 active:opacity-80 hover:text-[#B6FF00]"
-            >
-              {name}
-            </Link>
-          ) : (
-            <span className="text-sm font-semibold text-[#F5F5F5]">{name}</span>
-          )}
-          <span className="shrink-0 text-[10px] tabular-nums text-[#F5F5F5]/28">{time}</span>
-        </div>
-
-        {/* Action text */}
-        <p className="mt-0.5 text-sm">{action}</p>
-
-        {/* Detail tags */}
-        {tags && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">{tags}</div>
-        )}
-
-        {/* Footer: timestamp + reactions */}
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <p className="text-[10px] text-[#F5F5F5]/20">{dateDetail}</p>
-          <ReactionButton
-            feedEventId={event.id}
-            initialCount={event.reaction_count}
-            initialReacted={event.user_has_reacted}
-          />
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function DateSectionHeader({ group }: { group: DateGroup }) {
-  return (
-    <div className="flex items-center gap-3 pb-1">
-      <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/30">
-        {GROUP_LABELS[group]}
-      </span>
-      <div className="h-px flex-1 bg-white/[0.05]" />
-    </div>
-  );
-}
+const INITIAL_LIMIT = 15;
 
 function FeedEmpty() {
   return (
@@ -348,9 +23,9 @@ function FeedEmpty() {
           <Dumbbell className="size-5 text-[#3B82F6]" strokeWidth={1.8} />
         </div>
       </div>
-      <p className="text-sm font-medium text-[#F5F5F5]/35">Nada por aqui ainda</p>
-      <p className="mt-1 text-xs text-[#F5F5F5]/22">
-        Registre atividades ou siga atletas para ver o feed
+      <p className="text-sm font-semibold text-[#F5F5F5]/45">Seu feed ainda está quieto</p>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-[#F5F5F5]/25">
+        Siga atletas, registre treinos e participe de desafios para ver o feed ganhar vida.
       </p>
       <Link
         href="/explorar"
@@ -366,13 +41,12 @@ function FeedEmpty() {
 
 export default async function FeedPage() {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const events = await getFeedEvents(supabase, user.id);
-  const groups = groupEvents(events);
+  const events = await getFeedEvents(supabase, user.id, INITIAL_LIMIT + 1);
+  const hasMore = events.length > INITIAL_LIMIT;
+  const initialEvents = hasMore ? events.slice(0, INITIAL_LIMIT) : events;
 
   return (
     <AppShell>
@@ -392,21 +66,10 @@ export default async function FeedPage() {
           </p>
         </header>
 
-        {events.length === 0 ? (
+        {initialEvents.length === 0 ? (
           <FeedEmpty />
         ) : (
-          <div className="space-y-6">
-            {groups.map(({ group, events: groupEvents }) => (
-              <section key={group}>
-                <DateSectionHeader group={group} />
-                <div className="mt-2 space-y-2.5">
-                  {groupEvents.map((event) => (
-                    <FeedCard key={event.id} event={event} />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+          <FeedList initialEvents={initialEvents} initialHasMore={hasMore} />
         )}
       </main>
     </AppShell>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Menu, Zap } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { NavBadgeProvider } from "@/components/providers/nav-badge-provider";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
@@ -66,6 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ProfileProvider>
+    <NavBadgeProvider>
       <div className="flex min-h-dvh bg-[#0D0D0D] text-[#F5F5F5]">
         {/* Desktop sidebar */}
         <div className="hidden md:flex">
@@ -142,6 +144,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* PWA install prompt — shows only when not installed */}
       <InstallPrompt />
+    </NavBadgeProvider>
     </ProfileProvider>
   );
 }

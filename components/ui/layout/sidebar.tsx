@@ -23,6 +23,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { useNavBadgeContext } from "@/components/providers/nav-badge-provider";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { useProfile } from "@/hooks/use-profile";
@@ -38,7 +39,7 @@ const rankStyles: Record<string, { label: string; color: string }> = {
   elite:    { label: "Elite",    color: "#B6FF00" },
 };
 
-type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavItem = { label: string; href: string; icon: LucideIcon; badgeKey?: "feed" | "challenges" | "trophies" | "competitions" };
 type NavGroup = { label: string | null; items: NavItem[] };
 
 function buildNavGroups(isAdmin: boolean): NavGroup[] {
@@ -49,8 +50,8 @@ function buildNavGroups(isAdmin: boolean): NavGroup[] {
       { label: "Início",       href: "/",             icon: LayoutDashboard },
       { label: "Treinos",      href: "/treinos",      icon: Dumbbell       },
       { label: "Ranking",      href: "/social",        icon: Medal          },
-      { label: "Desafios & Competições", href: "/desafios-competicoes", icon: Trophy },
-      { label: "Feed",         href: "/feed",          icon: Rss            },
+      { label: "Desafios & Competições", href: "/desafios-competicoes", icon: Trophy, badgeKey: "challenges" as const },
+      { label: "Feed",         href: "/feed",          icon: Rss,           badgeKey: "feed" as const },
       { label: "Perfil",       href: "/perfil",        icon: UserRound      },
     ],
   },
@@ -76,6 +77,7 @@ function buildNavGroups(isAdmin: boolean): NavGroup[] {
 export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?: string }) {
   const pathname = usePathname();
   const { profile, isLoading: profileLoading } = useProfile();
+  const { badges } = useNavBadgeContext();
   const initials = email ? email[0].toUpperCase() : "?";
   const [weeklyProgress, setWeeklyProgress] = useState(0);
   const navGroups = buildNavGroups(Boolean(profile?.isAdmin));
@@ -161,6 +163,7 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
                 item.href === "/"
                   ? pathname === "/"
                   : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const badgeCount = item.badgeKey ? (badges[item.badgeKey] ?? 0) : 0;
               return (
                 <SidebarItem
                   key={item.label}
@@ -168,6 +171,7 @@ export function Sidebar({ onClose, email = "" }: { onClose?: () => void; email?:
                   href={item.href}
                   icon={item.icon}
                   active={isActive}
+                  badge={badgeCount > 0}
                   onClose={onClose}
                 />
               );
@@ -277,12 +281,14 @@ function SidebarItem({
   href,
   icon: Icon,
   active = false,
+  badge = false,
   onClose,
 }: {
   label: string;
   href: string;
   icon: LucideIcon;
   active?: boolean;
+  badge?: boolean;
   onClose?: () => void;
 }) {
   return (
@@ -305,13 +311,21 @@ function SidebarItem({
           style={{ boxShadow: "0 0 8px rgba(182,255,0,0.65)" }}
         />
       )}
-      <Icon
-        className={cn(
-          "size-[17px] shrink-0 transition-colors duration-150",
-          active ? "text-[#B6FF00]" : "text-[#F5F5F5]/28"
+      <div className="relative shrink-0">
+        <Icon
+          className={cn(
+            "size-[17px] transition-colors duration-150",
+            active ? "text-[#B6FF00]" : "text-[#F5F5F5]/28"
+          )}
+          strokeWidth={active ? 2.2 : 1.8}
+        />
+        {badge && !active && (
+          <span
+            className="absolute -right-0.5 -top-0.5 size-[7px] rounded-full bg-[#B6FF00]"
+            style={{ boxShadow: "0 0 6px rgba(182,255,0,0.8)" }}
+          />
         )}
-        strokeWidth={active ? 2.2 : 1.8}
-      />
+      </div>
       <span className="truncate">{label}</span>
     </Link>
   );

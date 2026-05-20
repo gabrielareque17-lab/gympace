@@ -16,16 +16,17 @@ import { createPortal } from "react-dom";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { useNavBadgeContext } from "@/components/providers/nav-badge-provider";
 import { cn } from "@/lib/utils";
 
 const LEFT_NAV = [
-  { label: "Início",  href: "/",       icon: Home  },
-  { label: "Feed",    href: "/feed",   icon: Rss   },
+  { label: "Início",  href: "/",       icon: Home,       badgeKey: undefined },
+  { label: "Feed",    href: "/feed",   icon: Rss,        badgeKey: "feed" as const },
 ] as const;
 
 const RIGHT_NAV = [
-  { label: "Ranking", href: "/social", icon: Medal },
-  { label: "Perfil",  href: "/perfil", icon: UserRound },
+  { label: "Ranking", href: "/social", icon: Medal,       badgeKey: "challenges" as const },
+  { label: "Perfil",  href: "/perfil", icon: UserRound,   badgeKey: undefined },
 ] as const;
 
 const ACTIONS = [
@@ -74,11 +75,13 @@ const NavItem = memo(function NavItem({
   href,
   icon: Icon,
   pathname,
+  badge = false,
 }: {
   label: string;
   href: string;
   icon: React.ElementType;
   pathname: string;
+  badge?: boolean;
 }) {
   const isActive =
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -100,11 +103,19 @@ const NavItem = memo(function NavItem({
           style={{ boxShadow: "0 0 10px rgba(182,255,0,0.65)" }}
         />
       )}
-      <Icon
-        className="size-[22px] shrink-0 transition-transform duration-100"
-        strokeWidth={isActive ? 2.2 : 1.7}
-        style={isActive ? { filter: "drop-shadow(0 0 6px rgba(182,255,0,0.55))" } : undefined}
-      />
+      <div className="relative">
+        <Icon
+          className="size-[22px] shrink-0 transition-transform duration-100"
+          strokeWidth={isActive ? 2.2 : 1.7}
+          style={isActive ? { filter: "drop-shadow(0 0 6px rgba(182,255,0,0.55))" } : undefined}
+        />
+        {badge && !isActive && (
+          <span
+            className="absolute -right-0.5 -top-0.5 size-[7px] rounded-full bg-[#B6FF00]"
+            style={{ boxShadow: "0 0 7px rgba(182,255,0,0.85)" }}
+          />
+        )}
+      </div>
       <span
         className={cn(
           "text-[10px] font-semibold tracking-tight transition-opacity duration-100",
@@ -120,6 +131,7 @@ const NavItem = memo(function NavItem({
 function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
   const pathname   = usePathname();
   const router     = useRouter();
+  const { badges } = useNavBadgeContext();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [sheetOpen, setSheetOpen]       = useState(false);
   const [mounted, setMounted]           = useState(false);
@@ -194,7 +206,12 @@ function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
           {LEFT_NAV.map((item) => (
-            <NavItem key={item.href} {...item} pathname={pathname} />
+            <NavItem
+              key={item.href}
+              {...item}
+              pathname={pathname}
+              badge={item.badgeKey ? (badges[item.badgeKey] ?? 0) > 0 : false}
+            />
           ))}
 
           {/* Center FAB */}
@@ -221,7 +238,12 @@ function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
           </div>
 
           {RIGHT_NAV.map((item) => (
-            <NavItem key={item.href} {...item} pathname={pathname} />
+            <NavItem
+              key={item.href}
+              {...item}
+              pathname={pathname}
+              badge={item.badgeKey ? (badges[item.badgeKey] ?? 0) > 0 : false}
+            />
           ))}
         </div>
       </nav>
