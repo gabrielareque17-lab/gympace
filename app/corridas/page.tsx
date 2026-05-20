@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   Clock,
   Flame,
   Gauge,
@@ -15,6 +16,7 @@ import {
   MoreVertical,
   Mountain,
   Pencil,
+  Play,
   RefreshCw,
   Route,
   Timer,
@@ -309,15 +311,17 @@ export default function RunsPage() {
                   Registre manualmente ou use o rastreamento GPS em tempo real.
                 </p>
               </div>
-              {/* GPS tracker button */}
+              {/* Run tracker button */}
               <button
                 type="button"
                 onClick={() => setShowTracker(true)}
-                className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.2)] transition hover:-translate-y-px hover:shadow-[0_0_32px_rgba(182,255,0,0.3)] active:translate-y-0"
+                className="group relative inline-flex shrink-0 items-center gap-2.5 overflow-hidden rounded-full bg-[#B6FF00] px-5 py-3 text-sm font-extrabold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.32),0_0_56px_rgba(182,255,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_44px_rgba(182,255,0,0.5),0_0_80px_rgba(182,255,0,0.18)] active:scale-[0.96] active:translate-y-0 active:shadow-[0_0_16px_rgba(182,255,0,0.2)]"
               >
-                <MapPin className="size-4" strokeWidth={2.5} />
-                <span className="hidden sm:inline">Rastreamento GPS</span>
-                <span className="sm:hidden">GPS</span>
+                {/* shimmer sweep */}
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                <Play className="relative size-4 fill-current stroke-none" />
+                <span className="relative hidden sm:inline">Iniciar corrida</span>
+                <span className="relative sm:hidden">Iniciar</span>
               </button>
             </div>
           </header>
@@ -498,21 +502,36 @@ export default function RunsPage() {
                 ) : null}
               </div>
 
-              {/* GPS CTA */}
+              {/* Run CTA */}
               <div className="mx-4 mb-4 sm:mx-5 sm:mb-5">
-                <button
-                  type="button"
-                  onClick={() => setShowTracker(true)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-[#B6FF00]/14 bg-[#B6FF00]/[0.06] px-4 py-3 text-left transition hover:bg-[#B6FF00]/[0.1]"
-                >
-                  <div className="grid size-8 place-items-center rounded-xl bg-[#B6FF00]/12">
-                    <MapPin className="size-4 text-[#B6FF00]" strokeWidth={2.5} />
+                {showTracker ? (
+                  <div className="flex items-center gap-3 rounded-2xl border border-[#B6FF00]/25 bg-[#B6FF00]/[0.07] px-4 py-4 shadow-[0_0_20px_rgba(182,255,0,0.1)]">
+                    <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-[#B6FF00]/12">
+                      <span className="absolute inset-0 animate-ping rounded-xl bg-[#B6FF00]/20" />
+                      <span className="size-2.5 rounded-full bg-[#B6FF00] shadow-[0_0_8px_#B6FF00]" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#B6FF00]">Correndo agora</p>
+                      <p className="mt-0.5 text-[10px] text-[#F5F5F5]/40">Rastreamento ativo</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#B6FF00]/80">Rastrear com GPS</p>
-                    <p className="mt-0.5 text-[10px] text-[#F5F5F5]/35">Distância e rota automáticas</p>
-                  </div>
-                </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowTracker(true)}
+                    className="group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-[#B6FF00]/18 bg-[#B6FF00]/[0.06] px-4 py-4 text-left transition-all duration-200 hover:border-[#B6FF00]/30 hover:bg-[#B6FF00]/[0.1] hover:shadow-[0_0_24px_rgba(182,255,0,0.1)] active:scale-[0.98]"
+                  >
+                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#B6FF00]/8 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                    <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-[#B6FF00]/12">
+                      <Play className="size-4 fill-[#B6FF00] stroke-none" />
+                    </div>
+                    <div className="relative min-w-0">
+                      <p className="text-xs font-bold text-[#B6FF00]/90">Iniciar corrida</p>
+                      <p className="mt-0.5 text-[10px] text-[#F5F5F5]/35">GPS em tempo real · rota + pace</p>
+                    </div>
+                    <ChevronRight className="relative ml-auto size-4 shrink-0 text-[#B6FF00]/35 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </button>
+                )}
               </div>
             </aside>
           </section>
