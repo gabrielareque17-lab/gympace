@@ -194,11 +194,14 @@ export default function RunsPage() {
     const dist = Number(form.distance);
     if (!form.distance || !form.duration || dist <= 0) return;
     const computed = computePace(dist, form.duration);
-    if (computed) {
-      setForm((cur) => ({ ...cur, pace: computed }));
-      setPaceIsAuto(true);
+    if (computed && computed !== form.pace) {
+      const id = window.setTimeout(() => {
+        setForm((cur) => ({ ...cur, pace: computed }));
+        setPaceIsAuto(true);
+      }, 0);
+      return () => window.clearTimeout(id);
     }
-  }, [form.distance, form.duration]);
+  }, [form.distance, form.duration, form.pace]);
 
   const loadRuns = useCallback(async () => {
     setRunsStatus("loading");
@@ -315,7 +318,7 @@ export default function RunsPage() {
               <button
                 type="button"
                 onClick={() => setShowTracker(true)}
-                className="group relative inline-flex shrink-0 items-center gap-2.5 overflow-hidden rounded-full bg-[#B6FF00] px-5 py-3 text-sm font-extrabold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.32),0_0_56px_rgba(182,255,0,0.1)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_44px_rgba(182,255,0,0.5),0_0_80px_rgba(182,255,0,0.18)] active:scale-[0.96] active:translate-y-0 active:shadow-[0_0_16px_rgba(182,255,0,0.2)]"
+                className="mobile-tap group relative inline-flex shrink-0 items-center gap-2.5 overflow-hidden rounded-full bg-[#B6FF00] px-5 py-3 text-sm font-extrabold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.32),0_0_56px_rgba(182,255,0,0.1)] transition-transform duration-100 hover:-translate-y-0.5 hover:shadow-[0_0_44px_rgba(182,255,0,0.5),0_0_80px_rgba(182,255,0,0.18)] active:scale-[0.97] active:translate-y-0 active:opacity-80"
               >
                 {/* shimmer sweep */}
                 <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
@@ -362,7 +365,7 @@ export default function RunsPage() {
                         key={t.value}
                         type="button"
                         onClick={() => setForm((cur) => ({ ...cur, run_type: t.value }))}
-                        className="flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200"
+                        className="mobile-tap flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-transform duration-100 active:scale-[0.97]"
                         style={
                           active
                             ? { borderColor: `${t.color}55`, background: `${t.color}14`, color: t.color }
@@ -449,7 +452,7 @@ export default function RunsPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.16)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_32px_rgba(182,255,0,0.24)] active:translate-y-0 disabled:pointer-events-none disabled:opacity-55"
+                  className="mobile-tap inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.16)] transition-transform duration-100 hover:-translate-y-px hover:shadow-[0_0_32px_rgba(182,255,0,0.24)] active:scale-[0.97] active:translate-y-0 disabled:pointer-events-none disabled:opacity-55"
                 >
                   {isSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   {isSaving ? "Salvando..." : "Salvar corrida"}
@@ -519,7 +522,7 @@ export default function RunsPage() {
                   <button
                     type="button"
                     onClick={() => setShowTracker(true)}
-                    className="group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-[#B6FF00]/18 bg-[#B6FF00]/[0.06] px-4 py-4 text-left transition-all duration-200 hover:border-[#B6FF00]/30 hover:bg-[#B6FF00]/[0.1] hover:shadow-[0_0_24px_rgba(182,255,0,0.1)] active:scale-[0.98]"
+                    className="mobile-tap group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-[#B6FF00]/18 bg-[#B6FF00]/[0.06] px-4 py-4 text-left transition-transform duration-100 hover:border-[#B6FF00]/30 hover:bg-[#B6FF00]/[0.1] hover:shadow-[0_0_24px_rgba(182,255,0,0.1)] active:scale-[0.98] active:opacity-80"
                   >
                     <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#B6FF00]/8 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
                     <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-[#B6FF00]/12">
@@ -929,11 +932,14 @@ function EditRunModal({
     const dist = Number(form.distance);
     if (!form.distance || !form.duration || dist <= 0) return;
     const computed = computePace(dist, form.duration);
-    if (computed) {
-      setForm((cur) => ({ ...cur, pace: computed }));
-      setPaceIsAuto(true);
+    if (computed && computed !== form.pace) {
+      const id = window.setTimeout(() => {
+        setForm((cur) => ({ ...cur, pace: computed }));
+        setPaceIsAuto(true);
+      }, 0);
+      return () => window.clearTimeout(id);
     }
-  }, [form.distance, form.duration]);
+  }, [form.distance, form.duration, form.pace]);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

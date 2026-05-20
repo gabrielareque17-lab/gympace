@@ -121,6 +121,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground;
@@ -143,6 +144,12 @@
   textarea {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+  }
+
+  .mobile-tap {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
   }
 
   ::-webkit-scrollbar {

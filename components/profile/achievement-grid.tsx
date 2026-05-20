@@ -151,8 +151,8 @@ function AchievementCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex w-full flex-col gap-2.5 rounded-2xl border p-3.5 text-left",
-        "transition-all duration-150 hover:scale-[1.025] active:scale-[0.98]",
+        "mobile-tap relative flex w-full flex-col gap-2.5 rounded-2xl border p-3.5 text-left",
+        "transition-transform duration-100 hover:scale-[1.025] active:scale-[0.98]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
       )}
       style={{
@@ -301,7 +301,7 @@ function AchievementModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 grid size-7 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[#F5F5F5]/40 transition-colors hover:bg-white/[0.08] hover:text-[#F5F5F5]/80"
+          className="mobile-tap absolute right-4 top-4 z-10 grid size-7 place-items-center rounded-full border border-white/[0.08] bg-white/[0.04] text-[#F5F5F5]/40 transition-transform duration-100 active:scale-[0.92] hover:bg-white/[0.08] hover:text-[#F5F5F5]/80"
         >
           <X className="size-3.5" strokeWidth={2} />
         </button>

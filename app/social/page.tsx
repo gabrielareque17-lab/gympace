@@ -254,7 +254,8 @@ export default async function SocialPage() {
               <Link
                 key={href}
                 href={href}
-                className="group flex items-center justify-between gap-2 rounded-2xl border px-4 py-3.5 transition-all duration-200 hover:opacity-90 active:scale-[0.97]"
+                prefetch
+                className="mobile-tap group flex items-center justify-between gap-2 rounded-2xl border px-4 py-3.5 transition-transform duration-100 hover:opacity-90 active:scale-[0.97] active:opacity-80"
                 style={{
                   borderColor: `${color}20`,
                   background: `${color}07`,

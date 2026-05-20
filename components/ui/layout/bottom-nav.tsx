@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
@@ -67,7 +67,9 @@ const ACTIONS = [
   },
 ] as const;
 
-function NavItem({
+const PREFETCH_ROUTES = ["/", "/feed", "/social", "/perfil", "/corridas", "/academia"] as const;
+
+const NavItem = memo(function NavItem({
   label,
   href,
   icon: Icon,
@@ -84,10 +86,11 @@ function NavItem({
   return (
     <Link
       href={href}
+      prefetch
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "group relative flex flex-1 flex-col items-center justify-center gap-1 py-3",
-        "transition-all duration-200 active:scale-[0.88]",
+        "mobile-tap group relative flex flex-1 flex-col items-center justify-center gap-1 py-3",
+        "transition-transform duration-100 active:scale-[0.94] active:opacity-80",
         isActive ? "text-[#B6FF00]" : "text-[#F5F5F5]/32"
       )}
     >
@@ -98,13 +101,13 @@ function NavItem({
         />
       )}
       <Icon
-        className="size-[22px] shrink-0 transition-all duration-200"
+        className="size-[22px] shrink-0 transition-transform duration-100"
         strokeWidth={isActive ? 2.2 : 1.7}
         style={isActive ? { filter: "drop-shadow(0 0 6px rgba(182,255,0,0.55))" } : undefined}
       />
       <span
         className={cn(
-          "text-[10px] font-semibold tracking-tight transition-all duration-200",
+          "text-[10px] font-semibold tracking-tight transition-opacity duration-100",
           isActive ? "opacity-100" : "opacity-40"
         )}
       >
@@ -112,9 +115,9 @@ function NavItem({
       </span>
     </Link>
   );
-}
+});
 
-export function BottomNav({ hidden = false }: { hidden?: boolean }) {
+function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
   const pathname   = usePathname();
   const router     = useRouter();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -126,6 +129,10 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
     const id = window.setTimeout(() => setMounted(true), 0);
     return () => window.clearTimeout(id);
   }, []);
+
+  useEffect(() => {
+    PREFETCH_ROUTES.forEach((route) => router.prefetch(route));
+  }, [router]);
 
   // Hide nav when software keyboard is open
   useEffect(() => {
@@ -156,12 +163,20 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
     return () => { document.body.style.overflow = ""; };
   }, [sheetOpen]);
 
-  if (hidden || keyboardOpen) return null;
+  const toggleSheet = useCallback(() => {
+    setSheetOpen((s) => !s);
+  }, []);
 
-  function handleAction(href: string) {
-    router.push(href);
+  const closeSheet = useCallback(() => {
     setSheetOpen(false);
-  }
+  }, []);
+
+  const handleAction = useCallback((href: string) => {
+    setSheetOpen(false);
+    router.push(href);
+  }, [router]);
+
+  if (hidden || keyboardOpen) return null;
 
   return (
     <>
@@ -170,7 +185,7 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
         aria-label="Navegação principal"
       >
         {/* Blurred background */}
-        <div className="absolute inset-0 bg-[#090909]/92 backdrop-blur-2xl" />
+        <div className="absolute inset-0 bg-[#090909]/95 backdrop-blur-md sm:backdrop-blur-2xl" />
         {/* Top border */}
         <div className="absolute inset-x-0 top-0 h-px bg-white/[0.06]" />
 
@@ -186,12 +201,12 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
           <div className="flex flex-1 flex-col items-center justify-center">
             <button
               type="button"
-              onClick={() => setSheetOpen((s) => !s)}
+              onClick={toggleSheet}
               aria-label="Criar atividade"
               aria-expanded={sheetOpen}
               className={cn(
-                "grid size-[52px] place-items-center rounded-2xl text-[#080808]",
-                "-translate-y-2.5 transition-all duration-300 active:scale-[0.92]",
+                "mobile-tap grid size-[52px] place-items-center rounded-2xl text-[#080808]",
+                "-translate-y-2.5 transition-transform duration-100 active:scale-[0.94]",
                 sheetOpen ? "rotate-45" : ""
               )}
               style={{
@@ -217,14 +232,14 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
           <style>{`
             @keyframes gpActBdIn  { from { opacity: 0; } to { opacity: 1; } }
             @keyframes gpActShIn  { from { transform: translateY(100%); } to { transform: translateY(0); } }
-            .gp-act-bd   { animation: gpActBdIn 0.18s ease; }
-            .gp-act-sh   { animation: gpActShIn 0.32s cubic-bezier(0.16,1,0.3,1); }
+            .gp-act-bd   { animation: gpActBdIn 0.12s ease; }
+            .gp-act-sh   { animation: gpActShIn 0.18s cubic-bezier(0.16,1,0.3,1); }
           `}</style>
 
           {/* Backdrop */}
           <div
             className="gp-act-bd fixed inset-0 z-[9997] bg-black/65 backdrop-blur-[3px]"
-            onClick={() => setSheetOpen(false)}
+            onClick={closeSheet}
           />
 
           {/* Sheet */}
@@ -251,7 +266,7 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
                   key={label}
                   type="button"
                   onClick={() => handleAction(href)}
-                  className="flex flex-col items-start gap-3 rounded-2xl p-4 text-left transition-all duration-150 active:scale-[0.97]"
+                  className="mobile-tap flex flex-col items-start gap-3 rounded-2xl p-4 text-left transition-transform duration-100 active:scale-[0.97] active:opacity-80"
                   style={{ background: bg, border: `1px solid ${border}` }}
                 >
                   <div
@@ -276,8 +291,8 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
             <div className="px-4 pb-4 pt-1">
               <button
                 type="button"
-                onClick={() => setSheetOpen(false)}
-                className="flex w-full items-center justify-center rounded-2xl bg-white/[0.04] py-3.5 text-[14px] font-semibold text-[#F5F5F5]/45 transition-colors active:bg-white/[0.07]"
+                onClick={closeSheet}
+                className="mobile-tap flex w-full items-center justify-center rounded-2xl bg-white/[0.04] py-3.5 text-[14px] font-semibold text-[#F5F5F5]/45 transition-colors duration-100 active:scale-[0.98] active:bg-white/[0.07]"
               >
                 Cancelar
               </button>
@@ -292,3 +307,5 @@ export function BottomNav({ hidden = false }: { hidden?: boolean }) {
     </>
   );
 }
+
+export const BottomNav = memo(BottomNavBase);

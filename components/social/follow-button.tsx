@@ -41,7 +41,7 @@ export function FollowButton({ targetUserId, initialIsFollowing }: FollowButtonP
         disabled={isPending}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-xl border px-4 text-sm font-semibold transition-all duration-200 disabled:pointer-events-none disabled:opacity-50"
+        className="mobile-tap inline-flex h-9 items-center gap-1.5 rounded-xl border px-4 text-sm font-semibold transition-transform duration-100 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50"
         style={
           isHovered
             ? {
@@ -78,7 +78,7 @@ export function FollowButton({ targetUserId, initialIsFollowing }: FollowButtonP
       type="button"
       onClick={handleToggle}
       disabled={isPending}
-      className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#B6FF00] px-4 text-sm font-bold text-[#080808] shadow-[0_0_20px_rgba(182,255,0,0.15)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_28px_rgba(182,255,0,0.25)] active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
+      className="mobile-tap inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#B6FF00] px-4 text-sm font-bold text-[#080808] shadow-[0_0_20px_rgba(182,255,0,0.15)] transition-transform duration-100 hover:-translate-y-px hover:shadow-[0_0_28px_rgba(182,255,0,0.25)] active:scale-[0.97] active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
     >
       {isPending ? (
         <Loader2 className="size-3.5 animate-spin" />

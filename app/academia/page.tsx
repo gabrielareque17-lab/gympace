@@ -401,7 +401,7 @@ export default function AcademiaPage() {
               <button
                 type="button"
                 onClick={() => setWorkoutTimerOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#22D3EE] px-4 py-3 text-sm font-bold text-[#061014] shadow-[0_0_24px_rgba(34,211,238,0.22)] transition active:scale-[0.97]"
+                className="mobile-tap inline-flex items-center justify-center gap-2 rounded-xl bg-[#22D3EE] px-4 py-3 text-sm font-bold text-[#061014] shadow-[0_0_24px_rgba(34,211,238,0.22)] transition-transform duration-100 active:scale-[0.97] active:opacity-80"
               >
                 <Play className="size-4 fill-current stroke-none" />
                 Iniciar treino com cronômetro
@@ -409,7 +409,7 @@ export default function AcademiaPage() {
               <button
                 type="button"
                 onClick={openManualRegistration}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#F5F5F5]/55 transition hover:bg-white/[0.07]"
+                className="mobile-tap inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm font-semibold text-[#F5F5F5]/55 transition-transform duration-100 active:scale-[0.97] active:opacity-80 hover:bg-white/[0.07]"
               >
                 Registrar manualmente
               </button>
@@ -474,7 +474,7 @@ export default function AcademiaPage() {
                       key={split.value}
                       type="button"
                       onClick={() => applySplit(split)}
-                      className="shrink-0 rounded-xl border px-4 py-2 text-xs font-bold transition-all"
+                      className="mobile-tap shrink-0 rounded-xl border px-4 py-2 text-xs font-bold transition-transform duration-100 active:scale-[0.97]"
                       style={
                         form.workout_split === split.value
                           ? { borderColor: "#B6FF0055", background: "#B6FF0014", color: "#B6FF00" }
@@ -520,7 +520,7 @@ export default function AcademiaPage() {
                               key={group.value}
                               type="button"
                               onClick={() => toggleGroup(group.value)}
-                              className="group min-h-[118px] rounded-2xl border p-3 text-left transition-all active:scale-[0.98]"
+                              className="mobile-tap group min-h-[118px] rounded-2xl border p-3 text-left transition-transform duration-100 active:scale-[0.98]"
                               style={
                                 active
                                   ? { borderColor: `${group.color}55`, background: `${group.color}12`, boxShadow: `0 0 20px ${group.color}12` }
@@ -577,7 +577,7 @@ export default function AcademiaPage() {
                           key={detail.value}
                           type="button"
                           onClick={() => toggleDetail(detail.value)}
-                          className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-all"
+                          className="mobile-tap rounded-full border px-3 py-1.5 text-xs font-semibold transition-transform duration-100 active:scale-[0.97]"
                           style={
                             active
                               ? { borderColor: `${detail.color}55`, background: `${detail.color}14`, color: detail.color }
@@ -601,7 +601,7 @@ export default function AcademiaPage() {
                         key={item.value}
                         type="button"
                         onClick={() => setForm((cur) => ({ ...cur, intensity: cur.intensity === item.value ? "" : item.value }))}
-                        className="rounded-xl border px-4 py-2 text-xs font-semibold transition-all"
+                        className="mobile-tap rounded-xl border px-4 py-2 text-xs font-semibold transition-transform duration-100 active:scale-[0.97]"
                         style={
                           form.intensity === item.value
                             ? { borderColor: `${item.color}55`, background: `${item.color}14`, color: item.color }
@@ -635,10 +635,10 @@ export default function AcademiaPage() {
                 </div>
                 <button
                   disabled={isSaving}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 py-3 text-sm font-bold text-[#080808] transition active:scale-[0.98] disabled:opacity-55"
+                  className="mobile-tap inline-flex items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 py-3 text-sm font-bold text-[#080808] transition-transform duration-100 active:scale-[0.97] disabled:opacity-55"
                 >
                   {isSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                  Salvar treino
+                  {isSaving ? "Salvando..." : "Salvar treino"}
                 </button>
               </div>
             </form>
@@ -711,7 +711,7 @@ function ActiveWorkoutTimer({
         <button
           type="button"
           onClick={onCancel}
-          className="grid size-9 place-items-center rounded-xl text-[#F5F5F5]/35 transition hover:bg-white/[0.06] hover:text-[#F5F5F5]/70"
+          className="mobile-tap grid size-9 place-items-center rounded-xl text-[#F5F5F5]/35 transition-transform duration-100 active:scale-[0.92] hover:bg-white/[0.06] hover:text-[#F5F5F5]/70"
           aria-label="Cancelar treino"
         >
           <X className="size-4" />
@@ -750,7 +750,7 @@ function ActiveWorkoutTimer({
             <button
               type="button"
               onClick={() => setPaused((value) => !value)}
-              className="grid size-20 place-items-center rounded-full transition active:scale-95"
+              className="mobile-tap grid size-20 place-items-center rounded-full transition-transform duration-100 active:scale-[0.97]"
               style={
                 paused
                   ? {
@@ -778,7 +778,7 @@ function ActiveWorkoutTimer({
             <button
               type="button"
               onClick={() => onFinish(elapsedSeconds)}
-              className="grid size-14 place-items-center rounded-full border border-white/[0.1] bg-white/[0.05] transition active:scale-95 hover:bg-white/[0.09]"
+              className="mobile-tap grid size-14 place-items-center rounded-full border border-white/[0.1] bg-white/[0.05] transition-transform duration-100 active:scale-[0.97] hover:bg-white/[0.09]"
             >
               <Square className="size-5 fill-current stroke-none text-[#F5F5F5]/60" />
             </button>
@@ -791,7 +791,7 @@ function ActiveWorkoutTimer({
         <button
           type="button"
           onClick={onCancel}
-          className="mt-5 flex w-full items-center justify-center rounded-2xl border border-red-500/15 bg-red-500/[0.06] py-3 text-sm font-semibold text-red-300/75"
+          className="mobile-tap mt-5 flex w-full items-center justify-center rounded-2xl border border-red-500/15 bg-red-500/[0.06] py-3 text-sm font-semibold text-red-300/75 transition-transform duration-100 active:scale-[0.98]"
         >
           Cancelar treino
         </button>

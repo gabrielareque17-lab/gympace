@@ -125,7 +125,7 @@ export function TrophyCollection({
                 type="button"
                 onClick={() => setFilter(item.key)}
                 className={cn(
-                  "shrink-0 rounded-xl border px-3 py-2 text-xs font-bold transition-all duration-150",
+                  "mobile-tap shrink-0 rounded-xl border px-3 py-2 text-xs font-bold transition-transform duration-100 active:scale-[0.97] active:opacity-80",
                   filter === item.key
                     ? "border-[#B6FF00]/35 bg-[#B6FF00]/10 text-[#B6FF00] shadow-[0_0_24px_rgba(182,255,0,0.08)]"
                     : "border-white/[0.07] bg-white/[0.03] text-[#F5F5F5]/40 hover:border-white/[0.14] hover:text-[#F5F5F5]/70"
@@ -186,8 +186,8 @@ function TrophyCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group relative min-h-[190px] overflow-hidden rounded-2xl border p-4 text-left transition-all duration-200",
-        "hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/30",
+        "mobile-tap group relative min-h-[190px] overflow-hidden rounded-2xl border p-4 text-left transition-transform duration-100",
+        "active:scale-[0.98] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/30",
         trophy.earned ? "bg-[#0B0B0B]" : "bg-white/[0.018] opacity-70",
         premium ? "border-[#EAB308]/25 shadow-[0_0_34px_rgba(234,179,8,0.08)]" : "border-white/[0.06]"
       )}

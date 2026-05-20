@@ -54,7 +54,7 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
             key={tab.key}
             type="button"
             onClick={() => setScope(tab.key)}
-            className="flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all duration-200"
+            className="mobile-tap flex-1 rounded-lg py-1.5 text-xs font-semibold transition-transform duration-100 active:scale-[0.97] active:opacity-80"
             style={
               scope === tab.key
                 ? { background: "rgba(182,255,0,0.1)", color: "#B6FF00", borderBottom: "1px solid rgba(182,255,0,0.3)" }
@@ -117,7 +117,8 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
                 {entry.username && (
                   <Link
                     href={`/perfil/${entry.username}`}
-                    className="ml-1 shrink-0 rounded-lg px-2 py-1 text-[10px] text-[#F5F5F5]/20 transition-colors hover:bg-white/[0.05] hover:text-[#F5F5F5]/50"
+                    prefetch
+                    className="mobile-tap ml-1 shrink-0 rounded-lg px-2 py-1 text-[10px] text-[#F5F5F5]/20 transition-colors duration-100 active:scale-[0.94] active:opacity-80 hover:bg-white/[0.05] hover:text-[#F5F5F5]/50"
                   >
                     →
                   </Link>

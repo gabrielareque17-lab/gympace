@@ -405,7 +405,8 @@ export default async function PerfilPage() {
                       <>
                         <Link
                           href={`/perfil/${profile.username}/seguidores`}
-                          className="group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-95 active:opacity-60"
+                          prefetch
+                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
                         >
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
                           seguidores
@@ -413,14 +414,16 @@ export default async function PerfilPage() {
                         <span className="text-[10px] text-[#F5F5F5]/15">·</span>
                         <Link
                           href={`/perfil/${profile.username}/seguindo`}
-                          className="group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-all duration-150 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-95 active:opacity-60"
+                          prefetch
+                          className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg px-2.5 py-2 text-xs text-[#F5F5F5]/45 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
                         >
                           <span className="font-bold text-[#F5F5F5]/80 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
                           seguindo
                         </Link>
                         <Link
                           href={`/perfil/${profile.username}/trofeus`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2.5 py-2 text-xs font-bold text-[#EAB308]/85 transition-all duration-150 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-95"
+                          prefetch
+                          className="mobile-tap inline-flex items-center gap-1.5 rounded-lg border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2.5 py-2 text-xs font-bold text-[#EAB308]/85 transition-transform duration-100 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-[0.97] active:opacity-80"
                         >
                           <Trophy className="size-3.5" strokeWidth={2} />
                           Ver troféus
@@ -661,7 +664,8 @@ export default async function PerfilPage() {
                   </div>
                   <Link
                     href="/social"
-                    className="rounded-lg border border-white/[0.07] px-3 py-1.5 text-[11px] text-[#F5F5F5]/35 transition-colors hover:border-white/[0.14] hover:text-[#F5F5F5]/60"
+                    prefetch
+                    className="mobile-tap rounded-lg border border-white/[0.07] px-3 py-1.5 text-[11px] text-[#F5F5F5]/35 transition-colors duration-100 active:scale-[0.97] active:opacity-80 hover:border-white/[0.14] hover:text-[#F5F5F5]/60"
                   >
                     Ver ranking →
                   </Link>

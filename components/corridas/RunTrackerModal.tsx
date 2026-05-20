@@ -432,7 +432,7 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
               type="button"
               onClick={handleDiscard}
               disabled={modalState === "saving"}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-[#F5F5F5]/55 transition hover:bg-white/[0.07] disabled:opacity-50"
+              className="mobile-tap flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] text-sm font-semibold text-[#F5F5F5]/55 transition-transform duration-100 active:scale-[0.97] active:opacity-80 hover:bg-white/[0.07] disabled:opacity-50"
             >
               <X className="size-4" />
               Descartar
@@ -441,7 +441,7 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
               type="button"
               onClick={() => void handleSave()}
               disabled={modalState === "saving"}
-              className="flex h-12 flex-[2] items-center justify-center gap-2 rounded-2xl bg-[#B6FF00] text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.2)] transition hover:shadow-[0_0_32px_rgba(182,255,0,0.3)] disabled:opacity-55"
+              className="mobile-tap flex h-12 flex-[2] items-center justify-center gap-2 rounded-2xl bg-[#B6FF00] text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.2)] transition-transform duration-100 active:scale-[0.97] hover:shadow-[0_0_32px_rgba(182,255,0,0.3)] disabled:opacity-55"
             >
               {modalState === "saving" ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -468,7 +468,7 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
         <button
           type="button"
           onClick={handleDiscard}
-          className="grid size-8 place-items-center rounded-lg text-[#F5F5F5]/25 transition hover:bg-white/[0.06] hover:text-[#F5F5F5]/55"
+          className="mobile-tap grid size-8 place-items-center rounded-lg text-[#F5F5F5]/25 transition-transform duration-100 active:scale-[0.92] hover:bg-white/[0.06] hover:text-[#F5F5F5]/55"
         >
           <X className="size-4" />
         </button>
@@ -577,7 +577,7 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
           <button
             type="button"
             onClick={isPaused ? tracker.resume : tracker.pause}
-            className="grid size-20 place-items-center rounded-full transition-all duration-300 active:scale-95"
+            className="mobile-tap grid size-20 place-items-center rounded-full transition-transform duration-100 active:scale-[0.97]"
             style={
               isPaused
                 ? {
@@ -617,7 +617,7 @@ export function RunTrackerModal({ onClose, onSaved }: Props) {
           <button
             type="button"
             onClick={handleFinish}
-            className="grid size-14 place-items-center rounded-full border border-white/[0.1] bg-white/[0.05] transition-all duration-200 active:scale-95 hover:bg-white/[0.09]"
+            className="mobile-tap grid size-14 place-items-center rounded-full border border-white/[0.1] bg-white/[0.05] transition-transform duration-100 active:scale-[0.97] hover:bg-white/[0.09]"
           >
             <Square
               className="size-5 fill-current stroke-none"

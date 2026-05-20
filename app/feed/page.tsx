@@ -153,7 +153,7 @@ function UserAvatar({ profile, name }: { profile?: FeedProfile; name: string }) 
   );
   if (!profileHref) return <>{avatar}</>;
   return (
-    <Link href={profileHref} className="block shrink-0 transition-opacity duration-150 hover:opacity-75">
+    <Link href={profileHref} prefetch className="mobile-tap block shrink-0 transition-opacity duration-100 active:opacity-80 hover:opacity-75">
       {avatar}
     </Link>
   );
@@ -269,7 +269,7 @@ function FeedCard({ event }: { event: FeedEvent }) {
   return (
     <article
       className={cn(
-        "group relative flex gap-3.5 rounded-2xl border bg-[#111111] p-4 transition-all duration-200 hover:bg-[#141414]",
+        "group relative flex gap-3.5 rounded-2xl border bg-[#111111] p-4 transition-colors duration-100 hover:bg-[#141414]",
         config.cardCn
       )}
     >
@@ -293,7 +293,8 @@ function FeedCard({ event }: { event: FeedEvent }) {
           {profileHref ? (
             <Link
               href={profileHref}
-              className="text-sm font-semibold text-[#F5F5F5] transition-colors duration-150 hover:text-[#B6FF00]"
+              prefetch
+              className="mobile-tap text-sm font-semibold text-[#F5F5F5] transition-colors duration-100 active:opacity-80 hover:text-[#B6FF00]"
             >
               {name}
             </Link>
@@ -353,7 +354,8 @@ function FeedEmpty() {
       </p>
       <Link
         href="/explorar"
-        className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/[0.07] px-4 py-1.5 text-xs font-semibold text-[#B6FF00]/75 transition-all hover:border-[#B6FF00]/35 hover:bg-[#B6FF00]/[0.12]"
+        prefetch
+        className="mobile-tap mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/[0.07] px-4 py-1.5 text-xs font-semibold text-[#B6FF00]/75 transition-transform duration-100 active:scale-[0.97] active:opacity-80 hover:border-[#B6FF00]/35 hover:bg-[#B6FF00]/[0.12]"
       >
         <Compass className="size-3.5" strokeWidth={2} />
         Explorar atletas

@@ -81,7 +81,7 @@ export function EditProfileForm({
           <button
             type="button"
             onClick={startEdit}
-            className="grid size-6 place-items-center rounded-lg text-[#F5F5F5]/25 transition-colors hover:bg-white/[0.06] hover:text-[#F5F5F5]/60"
+            className="mobile-tap grid size-6 place-items-center rounded-lg text-[#F5F5F5]/25 transition-transform duration-100 active:scale-[0.92] hover:bg-white/[0.06] hover:text-[#F5F5F5]/60"
             aria-label="Editar perfil"
           >
             <Pencil className="size-3.5" strokeWidth={2} />
@@ -139,7 +139,7 @@ export function EditProfileForm({
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#B6FF00] px-3 text-xs font-bold text-[#080808] transition-opacity disabled:opacity-50"
+          className="mobile-tap inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#B6FF00] px-3 text-xs font-bold text-[#080808] transition-transform duration-100 active:scale-[0.97] disabled:opacity-50"
         >
           {isSaving ? (
             <Loader2 className="size-3 animate-spin" strokeWidth={2.5} />
@@ -152,7 +152,7 @@ export function EditProfileForm({
           type="button"
           onClick={cancelEdit}
           disabled={isSaving}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 text-xs font-medium text-[#F5F5F5]/50 transition-colors hover:text-[#F5F5F5]/80 disabled:opacity-50"
+          className="mobile-tap inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 text-xs font-medium text-[#F5F5F5]/50 transition-transform duration-100 active:scale-[0.97] hover:text-[#F5F5F5]/80 disabled:opacity-50"
         >
           <X className="size-3" strokeWidth={2} />
           Cancelar
