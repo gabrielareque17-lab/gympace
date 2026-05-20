@@ -6,6 +6,9 @@ const BATCH_SIZE = 500;
 export interface GymPaceUpdatePayload {
   title: string;
   message: string;
+  features?: string;
+  updateType?: "feature" | "bugfix" | "season" | "announcement";
+  createdBy?: string;
 }
 
 export interface SendResult {
@@ -21,8 +24,26 @@ export interface SendResult {
 export async function sendGymPaceUpdate({
   title,
   message,
+  features,
+  updateType = "feature",
+  createdBy,
 }: GymPaceUpdatePayload): Promise<SendResult> {
   const supabase = createSupabaseAdminClient();
+
+  const { error: updateInsertError } = await supabase
+    .from("app_updates")
+    .insert({
+      title,
+      summary: message,
+      features: features?.trim() || message,
+      update_type: updateType,
+      created_by: createdBy ?? null,
+      is_published: true,
+    });
+
+  if (updateInsertError) {
+    return { sent: 0, error: updateInsertError.message };
+  }
 
   const { data: profiles, error: fetchError } = await supabase
     .from("profiles")

@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Bell,
   Compass,
   Dumbbell,
   LayoutDashboard,
@@ -50,6 +51,7 @@ function buildNavGroups(isAdmin: boolean): NavGroup[] {
     items: [
       { label: "Metas",        href: "/metas",         icon: Target         },
       { label: "Evolução",     href: "/evolucao",      icon: BarChart3      },
+      { label: "Atualizacoes", href: "/updates",       icon: Bell           },
       { label: "Explorar",     href: "/explorar",      icon: Compass        },
       { label: "Convites",     href: "/convites",      icon: Swords         },
     ],

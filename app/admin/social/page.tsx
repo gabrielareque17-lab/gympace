@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Bell, Gift, Loader2, Search, Shield, Trophy, UserRound } from "lucide-react";
+import { Bell, Gift, Loader2, Lock, Search, Shield, Sparkles, Trophy, UserRound } from "lucide-react";
+
+import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
+import { AvatarSVG } from "@/components/ui/avatar/avatar-svg";
+import type { AvatarDefinition } from "@/lib/avatar-registry";
 
 type AdminUser = {
   user_id: string;
   username: string | null;
   display_name: string | null;
+  avatar_id: string | null;
+  current_level: number | null;
   total_xp: number | null;
   rank: string | null;
   is_admin: boolean | null;
@@ -33,8 +39,12 @@ export default function AdminSocialPage() {
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [trophies, setTrophies] = useState<TrophyRow[]>([]);
+  const [avatars, setAvatars] = useState<AvatarDefinition[]>([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedTrophyId, setSelectedTrophyId] = useState("");
+  const [selectedAvatarId, setSelectedAvatarId] = useState("");
+  const [avatarSource, setAvatarSource] = useState("admin");
+  const [avatarSourceRef, setAvatarSourceRef] = useState("");
   const [trophyDraft, setTrophyDraft] = useState({
     name: "",
     description: "",
@@ -44,7 +54,15 @@ export default function AdminSocialPage() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
-  const selectedUser = useMemo(() => users.find((u) => u.user_id === selectedUserId), [users, selectedUserId]);
+
+  const selectedUser = useMemo(
+    () => users.find((u) => u.user_id === selectedUserId),
+    [users, selectedUserId]
+  );
+  const selectedAvatar = useMemo(
+    () => avatars.find((avatar) => avatar.id === selectedAvatarId),
+    [avatars, selectedAvatarId]
+  );
 
   async function loadUsers(q = "") {
     const res = await fetch(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`);
@@ -58,8 +76,19 @@ export default function AdminSocialPage() {
     if (res.ok) setTrophies(json.trophies ?? []);
   }
 
+  async function loadAvatars() {
+    const res = await fetch("/api/admin/avatars");
+    const json = await res.json();
+    if (!res.ok) return;
+    const locked = ((json.avatars ?? []) as AvatarDefinition[]).filter(
+      (avatar) => avatar.unlock.kind !== "free"
+    );
+    setAvatars(locked);
+    setSelectedAvatarId((current) => current || locked[0]?.id || "");
+  }
+
   useEffect(() => {
-    void Promise.resolve().then(() => Promise.all([loadUsers(), loadTrophies()]));
+    void Promise.resolve().then(() => Promise.all([loadUsers(), loadTrophies(), loadAvatars()]));
   }, []);
 
   useEffect(() => {
@@ -91,10 +120,10 @@ export default function AdminSocialPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Erro ao criar troféu.");
+        setError(json.error ?? "Erro ao criar trofeu.");
         return;
       }
-      setNotice("Troféu criado.");
+      setNotice("Trofeu criado.");
       setTrophyDraft({ name: "", description: "", rarity: "rare", visual: "trophy" });
       await loadTrophies();
     });
@@ -115,10 +144,34 @@ export default function AdminSocialPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Erro ao entregar troféu.");
+        setError(json.error ?? "Erro ao entregar trofeu.");
         return;
       }
-      setNotice("Troféu entregue.");
+      setNotice("Trofeu entregue.");
+    });
+  }
+
+  function unlockAvatar(formData: FormData) {
+    setNotice("");
+    setError("");
+    startTransition(async () => {
+      const res = await fetch("/api/admin/avatars", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: selectedUserId,
+          avatar_id: selectedAvatarId,
+          source: avatarSource,
+          source_ref: formData.get("source_ref"),
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Erro ao liberar avatar.");
+        return;
+      }
+      setNotice("Avatar exclusivo liberado.");
+      setAvatarSourceRef("");
     });
   }
 
@@ -137,19 +190,19 @@ export default function AdminSocialPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Erro ao enviar notificação.");
+        setError(json.error ?? "Erro ao enviar notificacao.");
         return;
       }
-      setNotice("Notificação enviada.");
+      setNotice("Notificacao enviada.");
     });
   }
 
   return (
     <div>
-      <div className="mb-7">
+      <div className="mb-5 sm:mb-7">
         <h1 className="text-2xl font-bold tracking-tight">Admin Social</h1>
         <p className="mt-1 text-sm text-[#F5F5F5]/40">
-          Gerencie usuários, troféus exclusivos, badges/títulos e updates direcionados.
+          Gerencie usuarios, trofeus, avatares exclusivos e updates direcionados.
         </p>
       </div>
 
@@ -159,11 +212,11 @@ export default function AdminSocialPage() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-5">
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:gap-5">
+        <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
           <div className="mb-4 flex items-center gap-2">
             <UserRound className="size-4 text-[#B6FF00]" />
-            <h2 className="font-display text-base font-semibold">Usuários</h2>
+            <h2 className="font-display text-base font-semibold">Usuarios</h2>
           </div>
           <form onSubmit={handleSearch} className="mb-4 flex gap-2">
             <input
@@ -172,11 +225,11 @@ export default function AdminSocialPage() {
               placeholder="Buscar por username ou nome"
               className="h-11 min-w-0 flex-1 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-sm outline-none focus:border-[#B6FF00]/30"
             />
-            <button className="grid size-11 place-items-center rounded-xl bg-[#B6FF00] text-[#080808]">
+            <button className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#B6FF00] text-[#080808]">
               <Search className="size-4" />
             </button>
           </form>
-          <div className="max-h-[520px] space-y-2 overflow-y-auto">
+          <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1 lg:max-h-[640px]">
             {users.map((user) => (
               <button
                 key={user.user_id}
@@ -188,23 +241,102 @@ export default function AdminSocialPage() {
                   background: selectedUserId === user.user_id ? "rgba(182,255,0,0.07)" : "rgba(255,255,255,0.02)",
                 }}
               >
-                <div className="grid size-9 place-items-center rounded-xl bg-white/[0.05]">
-                  {user.is_admin ? <Shield className="size-4 text-[#B6FF00]" /> : <UserRound className="size-4 text-[#F5F5F5]/35" />}
+                <div className="relative shrink-0">
+                  <AvatarDisplay
+                    avatarId={user.avatar_id}
+                    initials={(user.display_name ?? user.username ?? "A")[0]?.toUpperCase()}
+                    size="sm"
+                  />
+                  {user.is_admin && (
+                    <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-[#B6FF00] text-[#080808]">
+                      <Shield className="size-2.5" strokeWidth={2.4} />
+                    </span>
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{user.display_name ?? user.username ?? "Atleta"}</p>
-                  <p className="truncate text-xs text-[#F5F5F5]/30">@{user.username ?? "sem-username"} · {user.total_xp ?? 0} XP</p>
+                  <p className="truncate text-xs text-[#F5F5F5]/30">
+                    @{user.username ?? "sem-username"} · Nv. {user.current_level ?? 1} · {user.total_xp ?? 0} XP
+                  </p>
                 </div>
               </button>
             ))}
           </div>
         </section>
 
-        <div className="space-y-5">
-          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-5">
+        <div className="space-y-4 sm:space-y-5">
+          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Sparkles className="size-4 text-[#FACC15]" />
+              <h2 className="font-display text-base font-semibold">Criar acesso a avatar exclusivo</h2>
+            </div>
+            {selectedAvatar && (
+              <div className="mb-4 rounded-2xl border border-[#FACC15]/20 bg-[#FACC15]/[0.045] p-4">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-black/40">
+                    <AvatarSVG
+                      avatarId={selectedAvatar.id}
+                      accentColor={selectedAvatar.accentColor}
+                      secondaryColor={selectedAvatar.secondaryColor}
+                      size={64}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#FACC15]/70">
+                      {selectedAvatar.rarity} · {selectedAvatar.unlock.label}
+                    </p>
+                    <h3 className="truncate font-display text-base font-bold">{selectedAvatar.label}</h3>
+                    <p className="line-clamp-2 text-xs text-[#F5F5F5]/38">{selectedAvatar.description}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <form action={unlockAvatar} className="grid gap-3">
+              <p className="text-xs text-[#F5F5F5]/35">
+                Usuario selecionado: {selectedUser ? selectedUser.display_name ?? selectedUser.username : "nenhum"}
+              </p>
+              <select
+                value={selectedAvatarId}
+                onChange={(e) => setSelectedAvatarId(e.target.value)}
+                required
+                className="rounded-xl border border-white/[0.08] bg-[#161616] px-3 py-2.5 text-sm outline-none"
+              >
+                {avatars.map((avatar) => (
+                  <option key={avatar.id} value={avatar.id}>
+                    {avatar.label} · {avatar.rarity} · {avatar.unlock.label}
+                  </option>
+                ))}
+              </select>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select
+                  value={avatarSource}
+                  onChange={(e) => setAvatarSource(e.target.value)}
+                  className="rounded-xl border border-white/[0.08] bg-[#161616] px-3 py-2.5 text-sm outline-none"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="season">Temporada</option>
+                  <option value="trophy">Trofeu</option>
+                  <option value="achievement">Conquista</option>
+                </select>
+                <input
+                  name="source_ref"
+                  value={avatarSourceRef}
+                  onChange={(e) => setAvatarSourceRef(e.target.value)}
+                  placeholder="Ref opcional"
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30"
+                />
+              </div>
+              <button disabled={isPending || !selectedUserId || !selectedAvatarId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FACC15] px-4 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50">
+                {isPending ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}
+                Liberar avatar exclusivo
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Trophy className="size-4 text-[#EAB308]" />
-              <h2 className="font-display text-base font-semibold">Criar troféu exclusivo</h2>
+              <h2 className="font-display text-base font-semibold">Criar trofeu exclusivo</h2>
             </div>
             <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: `${RARITY_COLORS[trophyDraft.rarity]}35`, background: `${RARITY_COLORS[trophyDraft.rarity]}0D` }}>
               <div className="flex items-center gap-3">
@@ -215,36 +347,36 @@ export default function AdminSocialPage() {
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: RARITY_COLORS[trophyDraft.rarity] }}>
                     {trophyDraft.rarity} · {trophyDraft.visual || "trophy"}
                   </p>
-                  <h3 className="truncate font-display text-base font-bold">{trophyDraft.name || "Prévia do troféu"}</h3>
-                  <p className="line-clamp-2 text-xs text-[#F5F5F5]/38">{trophyDraft.description || "Descrição e visual aparecem aqui antes de criar."}</p>
+                  <h3 className="truncate font-display text-base font-bold">{trophyDraft.name || "Previa do trofeu"}</h3>
+                  <p className="line-clamp-2 text-xs text-[#F5F5F5]/38">{trophyDraft.description || "Descricao e visual aparecem aqui antes de criar."}</p>
                 </div>
               </div>
             </div>
             <form action={createTrophy} className="grid gap-3 sm:grid-cols-2">
-              <input name="name" required placeholder="Nome do troféu" value={trophyDraft.name} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, name: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
+              <input name="name" required placeholder="Nome do trofeu" value={trophyDraft.name} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, name: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
               <select name="rarity" value={trophyDraft.rarity} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, rarity: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-[#161616] px-3 py-2.5 text-sm outline-none">
                 {RARITIES.map((rarity) => <option key={rarity} value={rarity}>{rarity}</option>)}
               </select>
               <input name="visual" placeholder="Visual: trophy, crown, medal..." value={trophyDraft.visual} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, visual: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
-              <textarea name="description" placeholder="Descrição" rows={2} value={trophyDraft.description} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, description: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30 sm:col-span-2" />
+              <textarea name="description" placeholder="Descricao" rows={2} value={trophyDraft.description} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, description: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30 sm:col-span-2" />
               <button disabled={isPending} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50">
                 {isPending ? <Loader2 className="size-4 animate-spin" /> : <Gift className="size-4" />}
-                Criar troféu
+                Criar trofeu
               </button>
             </form>
           </section>
 
-          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-5">
+          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Gift className="size-4 text-[#B6FF00]" />
-              <h2 className="font-display text-base font-semibold">Entregar troféu</h2>
+              <h2 className="font-display text-base font-semibold">Entregar trofeu</h2>
             </div>
             <form action={awardTrophy} className="grid gap-3">
               <p className="text-xs text-[#F5F5F5]/35">
-                Usuário selecionado: {selectedUser ? selectedUser.display_name ?? selectedUser.username : "nenhum"}
+                Usuario selecionado: {selectedUser ? selectedUser.display_name ?? selectedUser.username : "nenhum"}
               </p>
               <select value={selectedTrophyId} onChange={(e) => setSelectedTrophyId(e.target.value)} required className="rounded-xl border border-white/[0.08] bg-[#161616] px-3 py-2.5 text-sm outline-none">
-                <option value="">Escolha o troféu</option>
+                <option value="">Escolha o trofeu</option>
                 {trophies.map((trophy) => <option key={trophy.id} value={trophy.id}>{trophy.name} · {trophy.rarity}</option>)}
               </select>
               <input name="note" placeholder="Nota interna opcional" className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
@@ -254,13 +386,13 @@ export default function AdminSocialPage() {
             </form>
           </section>
 
-          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-5">
+          <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Bell className="size-4 text-[#22D3EE]" />
-              <h2 className="font-display text-base font-semibold">Update para usuário específico</h2>
+              <h2 className="font-display text-base font-semibold">Update para usuario especifico</h2>
             </div>
             <form action={sendUserNotification} className="grid gap-3">
-              <input name="title" required placeholder="Título" className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
+              <input name="title" required placeholder="Titulo" className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
               <textarea name="message" required rows={3} placeholder="Mensagem" className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
               <button disabled={isPending || !selectedUserId} className="rounded-xl bg-[#22D3EE] px-4 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50">
                 Enviar para selecionado

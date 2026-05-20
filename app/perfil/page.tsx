@@ -403,7 +403,62 @@ export default async function PerfilPage() {
                     fallbackName={nickname}
                     fallbackBio={athleteBio}
                   />
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {profile?.username ? (
+                        <>
+                          <Link
+                            href={`/perfil/${profile.username}/seguidores`}
+                            prefetch
+                            className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1.5 text-xs text-[#F5F5F5]/55 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
+                          >
+                            <span className="font-bold text-[#F5F5F5]/82 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
+                            seguidores
+                          </Link>
+                          <Link
+                            href={`/perfil/${profile.username}/seguindo`}
+                            prefetch
+                            className="mobile-tap group inline-flex items-baseline gap-1 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1.5 text-xs text-[#F5F5F5]/55 transition-transform duration-100 hover:bg-white/[0.05] hover:text-[#F5F5F5]/80 active:scale-[0.97] active:opacity-80"
+                          >
+                            <span className="font-bold text-[#F5F5F5]/82 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
+                            seguindo
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <span className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1.5 text-xs text-[#F5F5F5]/55">
+                            <span className="font-bold text-[#F5F5F5]/82">{followersCount ?? 0}</span> seguidores
+                          </span>
+                          <span className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-1.5 text-xs text-[#F5F5F5]/55">
+                            <span className="font-bold text-[#F5F5F5]/82">{followingCount ?? 0}</span> seguindo
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className="rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em]"
+                        style={{
+                          borderColor: (avatarDef?.accentColor ?? "#B6FF00") + "40",
+                          color: avatarDef?.accentColor ?? "#B6FF00",
+                          background: (avatarDef?.accentColor ?? "#B6FF00") + "0F",
+                        }}
+                      >
+                        {athleteLabel}
+                      </span>
+                      {profile?.username && (
+                        <Link
+                          href={`/perfil/${profile.username}/trofeus`}
+                          prefetch
+                          className="mobile-tap inline-flex items-center gap-1 rounded-lg border border-[#EAB308]/25 bg-[#EAB308]/[0.08] px-2.5 py-1.5 text-xs font-bold text-[#EAB308]/90 shadow-[0_0_18px_rgba(234,179,8,0.08)] transition-transform duration-100 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-[0.97] active:opacity-80"
+                        >
+                          <Trophy className="size-3" strokeWidth={2} />
+                          Troféus
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                  <div className="hidden">
                     <span
                       className="rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em]"
                       style={{

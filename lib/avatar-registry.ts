@@ -106,6 +106,24 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     accentColor: '#D9FF5C',
     glowColor: 'rgba(217,255,92,0.32)',
   },
+  {
+    id: 'neon-runner-vesta',
+    ...running,
+    label: 'Vesta',
+    description: 'Sprint feminino',
+    accentColor: '#B6FF00',
+    secondaryColor: '#86EFAC',
+    glowColor: 'rgba(182,255,0,0.34)',
+  },
+  {
+    id: 'neon-runner-luma',
+    ...running,
+    label: 'Luma',
+    description: 'Pace elegante',
+    accentColor: '#84FF5F',
+    secondaryColor: '#22D3EE',
+    glowColor: 'rgba(132,255,95,0.30)',
+  },
 
   {
     id: 'neon-lifter-iron',
@@ -162,6 +180,24 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     description: 'Potencia limpa',
     accentColor: '#F0ABFC',
     glowColor: 'rgba(240,171,252,0.28)',
+  },
+  {
+    id: 'neon-lifter-athena',
+    ...gym,
+    label: 'Athena',
+    description: 'Forca premium',
+    accentColor: '#C084FC',
+    secondaryColor: '#F0ABFC',
+    glowColor: 'rgba(192,132,252,0.34)',
+  },
+  {
+    id: 'neon-lifter-nova',
+    ...gym,
+    label: 'Nova',
+    description: 'Intensidade limpa',
+    accentColor: '#E879F9',
+    secondaryColor: '#A855F7',
+    glowColor: 'rgba(232,121,249,0.30)',
   },
 
   {
@@ -227,6 +263,24 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     secondaryColor: '#B6FF00',
     glowColor: 'rgba(124,58,237,0.30)',
   },
+  {
+    id: 'neon-hybrid-iris',
+    ...hybrid,
+    label: 'Iris',
+    description: 'Foco hibrido',
+    accentColor: '#B6FF00',
+    secondaryColor: '#D946EF',
+    glowColor: 'rgba(182,255,0,0.28)',
+  },
+  {
+    id: 'neon-hybrid-sable',
+    ...hybrid,
+    label: 'Sable',
+    description: 'Rara e forte',
+    accentColor: '#A78BFA',
+    secondaryColor: '#39FF88',
+    glowColor: 'rgba(167,139,250,0.31)',
+  },
 
   {
     id: 'season-gold-champion',
@@ -263,6 +317,18 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     glowColor: 'rgba(245,158,11,0.34)',
     rarity: 'seasonal',
     unlock: { kind: 'admin', label: 'Admin' },
+  },
+  {
+    id: 'season-gold-valkyrie',
+    type: 'power_athlete',
+    category: 'premium',
+    label: 'Valkyrie',
+    description: 'Elite feminina',
+    accentColor: '#FACC15',
+    secondaryColor: '#F0ABFC',
+    glowColor: 'rgba(250,204,21,0.36)',
+    rarity: 'seasonal',
+    unlock: { kind: 'season', seasonKey: 'elite-02', label: 'Temporada' },
   },
 ]
 

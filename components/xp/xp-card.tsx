@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Zap } from 'lucide-react'
 import { useProfile } from '@/hooks/use-profile'
@@ -44,7 +44,7 @@ export function XPCard() {
       <div className="relative">
         <div className="mb-4 flex items-center justify-between gap-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F5F5F5]/38">
-            Progressão XP
+            ProgressÃ£o XP
           </p>
           <div
             className="grid size-8 place-items-center rounded-lg transition-all duration-200 group-hover:scale-110"
@@ -54,22 +54,23 @@ export function XPCard() {
           </div>
         </div>
 
-        <div className="mb-5">
-          <div className="flex items-baseline gap-2">
+        <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              className="font-display text-[2.25rem] font-bold leading-none tracking-tight"
+              className="font-display text-xl font-bold leading-none tracking-tight sm:text-2xl"
               style={{ color: rankStyle.color }}
             >
-              {level}
+              NÃ­vel {level}
             </span>
+            <span className="text-sm font-bold text-[#F5F5F5]/18">Â·</span>
             <span
-              className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
+              className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
               style={{ background: rankStyle.color + '18', color: rankStyle.color }}
             >
               {rankStyle.label}
             </span>
           </div>
-          <p className="mt-2 text-xs text-[#F5F5F5]/32">
+          <p className="mt-2 text-xs font-medium leading-relaxed text-[#F5F5F5]/36">
             {totalXp.toLocaleString('pt-BR')} XP total
             {xpForNextLevel ? ` · ${xpIntoLevel}/${xpForNextLevel} no nível` : ''}
           </p>
@@ -94,3 +95,5 @@ export function XPCard() {
     </article>
   )
 }
+
+

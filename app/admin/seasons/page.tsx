@@ -115,9 +115,9 @@ export default function AdminSeasonsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] p-6 text-[#F5F5F5]">
+    <div className="text-[#F5F5F5]">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link href="/admin" className="text-xs text-[#F5F5F5]/30 hover:text-[#F5F5F5]/60">
             ← Admin
@@ -128,7 +128,7 @@ export default function AdminSeasonsPage() {
         <button
           type="button"
           onClick={startCreate}
-          className="flex items-center gap-2 rounded-xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] transition-all active:scale-95"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] transition-all active:scale-95 sm:w-auto"
         >
           <Plus className="size-4" />
           Nova temporada
@@ -137,7 +137,7 @@ export default function AdminSeasonsPage() {
 
       {/* Form */}
       {showForm && (
-        <section className="mb-6 rounded-2xl border border-white/[0.09] bg-[#111] p-5">
+        <section className="mb-5 rounded-2xl border border-white/[0.09] bg-[#111] p-4 sm:mb-6 sm:p-5">
           <h2 className="mb-4 text-base font-semibold">
             {editingId ? "Editar temporada" : "Criar temporada"}
           </h2>
@@ -232,11 +232,11 @@ export default function AdminSeasonsPage() {
               </p>
             )}
 
-            <div className="flex gap-2 sm:col-span-2">
+            <div className="grid gap-2 sm:col-span-2 sm:flex">
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex items-center gap-2 rounded-xl bg-[#B6FF00] px-5 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50"
               >
                 <Check className="size-4" />
                 {isPending ? "Salvando..." : "Salvar"}
@@ -244,7 +244,7 @@ export default function AdminSeasonsPage() {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="flex items-center gap-2 rounded-xl border border-white/[0.09] px-5 py-2.5 text-sm font-medium text-[#F5F5F5]/50"
+                className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.09] px-5 py-2.5 text-sm font-medium text-[#F5F5F5]/50"
               >
                 <X className="size-4" />
                 Cancelar
@@ -264,7 +264,7 @@ export default function AdminSeasonsPage() {
           {seasons.map((season) => (
             <div
               key={season.id}
-              className="flex items-center gap-4 rounded-2xl border bg-[#111] p-4"
+              className="flex flex-col gap-3 rounded-2xl border bg-[#111] p-4 sm:flex-row sm:items-center sm:gap-4"
               style={{ borderColor: season.isActive ? `${season.color}40` : "rgba(255,255,255,0.07)" }}
             >
               {/* Color dot */}
@@ -273,7 +273,7 @@ export default function AdminSeasonsPage() {
                 style={{ background: season.color, boxShadow: season.isActive ? `0 0 8px ${season.color}` : "none" }}
               />
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 self-stretch sm:self-auto">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-sm font-semibold text-[#F5F5F5]/90">{season.name}</p>
                   {season.isActive && (
@@ -292,7 +292,7 @@ export default function AdminSeasonsPage() {
                 </p>
               </div>
 
-              <div className="flex shrink-0 gap-2">
+              <div className="grid w-full shrink-0 grid-cols-[1fr_auto] gap-2 sm:w-auto sm:flex">
                 <button
                   type="button"
                   onClick={() => toggleActive(season)}

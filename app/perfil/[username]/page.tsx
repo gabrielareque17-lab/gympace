@@ -282,7 +282,7 @@ export default async function PublicProfilePage({ params }: Props) {
                   )}
 
                   {/* Follower / following counts */}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  <div className="hidden">
                     <Link
                       href={`/perfil/${profile.username}/seguidores`}
                       className="group inline-flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#B6FF00]/25 hover:bg-[#B6FF00]/[0.06] hover:text-[#B6FF00]"
@@ -304,7 +304,60 @@ export default async function PublicProfilePage({ params }: Props) {
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Link
+                      href={`/perfil/${profile.username}/seguidores`}
+                      className="group inline-flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#B6FF00]/25 hover:bg-[#B6FF00]/[0.06] hover:text-[#B6FF00]"
+                    >
+                      <span className="font-bold text-[#F5F5F5]/82 transition-colors group-hover:text-[#F5F5F5]">{followersCount ?? 0}</span>
+                      seguidores
+                    </Link>
+                    <Link
+                      href={`/perfil/${profile.username}/seguindo`}
+                      className="group inline-flex items-center gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.035] px-2.5 py-1.5 text-xs font-semibold text-[#F5F5F5]/55 transition-all duration-150 hover:border-[#22D3EE]/25 hover:bg-[#22D3EE]/[0.06] hover:text-[#22D3EE]"
+                    >
+                      <span className="font-bold text-[#F5F5F5]/82 transition-colors group-hover:text-[#F5F5F5]">{followingCount ?? 0}</span>
+                      seguindo
+                    </Link>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span
+                      className="w-fit rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                      style={{
+                        borderColor: accentColor + "40",
+                        color: accentColor,
+                        background: accentColor + "0F",
+                      }}
+                    >
+                      {athleteLabel}
+                    </span>
+                    <Link
+                      href={`/perfil/${profile.username}/trofeus`}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#EAB308]/25 bg-[#EAB308]/[0.08] px-3 py-1.5 text-[11px] font-bold text-[#EAB308]/90 shadow-[0_0_18px_rgba(234,179,8,0.08)] transition-all duration-150 hover:border-[#EAB308]/35 hover:bg-[#EAB308]/[0.11] active:scale-95"
+                    >
+                      <Trophy className="size-3.5" strokeWidth={2} />
+                      Ver troféus
+                    </Link>
+                    {currentUser && !isOwnProfile && (
+                      <>
+                        <FollowButton
+                          targetUserId={profile.user_id}
+                          initialIsFollowing={isFollowing}
+                        />
+                        <Link
+                          href={`/desafios/novo?userId=${profile.user_id}`}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-[#F5F5F5]/60 transition-all duration-150 hover:border-[#FB923C]/30 hover:bg-[#FB923C]/[0.06] hover:text-[#FB923C]/90 active:scale-95"
+                        >
+                          <Swords className="size-3.5" strokeWidth={2} />
+                          Desafiar
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="hidden">
                   <span
                     className="w-fit rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
                     style={{
