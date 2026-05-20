@@ -1,11 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Activity,
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
   Clock,
+  Flame,
   Gauge,
   Loader2,
   MapPin,
@@ -26,6 +29,14 @@ import { LevelUpOverlay } from "@/components/xp/level-up-overlay";
 import { useProfile } from "@/hooks/use-profile";
 import { formatDateLabel as formatRunDate } from "@/lib/date-utils";
 
+const RunTrackerModal = dynamic(
+  () =>
+    import("@/components/corridas/RunTrackerModal").then(
+      (m) => ({ default: m.RunTrackerModal })
+    ),
+  { ssr: false }
+);
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Run = {
@@ -33,6 +44,9 @@ type Run = {
   distance: number;
   pace: string;
   duration: string;
+  duration_seconds: number | null;
+  avg_speed: number | null;
+  calories: number | null;
   run_type: string | null;
   notes: string | null;
   created_at: string;
@@ -169,6 +183,7 @@ export default function RunsPage() {
   const [editingRun, setEditingRun] = useState<Run | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showTracker, setShowTracker] = useState(false);
 
   const isSaving = status === "saving";
 
@@ -249,10 +264,21 @@ export default function RunsPage() {
     await loadRuns();
   }
 
+  function handleTrackerSaved() {
+    refetchProfile();
+    void loadRuns();
+  }
+
   const runType = getRunType(form.run_type);
 
   return (
     <>
+      {showTracker && (
+        <RunTrackerModal
+          onClose={() => setShowTracker(false)}
+          onSaved={handleTrackerSaved}
+        />
+      )}
       {showLevelUp && xpFeedback && (
         <LevelUpOverlay
           level={xpFeedback.currentLevel}
@@ -271,27 +297,42 @@ export default function RunsPage() {
       )}
       <AppShell>
         <div className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          {/* ── Header ─────────────────────────────────────────────────── */}
           <header className="mb-6 sm:mb-8">
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
               Registro
             </p>
-            <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Nova corrida</h1>
-            <p className="mt-1.5 max-w-lg text-sm leading-6 text-[#F5F5F5]/40 sm:mt-2">
-              Registre suas corridas com tipo, pace calculado automaticamente e observações.
-            </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Corridas</h1>
+                <p className="mt-1.5 max-w-lg text-sm leading-6 text-[#F5F5F5]/40 sm:mt-2">
+                  Registre manualmente ou use o rastreamento GPS em tempo real.
+                </p>
+              </div>
+              {/* GPS tracker button */}
+              <button
+                type="button"
+                onClick={() => setShowTracker(true)}
+                className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.2)] transition hover:-translate-y-px hover:shadow-[0_0_32px_rgba(182,255,0,0.3)] active:translate-y-0"
+              >
+                <MapPin className="size-4" strokeWidth={2.5} />
+                <span className="hidden sm:inline">Rastreamento GPS</span>
+                <span className="sm:hidden">GPS</span>
+              </button>
+            </div>
           </header>
 
           <section className="grid gap-4 xl:grid-cols-[1fr_0.55fr]">
+            {/* ── Manual form ─────────────────────────────────────────── */}
             <form
               onSubmit={handleSubmit}
               className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]"
             >
-              {/* Form header */}
               <div className="relative border-b border-white/[0.05] px-4 py-4 sm:px-6 sm:py-5">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="font-display text-base font-semibold">Dados do treino</h2>
+                    <h2 className="font-display text-base font-semibold">Registro manual</h2>
                     <p className="mt-1 text-sm text-[#F5F5F5]/38">Preencha distância e duração para calcular o pace.</p>
                   </div>
                   <div
@@ -437,7 +478,7 @@ export default function RunsPage() {
               ) : null}
             </form>
 
-            {/* Preview */}
+            {/* ── Preview ─────────────────────────────────────────────── */}
             <aside className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
               <div className="relative border-b border-white/[0.05] px-4 py-3 sm:px-5 sm:py-4">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
@@ -456,10 +497,27 @@ export default function RunsPage() {
                   </div>
                 ) : null}
               </div>
+
+              {/* GPS CTA */}
+              <div className="mx-4 mb-4 sm:mx-5 sm:mb-5">
+                <button
+                  type="button"
+                  onClick={() => setShowTracker(true)}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-[#B6FF00]/14 bg-[#B6FF00]/[0.06] px-4 py-3 text-left transition hover:bg-[#B6FF00]/[0.1]"
+                >
+                  <div className="grid size-8 place-items-center rounded-xl bg-[#B6FF00]/12">
+                    <MapPin className="size-4 text-[#B6FF00]" strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#B6FF00]/80">Rastrear com GPS</p>
+                    <p className="mt-0.5 text-[10px] text-[#F5F5F5]/35">Distância e rota automáticas</p>
+                  </div>
+                </button>
+              </div>
             </aside>
           </section>
 
-          {/* Saved runs */}
+          {/* ── Saved runs ──────────────────────────────────────────────── */}
           <SavedRunsSection
             runs={runs}
             status={runsStatus}
@@ -606,7 +664,7 @@ function SavedRunsSection({
               <Route className="size-5" strokeWidth={1.5} />
             </div>
             <p className="text-sm font-medium text-[#F5F5F5]/35">Nenhuma corrida salva ainda</p>
-            <p className="mt-1 text-xs text-[#F5F5F5]/20">Use o formulário acima para registrar seu primeiro treino</p>
+            <p className="mt-1 text-xs text-[#F5F5F5]/20">Use o GPS ou o formulário acima para registrar</p>
           </div>
         )}
         {isLoading && runs.length === 0 && (
@@ -637,7 +695,7 @@ function SavedRunsSection({
   );
 }
 
-// ─── Run card ─────────────────────────────────────────────────────────────────
+// ─── Run card (premium) ───────────────────────────────────────────────────────
 
 function RunCard({
   run,
@@ -659,6 +717,7 @@ function RunCard({
   const rt = getRunType(run.run_type);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const hasGps = run.avg_speed !== null || run.calories !== null;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -706,6 +765,18 @@ function RunCard({
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#151515] p-4 transition-all duration-300 hover:border-white/[0.1] hover:bg-[#181818] hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)]">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      {/* GPS badge */}
+      {hasGps && (
+        <div
+          className="absolute right-3 top-3 flex items-center gap-1 rounded-full border px-1.5 py-0.5"
+          style={{ borderColor: `${rt.color}22`, background: `${rt.color}0A` }}
+        >
+          <MapPin className="size-2.5" style={{ color: rt.color }} strokeWidth={2} />
+          <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: `${rt.color}cc` }}>
+            GPS
+          </span>
+        </div>
+      )}
 
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -723,7 +794,6 @@ function RunCard({
           </span>
         </div>
 
-        {/* Action menu */}
         <div ref={menuRef} className="relative shrink-0">
           <button
             type="button"
@@ -755,6 +825,7 @@ function RunCard({
         </div>
       </div>
 
+      {/* Distance — primary metric */}
       <div className="mb-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#F5F5F5]/32">Distância</p>
         <p className="font-display mt-1 text-2xl font-bold tracking-tight">
@@ -763,9 +834,16 @@ function RunCard({
         </p>
       </div>
 
+      {/* Stats */}
       <div className="space-y-1.5">
         <RunStat icon={Gauge} label="Pace" value={`${run.pace}/km`} />
         <RunStat icon={Clock} label="Duração" value={run.duration} />
+        {run.avg_speed !== null && (
+          <RunStat icon={Activity} label="Velocidade" value={`${run.avg_speed} km/h`} accent="#A78BFA" />
+        )}
+        {run.calories !== null && (
+          <RunStat icon={Flame} label="Calorias" value={`${run.calories} kcal`} accent="#FB923C" />
+        )}
         <RunStat icon={CalendarDays} label="Data" value={formatRunDate(run.created_at)} />
       </div>
 
@@ -779,11 +857,25 @@ function RunCard({
   );
 }
 
-function RunStat({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+function RunStat({
+  icon: Icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  accent?: string;
+}) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
       <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.1em] text-[#F5F5F5]/30">
-        <Icon className="size-3 text-[#B6FF00]/60" strokeWidth={2} />
+        <Icon
+          className="size-3"
+          style={{ color: accent ? `${accent}99` : "rgba(182,255,0,0.6)" }}
+          strokeWidth={2}
+        />
         {label}
       </span>
       <span className="font-mono text-xs font-semibold text-[#F5F5F5]/75">{value}</span>
@@ -851,8 +943,7 @@ function EditRunModal({
           <p className="mt-1 text-xs text-[#F5F5F5]/38">{formatRunDate(run.created_at)}</p>
         </div>
 
-        <form onSubmit={handleSave} className="p-6 space-y-4">
-          {/* Run type */}
+        <form onSubmit={handleSave} className="space-y-4 p-6">
           <div>
             <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#F5F5F5]/30">Tipo</p>
             <div className="flex flex-wrap gap-2">
@@ -943,7 +1034,7 @@ function EditRunModal({
   );
 }
 
-// ─── Shared feedback components ───────────────────────────────────────────────
+// ─── Feedback components ──────────────────────────────────────────────────────
 
 function ProgressPulse({ updates }: { updates: ProgressUpdate[] }) {
   const accent = "#B6FF00";
