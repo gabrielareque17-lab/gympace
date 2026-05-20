@@ -1,248 +1,318 @@
 export type AvatarType = 'runner' | 'gym_rat' | 'hybrid_athlete' | 'power_athlete'
-export type AvatarCategory = 'running' | 'gym' | 'hybrid'
+export type AvatarCategory = 'running' | 'gym' | 'hybrid' | 'premium'
+export type AvatarRarity = 'core' | 'rare' | 'epic' | 'legendary' | 'seasonal'
+export type AvatarUnlockKind = 'free' | 'level' | 'season' | 'trophy' | 'achievement' | 'admin'
+
+export interface AvatarUnlockRule {
+  kind: AvatarUnlockKind
+  level?: number
+  seasonKey?: string
+  trophyId?: string
+  achievementId?: string
+  label: string
+}
 
 export interface AvatarDefinition {
   id: string
   type: AvatarType
-  category?: AvatarCategory
+  category: AvatarCategory
   label: string
   description: string
   accentColor: string
+  secondaryColor: string
   glowColor: string
+  rarity: AvatarRarity
+  unlock: AvatarUnlockRule
+}
+
+const running = {
+  type: 'runner' as const,
+  category: 'running' as const,
+  secondaryColor: '#39FF88',
+  rarity: 'core' as const,
+  unlock: { kind: 'free' as const, label: 'Livre' },
+}
+
+const gym = {
+  type: 'gym_rat' as const,
+  category: 'gym' as const,
+  secondaryColor: '#F0ABFC',
+  rarity: 'core' as const,
+  unlock: { kind: 'free' as const, label: 'Livre' },
+}
+
+const hybrid = {
+  type: 'hybrid_athlete' as const,
+  category: 'hybrid' as const,
+  secondaryColor: '#A78BFA',
+  rarity: 'rare' as const,
+  unlock: { kind: 'free' as const, label: 'Livre' },
 }
 
 export const AVATAR_REGISTRY: AvatarDefinition[] = [
-  // ── Legacy avatars (kept for backward compatibility) ──────────────────────
   {
-    id: 'runner-v1',
-    type: 'runner',
-    label: 'Corredor',
-    description: 'Velocidade e resistência',
+    id: 'neon-runner-velocity',
+    ...running,
+    label: 'Velocity',
+    description: 'Visor de sprint',
     accentColor: '#B6FF00',
-    glowColor: 'rgba(182,255,0,0.25)',
+    glowColor: 'rgba(182,255,0,0.34)',
   },
   {
-    id: 'gym-v1',
-    type: 'gym_rat',
-    label: 'Academia',
-    description: 'Força e hipertrofia',
-    accentColor: '#60A5FA',
-    glowColor: 'rgba(96,165,250,0.25)',
+    id: 'neon-runner-aero',
+    ...running,
+    label: 'Aero',
+    description: 'Ritmo limpo',
+    accentColor: '#A3FF12',
+    glowColor: 'rgba(163,255,18,0.32)',
   },
   {
-    id: 'hybrid-v1',
-    type: 'hybrid_athlete',
-    label: 'Híbrido',
-    description: 'Potência e mobilidade',
-    accentColor: '#A78BFA',
-    glowColor: 'rgba(167,139,250,0.25)',
+    id: 'neon-runner-pulse',
+    ...running,
+    label: 'Pulse',
+    description: 'Energia urbana',
+    accentColor: '#7CFF3A',
+    glowColor: 'rgba(124,255,58,0.32)',
   },
   {
-    id: 'power-v1',
-    type: 'power_athlete',
-    label: 'Força',
-    description: 'Explosão e potência',
-    accentColor: '#FB923C',
-    glowColor: 'rgba(251,146,60,0.25)',
-  },
-
-  // ── 🟢 Corrida ─────────────────────────────────────────────────────────────
-  {
-    id: 'runner-sprint',
-    type: 'runner',
-    category: 'running',
-    label: 'Sprint',
-    description: 'Explosão e velocidade',
-    accentColor: '#B6FF00',
-    glowColor: 'rgba(182,255,0,0.25)',
-  },
-  {
-    id: 'runner-marathon',
-    type: 'runner',
-    category: 'running',
-    label: 'Marathon',
-    description: 'Ritmo e resistência',
-    accentColor: '#A3E635',
-    glowColor: 'rgba(163,230,53,0.25)',
-  },
-  {
-    id: 'runner-trail',
-    type: 'runner',
-    category: 'running',
-    label: 'Trail',
-    description: 'Off-road e superação',
-    accentColor: '#4ADE80',
-    glowColor: 'rgba(74,222,128,0.25)',
-  },
-  {
-    id: 'runner-night',
-    type: 'runner',
-    category: 'running',
-    label: 'Night Runner',
-    description: 'Treino nas sombras',
+    id: 'neon-runner-ghost',
+    ...running,
+    label: 'Ghost',
+    description: 'Night run',
     accentColor: '#00FF88',
-    glowColor: 'rgba(0,255,136,0.25)',
+    glowColor: 'rgba(0,255,136,0.30)',
   },
   {
-    id: 'runner-elite',
-    type: 'runner',
-    category: 'running',
-    label: 'Elite Runner',
-    description: 'Performance de elite',
-    accentColor: '#86EFAC',
-    glowColor: 'rgba(134,239,172,0.25)',
-  },
-  {
-    id: 'runner-endurance',
-    type: 'runner',
-    category: 'running',
-    label: 'Endurance',
-    description: 'Volume e consistência',
-    accentColor: '#22C55E',
-    glowColor: 'rgba(34,197,94,0.25)',
-  },
-  {
-    id: 'runner-speed',
-    type: 'runner',
-    category: 'running',
-    label: 'Speed Runner',
-    description: 'Ritmo e eficiência',
+    id: 'neon-runner-stride',
+    ...running,
+    label: 'Stride',
+    description: 'Tecnica e cadencia',
     accentColor: '#C4FF3D',
-    glowColor: 'rgba(196,255,61,0.25)',
+    glowColor: 'rgba(196,255,61,0.30)',
+  },
+  {
+    id: 'neon-runner-orbit',
+    ...running,
+    label: 'Orbit',
+    description: 'Foco constante',
+    accentColor: '#4ADE80',
+    glowColor: 'rgba(74,222,128,0.30)',
+  },
+  {
+    id: 'neon-runner-prime',
+    ...running,
+    label: 'Prime',
+    description: 'Performance alta',
+    accentColor: '#D9FF5C',
+    glowColor: 'rgba(217,255,92,0.32)',
   },
 
-  // ── 🔵 Academia ────────────────────────────────────────────────────────────
   {
-    id: 'gym-bodybuilder',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Bodybuilder',
-    description: 'Escultura e proporção',
-    accentColor: '#60A5FA',
-    glowColor: 'rgba(96,165,250,0.25)',
+    id: 'neon-lifter-iron',
+    ...gym,
+    label: 'Iron',
+    description: 'Forca bruta',
+    accentColor: '#A855F7',
+    glowColor: 'rgba(168,85,247,0.34)',
   },
   {
-    id: 'gym-powerlifting',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Powerlifting',
-    description: 'Força máxima bruta',
-    accentColor: '#3B82F6',
-    glowColor: 'rgba(59,130,246,0.25)',
-  },
-  {
-    id: 'gym-calistenia',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Calistenia',
-    description: 'Controle e habilidade',
-    accentColor: '#38BDF8',
-    glowColor: 'rgba(56,189,248,0.25)',
-  },
-  {
-    id: 'gym-strong',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Strong',
-    description: 'Força e potência',
-    accentColor: '#0EA5E9',
-    glowColor: 'rgba(14,165,233,0.25)',
-  },
-  {
-    id: 'gym-hypertrophy',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Hypertrophy',
-    description: 'Volume e progressão',
-    accentColor: '#93C5FD',
-    glowColor: 'rgba(147,197,253,0.25)',
-  },
-  {
-    id: 'gym-hardcore',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Hardcore',
-    description: 'Intensidade máxima',
-    accentColor: '#1D4ED8',
-    glowColor: 'rgba(29,78,216,0.25)',
-  },
-  {
-    id: 'gym-iron',
-    type: 'gym_rat',
-    category: 'gym',
-    label: 'Iron Athlete',
-    description: 'Dedicação de ferro',
-    accentColor: '#7DD3FC',
-    glowColor: 'rgba(125,211,252,0.25)',
-  },
-
-  // ── 🟣 Híbrido ─────────────────────────────────────────────────────────────
-  {
-    id: 'hybrid-functional',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Functional',
-    description: 'Movimento completo',
-    accentColor: '#A78BFA',
-    glowColor: 'rgba(167,139,250,0.25)',
-  },
-  {
-    id: 'hybrid-cross',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Cross Athlete',
-    description: 'Alta intensidade',
-    accentColor: '#8B5CF6',
-    glowColor: 'rgba(139,92,246,0.25)',
-  },
-  {
-    id: 'hybrid-mobility',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Mobility',
-    description: 'Flexibilidade e controle',
+    id: 'neon-lifter-titan',
+    ...gym,
+    label: 'Titan',
+    description: 'Carga maxima',
     accentColor: '#C084FC',
-    glowColor: 'rgba(192,132,252,0.25)',
+    glowColor: 'rgba(192,132,252,0.32)',
   },
   {
-    id: 'hybrid-pro',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Hybrid Pro',
-    description: 'Força e resistência',
-    accentColor: '#E879F9',
-    glowColor: 'rgba(232,121,249,0.25)',
-  },
-  {
-    id: 'hybrid-endurance',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Endurance Hybrid',
-    description: 'Potência aeróbica',
-    accentColor: '#7C3AED',
-    glowColor: 'rgba(124,58,237,0.25)',
-  },
-  {
-    id: 'hybrid-tactical',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Tactical',
-    description: 'Físico e mente',
+    id: 'neon-lifter-volt',
+    ...gym,
+    label: 'Volt',
+    description: 'Intensidade',
     accentColor: '#D946EF',
-    glowColor: 'rgba(217,70,239,0.25)',
+    glowColor: 'rgba(217,70,239,0.30)',
   },
   {
-    id: 'hybrid-performance',
-    type: 'hybrid_athlete',
-    category: 'hybrid',
-    label: 'Performance',
-    description: 'Resultado e evolução',
+    id: 'neon-lifter-forge',
+    ...gym,
+    label: 'Forge',
+    description: 'Disciplina pesada',
+    accentColor: '#8B5CF6',
+    glowColor: 'rgba(139,92,246,0.32)',
+  },
+  {
+    id: 'neon-lifter-arc',
+    ...gym,
+    label: 'Arc',
+    description: 'Controle total',
+    accentColor: '#E879F9',
+    glowColor: 'rgba(232,121,249,0.30)',
+  },
+  {
+    id: 'neon-lifter-crown',
+    ...gym,
+    label: 'Crown',
+    description: 'Presenca forte',
+    accentColor: '#9333EA',
+    glowColor: 'rgba(147,51,234,0.34)',
+  },
+  {
+    id: 'neon-lifter-core',
+    ...gym,
+    label: 'Core',
+    description: 'Potencia limpa',
     accentColor: '#F0ABFC',
-    glowColor: 'rgba(240,171,252,0.25)',
+    glowColor: 'rgba(240,171,252,0.28)',
+  },
+
+  {
+    id: 'neon-hybrid-apex',
+    ...hybrid,
+    label: 'Apex',
+    description: 'Forca + pace',
+    accentColor: '#B6FF00',
+    secondaryColor: '#A78BFA',
+    glowColor: 'rgba(182,255,0,0.24)',
+  },
+  {
+    id: 'neon-hybrid-fusion',
+    ...hybrid,
+    label: 'Fusion',
+    description: 'Raro e versatil',
+    accentColor: '#A78BFA',
+    secondaryColor: '#B6FF00',
+    glowColor: 'rgba(167,139,250,0.30)',
+  },
+  {
+    id: 'neon-hybrid-zenith',
+    ...hybrid,
+    label: 'Zenith',
+    description: 'Dupla performance',
+    accentColor: '#D946EF',
+    secondaryColor: '#7CFF3A',
+    glowColor: 'rgba(217,70,239,0.28)',
+  },
+  {
+    id: 'neon-hybrid-rogue',
+    ...hybrid,
+    label: 'Rogue',
+    description: 'Alta intensidade',
+    accentColor: '#22D3EE',
+    secondaryColor: '#B6FF00',
+    glowColor: 'rgba(34,211,238,0.25)',
+  },
+  {
+    id: 'neon-hybrid-vector',
+    ...hybrid,
+    label: 'Vector',
+    description: 'Movimento preciso',
+    accentColor: '#C084FC',
+    secondaryColor: '#39FF88',
+    glowColor: 'rgba(192,132,252,0.28)',
+  },
+  {
+    id: 'neon-hybrid-matrix',
+    ...hybrid,
+    label: 'Matrix',
+    description: 'Status hibrido',
+    accentColor: '#B6FF00',
+    secondaryColor: '#F0ABFC',
+    glowColor: 'rgba(182,255,0,0.26)',
+  },
+  {
+    id: 'neon-hybrid-phantom',
+    ...hybrid,
+    label: 'Phantom',
+    description: 'Endurance forte',
+    accentColor: '#7C3AED',
+    secondaryColor: '#B6FF00',
+    glowColor: 'rgba(124,58,237,0.30)',
+  },
+
+  {
+    id: 'season-gold-champion',
+    type: 'power_athlete',
+    category: 'premium',
+    label: 'Champion',
+    description: 'Temporada Elite',
+    accentColor: '#FACC15',
+    secondaryColor: '#FFF4A3',
+    glowColor: 'rgba(250,204,21,0.34)',
+    rarity: 'legendary',
+    unlock: { kind: 'season', seasonKey: 'elite-01', label: 'Temporada' },
+  },
+  {
+    id: 'season-gold-immortal',
+    type: 'power_athlete',
+    category: 'premium',
+    label: 'Immortal',
+    description: 'Troféu exclusivo',
+    accentColor: '#EAB308',
+    secondaryColor: '#B6FF00',
+    glowColor: 'rgba(234,179,8,0.34)',
+    rarity: 'legendary',
+    unlock: { kind: 'trophy', trophyId: 'exclusive-season', label: 'Troféu' },
+  },
+  {
+    id: 'season-gold-admin',
+    type: 'power_athlete',
+    category: 'premium',
+    label: 'Founder',
+    description: 'Admin drop',
+    accentColor: '#F59E0B',
+    secondaryColor: '#FDE68A',
+    glowColor: 'rgba(245,158,11,0.34)',
+    rarity: 'seasonal',
+    unlock: { kind: 'admin', label: 'Admin' },
   },
 ]
 
-export const getAvatarById = (id: string): AvatarDefinition | undefined =>
-  AVATAR_REGISTRY.find((a) => a.id === id)
+const LEGACY_AVATAR_MAP: Record<string, string> = {
+  'runner-v1': 'neon-runner-velocity',
+  'gym-v1': 'neon-lifter-iron',
+  'hybrid-v1': 'neon-hybrid-apex',
+  'power-v1': 'neon-lifter-titan',
+  'runner-sprint': 'neon-runner-velocity',
+  'runner-marathon': 'neon-runner-aero',
+  'runner-trail': 'neon-runner-orbit',
+  'runner-night': 'neon-runner-ghost',
+  'runner-elite': 'neon-runner-prime',
+  'runner-endurance': 'neon-runner-stride',
+  'runner-speed': 'neon-runner-pulse',
+  'gym-bodybuilder': 'neon-lifter-iron',
+  'gym-powerlifting': 'neon-lifter-titan',
+  'gym-calistenia': 'neon-lifter-core',
+  'gym-strong': 'neon-lifter-forge',
+  'gym-hypertrophy': 'neon-lifter-volt',
+  'gym-hardcore': 'neon-lifter-crown',
+  'gym-iron': 'neon-lifter-arc',
+  'hybrid-functional': 'neon-hybrid-apex',
+  'hybrid-cross': 'neon-hybrid-fusion',
+  'hybrid-mobility': 'neon-hybrid-vector',
+  'hybrid-pro': 'neon-hybrid-zenith',
+  'hybrid-endurance': 'neon-hybrid-phantom',
+  'hybrid-tactical': 'neon-hybrid-rogue',
+  'hybrid-performance': 'neon-hybrid-matrix',
+}
+
+export const SELECTABLE_AVATARS = AVATAR_REGISTRY
+
+export function resolveAvatarId(id: string | null | undefined): string {
+  if (!id) return getDefaultAvatar().id
+  return LEGACY_AVATAR_MAP[id] ?? id
+}
+
+export const getAvatarById = (id: string | null | undefined): AvatarDefinition | undefined =>
+  AVATAR_REGISTRY.find((a) => a.id === resolveAvatarId(id))
 
 export const getDefaultAvatar = (): AvatarDefinition => AVATAR_REGISTRY[0]
+
+export function isAvatarUnlocked(
+  avatar: AvatarDefinition,
+  context: { level?: number | null; isAdmin?: boolean | null; unlockedAvatarIds?: string[] } = {}
+): boolean {
+  if (avatar.unlock.kind === 'free') return true
+  if (context.isAdmin) return true
+  if (context.unlockedAvatarIds?.includes(avatar.id)) return true
+  if (avatar.unlock.kind === 'level') return (context.level ?? 0) >= (avatar.unlock.level ?? Infinity)
+  return false
+}

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { AVATAR_REGISTRY, type AvatarType } from '@/lib/avatar-registry'
+import { getAvatarById, isAvatarUnlocked, type AvatarType } from '@/lib/avatar-registry'
 import type { ProfilePatch } from '@/lib/profile'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { syncUserXP } from '@/lib/xp'
@@ -31,13 +31,17 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const [profileResult, xpFeedback] = await Promise.all([
+  const [profileResult, xpFeedback, avatarUnlocksResult] = await Promise.all([
     supabase
       .from('profiles')
       .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, current_level, total_xp, rank, is_admin, timezone, created_at')
       .eq('user_id', user.id)
       .maybeSingle(),
     syncUserXP(supabase, user.id),
+    supabase
+      .from('user_avatar_unlocks')
+      .select('avatar_id')
+      .eq('user_id', user.id),
   ])
 
   const { data: profile, error: profileError } = profileResult
@@ -84,6 +88,7 @@ export async function GET() {
     xpForNextLevel: xpFeedback.xpForNextLevel,
     rank: xpFeedback.rank,
     isAdmin: Boolean(resolvedProfile?.is_admin),
+    unlockedAvatarIds: ((avatarUnlocksResult.data ?? []) as { avatar_id: string }[]).map((row) => row.avatar_id),
     timezone: resolvedProfile?.timezone ?? 'America/Manaus',
     createdAt: resolvedProfile?.created_at ?? null,
   })
@@ -115,8 +120,23 @@ export async function PATCH(request: Request) {
     if (!VALID_TYPES.includes(avatarType as AvatarType)) {
       return NextResponse.json({ error: 'Invalid avatarType' }, { status: 400 })
     }
-    if (!AVATAR_REGISTRY.find((a) => a.id === avatarId)) {
+    const avatar = getAvatarById(avatarId)
+    if (!avatar) {
       return NextResponse.json({ error: 'Unknown avatarId' }, { status: 400 })
+    }
+    const xpFeedback = await syncUserXP(supabase, user.id)
+    const { data: profileAccess } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    const { data: avatarUnlocks } = await supabase
+      .from('user_avatar_unlocks')
+      .select('avatar_id')
+      .eq('user_id', user.id)
+    const unlockedAvatarIds = ((avatarUnlocks ?? []) as { avatar_id: string }[]).map((row) => row.avatar_id)
+    if (!isAvatarUnlocked(avatar, { level: xpFeedback.currentLevel, isAdmin: Boolean(profileAccess?.is_admin), unlockedAvatarIds })) {
+      return NextResponse.json({ error: 'Avatar bloqueado.' }, { status: 403 })
     }
     update.avatar_id = avatarId
     update.avatar_type = avatarType

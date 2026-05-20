@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check, Lock } from 'lucide-react'
 
 import { AvatarDefinition, AvatarType } from '@/lib/avatar-registry'
 import { cn } from '@/lib/utils'
@@ -12,26 +12,36 @@ interface AvatarCardProps {
   isSelected: boolean
   onSelect: (id: string, type: AvatarType) => void
   isLoading?: boolean
+  isLocked?: boolean
 }
 
-export function AvatarCard({ definition, isSelected, onSelect, isLoading }: AvatarCardProps) {
+const RARITY_LABELS = {
+  core: 'Base',
+  rare: 'Raro',
+  epic: 'Epico',
+  legendary: 'Lendario',
+  seasonal: 'Temporada',
+} as const
+
+export function AvatarCard({ definition, isSelected, onSelect, isLoading, isLocked = false }: AvatarCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   const showGlow = isSelected || isHovered
-  const { accentColor, glowColor } = definition
+  const { accentColor, secondaryColor, glowColor } = definition
 
   return (
     <button
       type="button"
-      onClick={() => !isLoading && onSelect(definition.id, definition.type)}
+      onClick={() => !isLoading && !isLocked && onSelect(definition.id, definition.type)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      disabled={isLoading}
+      disabled={isLoading || isLocked}
       className={cn(
-        'relative flex flex-col items-center gap-2 rounded-2xl border p-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-3 sm:p-4',
+        'relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border p-2.5 text-left transition-all duration-200 [content-visibility:auto] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 disabled:cursor-not-allowed sm:gap-3 sm:p-3.5',
         isSelected
           ? 'bg-[#141414]'
-          : 'border-white/[0.06] bg-[#111111] hover:bg-[#141414] hover:border-white/[0.14]'
+          : 'border-white/[0.06] bg-[#101010] hover:border-white/[0.14] hover:bg-[#141414]',
+        isLocked && 'opacity-55 grayscale-[0.35]'
       )}
       style={{
         borderColor: isSelected ? `${accentColor}55` : undefined,
@@ -39,6 +49,11 @@ export function AvatarCard({ definition, isSelected, onSelect, isLoading }: Avat
       }}
       aria-pressed={isSelected}
     >
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${accentColor}55, transparent)` }}
+      />
+
       {/* Selected checkmark */}
       {isSelected && (
         <span
@@ -48,23 +63,28 @@ export function AvatarCard({ definition, isSelected, onSelect, isLoading }: Avat
           <Check className="size-2.5 text-[#080808] sm:size-3" strokeWidth={3} />
         </span>
       )}
+      {isLocked && (
+        <span className="absolute right-2 top-2 grid size-5 place-items-center rounded-full border border-white/[0.08] bg-black/70 text-white/45">
+          <Lock className="size-3" strokeWidth={2} />
+        </span>
+      )}
 
       {/* Avatar illustration */}
-      <div className="flex items-center justify-center">
-        <AvatarSVG avatarId={definition.id} accentColor={accentColor} size={42} className="sm:hidden" />
-        <AvatarSVG avatarId={definition.id} accentColor={accentColor} size={52} className="hidden sm:block" />
+      <div className="flex size-16 items-center justify-center rounded-2xl bg-black/25 sm:size-20">
+        <AvatarSVG avatarId={definition.id} accentColor={accentColor} secondaryColor={secondaryColor} size={64} className="sm:hidden" />
+        <AvatarSVG avatarId={definition.id} accentColor={accentColor} secondaryColor={secondaryColor} size={80} className="hidden sm:block" />
       </div>
 
-      {/* Category dot */}
-      <span
-        className="block size-1.5 rounded-full"
-        style={{ backgroundColor: accentColor }}
-      />
+      <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/36">
+        {RARITY_LABELS[definition.rarity]}
+      </span>
 
       {/* Label + description */}
       <div className="text-center">
         <p className="font-display text-xs font-semibold text-[#F5F5F5] sm:text-sm">{definition.label}</p>
-        <p className="mt-0.5 text-[10px] text-[#F5F5F5]/40 sm:text-xs sm:text-[#F5F5F5]/45">{definition.description}</p>
+        <p className="mt-0.5 text-[10px] text-[#F5F5F5]/40 sm:text-xs sm:text-[#F5F5F5]/45">
+          {isLocked ? definition.unlock.label : definition.description}
+        </p>
       </div>
     </button>
   )

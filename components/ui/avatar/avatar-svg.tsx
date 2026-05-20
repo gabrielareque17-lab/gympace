@@ -1,328 +1,149 @@
+import { getAvatarById } from '@/lib/avatar-registry'
+
 interface AvatarSVGProps {
   avatarId: string
   accentColor: string
+  secondaryColor?: string
   size?: number
   className?: string
 }
 
-// Maps each avatar ID to a [category, variant] key for SVG routing
-const AVATAR_SVG_KEY: Record<string, string> = {
-  // Legacy
-  'runner-v1':      'runner-1',
-  'gym-v1':         'gym-1',
-  'hybrid-v1':      'hybrid-1',
-  'power-v1':       'power',
-  // Corrida
-  'runner-sprint':   'runner-1',
-  'runner-night':    'runner-1',
-  'runner-marathon': 'runner-2',
-  'runner-elite':    'runner-2',
-  'runner-speed':    'runner-2',
-  'runner-trail':    'runner-3',
-  'runner-endurance':'runner-3',
-  // Academia
-  'gym-bodybuilder': 'gym-1',
-  'gym-strong':      'gym-1',
-  'gym-iron':        'gym-1',
-  'gym-powerlifting':'gym-2',
-  'gym-hypertrophy': 'gym-2',
-  'gym-hardcore':    'gym-2',
-  'gym-calistenia':  'gym-3',
-  // Híbrido
-  'hybrid-functional':  'hybrid-1',
-  'hybrid-pro':         'hybrid-1',
-  'hybrid-cross':       'hybrid-2',
-  'hybrid-endurance':   'hybrid-2',
-  'hybrid-performance': 'hybrid-2',
-  'hybrid-mobility':    'hybrid-3',
-  'hybrid-tactical':    'hybrid-3',
+function hashAvatar(id: string) {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  return hash
 }
 
-export function AvatarSVG({ avatarId, accentColor, size = 64, className }: AvatarSVGProps) {
-  const props = {
-    viewBox: '0 0 64 80',
-    width: size,
-    height: Math.round(size * 1.25),
-    fill: 'none',
-    className,
-  }
-  const key = AVATAR_SVG_KEY[avatarId] ?? 'default'
+export function AvatarSVG({
+  avatarId,
+  accentColor,
+  secondaryColor,
+  size = 64,
+  className,
+}: AvatarSVGProps) {
+  const definition = getAvatarById(avatarId)
+  const category = definition?.category ?? 'running'
+  const rarity = definition?.rarity ?? 'core'
   const accent = accentColor
+  const secondary = secondaryColor ?? definition?.secondaryColor ?? accentColor
+  const h = hashAvatar(avatarId)
+  const uid = avatarId.replace(/[^a-z0-9_-]/gi, '-')
+  const visorTilt = [-5, 0, 5][h % 3]
+  const hair = h % 4
+  const jaw = h % 3
+  const shoulderWide = category === 'gym' || category === 'premium'
+  const isHybrid = category === 'hybrid'
+  const isPremium = category === 'premium'
 
-  switch (key) {
-    case 'runner-1': return <RunnerSVG {...props} accent={accent} />
-    case 'runner-2': return <RunnerMarathonSVG {...props} accent={accent} />
-    case 'runner-3': return <RunnerTrailSVG {...props} accent={accent} />
-    case 'gym-1':    return <GymSVG {...props} accent={accent} />
-    case 'gym-2':    return <GymSquatSVG {...props} accent={accent} />
-    case 'gym-3':    return <GymCalisteniaSVG {...props} accent={accent} />
-    case 'hybrid-1': return <HybridSVG {...props} accent={accent} />
-    case 'hybrid-2': return <HybridFunctionalSVG {...props} accent={accent} />
-    case 'hybrid-3': return <HybridMobilitySVG {...props} accent={accent} />
-    case 'power':    return <PowerSVG {...props} accent={accent} />
-    default:         return <DefaultSVG {...props} accent={accent} />
-  }
-}
-
-interface SVGBaseProps {
-  viewBox: string
-  width: number
-  height: number
-  fill: string
-  className?: string
-  accent: string
-}
-
-const bodyFill = 'rgba(255,255,255,0.08)'
-const bodyStroke = 'rgba(255,255,255,0.18)'
-
-/* ── Runner 1: mid-stride, forward lean (Sprint / Night / legacy) ── */
-function RunnerSVG({ accent, ...svg }: SVGBaseProps) {
   return (
-    <svg {...svg}>
-      <line x1="6" y1="38" x2="14" y2="38" stroke={accent} strokeWidth="1.5" strokeOpacity="0.4" strokeLinecap="round" />
-      <line x1="8" y1="44" x2="14" y2="44" stroke={accent} strokeWidth="1.5" strokeOpacity="0.3" strokeLinecap="round" />
-      <line x1="10" y1="50" x2="14" y2="50" stroke={accent} strokeWidth="1.5" strokeOpacity="0.2" strokeLinecap="round" />
-      <g transform="rotate(-10, 32, 44)">
-        <circle cx="34" cy="11" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-        <polygon points="30,19 38,19 36,39 28,39" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-        <rect x="33" y="22" width="5" height="14" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(30, 33, 22)" />
-        <rect x="26" y="22" width="5" height="14" rx="2.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-38, 31, 22)" />
-        <rect x="29" y="39" width="6" height="20" rx="3" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(18, 32, 39)" />
-        <rect x="29" y="39" width="6" height="20" rx="3" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-22, 32, 39)" />
+    <svg
+      viewBox="0 0 96 96"
+      width={size}
+      height={size}
+      fill="none"
+      className={className}
+      role="img"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id={`${uid}-bg`} cx="50%" cy="35%" r="68%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.24" />
+          <stop offset="46%" stopColor={secondary} stopOpacity={isHybrid ? '0.16' : '0.08'} />
+          <stop offset="100%" stopColor="#050505" stopOpacity="0.98" />
+        </radialGradient>
+        <linearGradient id={`${uid}-skin`} x1="26" y1="18" x2="70" y2="78">
+          <stop stopColor="#2A2A2A" />
+          <stop offset="1" stopColor="#0F0F0F" />
+        </linearGradient>
+        <linearGradient id={`${uid}-visor`} x1="23" y1="41" x2="73" y2="41">
+          <stop stopColor={accent} />
+          <stop offset="1" stopColor={secondary} />
+        </linearGradient>
+        <linearGradient id={`${uid}-suit`} x1="20" y1="62" x2="76" y2="92">
+          <stop stopColor={category === 'running' ? '#111A0D' : category === 'gym' ? '#160E20' : '#101010'} />
+          <stop offset="1" stopColor="#050505" />
+        </linearGradient>
+        <filter id={`${uid}-glow`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <rect x="4" y="4" width="88" height="88" rx="26" fill={`url(#${uid}-bg)`} />
+      <path d="M17 73C20 58 30 50 48 50C66 50 76 58 79 73V89H17V73Z" fill={`url(#${uid}-suit)`} />
+      <path
+        d={shoulderWide ? 'M13 86C17 66 28 58 48 58C68 58 79 66 83 86' : 'M19 86C23 68 33 59 48 59C63 59 73 68 77 86'}
+        stroke="rgba(255,255,255,0.13)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+
+      <path
+        d={jaw === 0
+          ? 'M29 31C31 20 38 14 48 14C58 14 65 20 67 31L64 49C62 60 56 66 48 66C40 66 34 60 32 49L29 31Z'
+          : jaw === 1
+          ? 'M30 30C33 19 39 14 48 14C57 14 63 19 66 30L64 50C61 60 56 65 48 65C40 65 35 60 32 50L30 30Z'
+          : 'M28 32C31 20 38 15 48 15C58 15 65 20 68 32L63 52C60 61 55 66 48 66C41 66 36 61 33 52L28 32Z'}
+        fill={`url(#${uid}-skin)`}
+        stroke="rgba(255,255,255,0.16)"
+        strokeWidth="1.5"
+      />
+
+      {hair === 0 && <path d="M30 31C35 17 46 11 63 22C57 18 48 19 39 25C35 27 32 29 30 31Z" fill="#050505" />}
+      {hair === 1 && <path d="M30 29C36 15 51 10 66 27C55 22 43 22 30 29Z" fill="#050505" />}
+      {hair === 2 && <path d="M29 32C30 20 38 13 49 13C58 13 65 19 67 31C56 25 43 24 29 32Z" fill="#050505" />}
+      {hair === 3 && <path d="M33 27C39 15 52 13 63 24C54 21 45 22 33 27Z" fill="#050505" />}
+
+      <g transform={`rotate(${visorTilt} 48 40)`} filter={`url(#${uid}-glow)`}>
+        <path
+          d="M26 38C32 34 40 32 48 32C56 32 64 34 70 38L67 45C55 48 41 48 29 45L26 38Z"
+          fill={`url(#${uid}-visor)`}
+          fillOpacity="0.9"
+        />
+        <path d="M31 40H65" stroke="#050505" strokeOpacity="0.45" strokeWidth="2" strokeLinecap="round" />
+        <path d="M33 37C42 35 54 35 63 37" stroke="white" strokeOpacity="0.28" strokeWidth="1.2" strokeLinecap="round" />
       </g>
-      <ellipse cx="42" cy="73" rx="5" ry="2" fill={accent} fillOpacity="0.7" />
-    </svg>
-  )
-}
 
-/* ── Runner 2: marathon, upright, efficient (Marathon / Elite / Speed) ── */
-function RunnerMarathonSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      {/* Subtle pace dot */}
-      <circle cx="9" cy="44" r="2" fill={accent} fillOpacity="0.35" />
-      {/* Upright group — slight lean */}
-      <g transform="rotate(-6, 32, 40)">
-        <circle cx="32" cy="11" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-        <polygon points="27,19 37,19 35,41 29,41" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-        {/* Left arm — compact forward swing */}
-        <rect x="21" y="21" width="5" height="13" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-40, 23, 21)" />
-        {/* Right arm — compact back swing */}
-        <rect x="36" y="21" width="5" height="13" rx="2.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(35, 38, 21)" />
-        {/* Left leg — extended forward stride */}
-        <rect x="26" y="41" width="7" height="24" rx="3.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(24, 29, 41)" />
-        {/* Right leg — extended back push */}
-        <rect x="29" y="41" width="7" height="24" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-22, 33, 41)" />
-      </g>
-      <ellipse cx="38" cy="73" rx="5" ry="1.5" fill={accent} fillOpacity="0.6" />
-    </svg>
-  )
-}
+      <path d="M38 56C42 59 54 59 58 56" stroke={accent} strokeOpacity="0.45" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M42 67L48 77L54 67" stroke={accent} strokeOpacity="0.55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M24 75H38M58 75H72" stroke={secondary} strokeOpacity="0.35" strokeWidth="1.5" strokeLinecap="round" />
 
-/* ── Runner 3: trail, low stance, arms wide (Trail / Endurance) ── */
-function RunnerTrailSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      {/* Terrain rocks */}
-      <circle cx="16" cy="68" r="2.5" fill={accent} fillOpacity="0.18" />
-      <circle cx="24" cy="70" r="1.5" fill={accent} fillOpacity="0.14" />
-      <circle cx="48" cy="71" r="2" fill={accent} fillOpacity="0.18" />
-      {/* Slope line */}
-      <line x1="8" y1="70" x2="56" y2="64" stroke={accent} strokeWidth="1.2" strokeOpacity="0.18" strokeLinecap="round" />
-      {/* Strong forward lean */}
-      <g transform="rotate(-18, 32, 38)">
-        <circle cx="34" cy="10" r="6" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-        <polygon points="28,17 38,17 36,35 26,35" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-        {/* Left arm — wide out for balance */}
-        <rect x="13" y="18" width="5" height="15" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-68, 15, 18)" />
-        {/* Right arm — wide back */}
-        <rect x="39" y="18" width="5" height="15" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(62, 41, 18)" />
-        {/* Left leg — bent knee, short stride */}
-        <rect x="24" y="35" width="6" height="17" rx="3" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(28, 27, 35)" />
-        {/* Right leg — back push */}
-        <rect x="28" y="35" width="6" height="17" rx="3" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-16, 31, 35)" />
-      </g>
-      <ellipse cx="46" cy="67" rx="4.5" ry="1.5" fill={accent} fillOpacity="0.65" />
-    </svg>
-  )
-}
-
-/* ── Gym 1: barbell overhead press (Bodybuilder / Strong / Iron / legacy) ── */
-function GymSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      <rect x="8" y="5" width="48" height="4" rx="2" fill={accent} />
-      <rect x="6" y="2" width="5" height="10" rx="1.5" fill={accent} fillOpacity="0.6" />
-      <rect x="53" y="2" width="5" height="10" rx="1.5" fill={accent} fillOpacity="0.6" />
-      <circle cx="32" cy="17" r="7" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      <polygon points="18,26 46,26 43,50 21,50" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="10" y="10" width="6" height="18" rx="3" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(12, 13, 10)" />
-      <rect x="48" y="10" width="6" height="18" rx="3" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-12, 51, 10)" />
-      <rect x="21" y="50" width="8" height="22" rx="4" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="35" y="50" width="8" height="22" rx="4" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <ellipse cx="25" cy="73" rx="6" ry="2" fill={accent} fillOpacity="0.5" />
-      <ellipse cx="39" cy="73" rx="6" ry="2" fill={accent} fillOpacity="0.5" />
-    </svg>
-  )
-}
-
-/* ── Gym 2: barbell squat, wide stance (Powerlifting / Hypertrophy / Hardcore) ── */
-function GymSquatSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      {/* Barbell on traps */}
-      <rect x="8" y="18" width="48" height="4" rx="2" fill={accent} />
-      <rect x="5" y="14" width="5" height="12" rx="1.5" fill={accent} fillOpacity="0.6" />
-      <rect x="54" y="14" width="5" height="12" rx="1.5" fill={accent} fillOpacity="0.6" />
-      {/* Head — braced forward */}
-      <circle cx="32" cy="9" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      {/* Arms gripping bar */}
-      <rect x="10" y="18" width="5" height="13" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-25, 12, 18)" />
-      <rect x="49" y="18" width="5" height="13" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(25, 51, 18)" />
-      {/* Torso */}
-      <polygon points="21,22 43,22 40,44 24,44" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      {/* Upper legs — wide squat */}
-      <rect x="15" y="44" width="9" height="17" rx="4.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-38, 20, 44)" />
-      <rect x="40" y="44" width="9" height="17" rx="4.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(38, 44, 44)" />
-      {/* Lower legs — near vertical */}
-      <rect x="8" y="56" width="7" height="16" rx="3.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" />
-      <rect x="49" y="56" width="7" height="16" rx="3.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" />
-      {/* Feet */}
-      <ellipse cx="12" cy="73" rx="6" ry="2" fill={accent} fillOpacity="0.5" />
-      <ellipse cx="52" cy="73" rx="6" ry="2" fill={accent} fillOpacity="0.5" />
-    </svg>
-  )
-}
-
-/* ── Gym 3: pull-up, bar overhead (Calistenia) ── */
-function GymCalisteniaSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      {/* Pull-up bar */}
-      <rect x="6" y="5" width="52" height="4" rx="2" fill={accent} />
-      <rect x="7" y="2" width="4" height="5" rx="1" fill={accent} fillOpacity="0.45" />
-      <rect x="53" y="2" width="4" height="5" rx="1" fill={accent} fillOpacity="0.45" />
-      {/* Arms gripping bar */}
-      <rect x="18" y="9" width="5" height="15" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-12, 20, 9)" />
-      <rect x="41" y="9" width="5" height="15" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(12, 43, 9)" />
-      {/* Head — chin above bar */}
-      <circle cx="32" cy="21" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      {/* Torso — hanging */}
-      <polygon points="26,28 38,28 36,50 28,50" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      {/* Core tension line */}
-      <line x1="32" y1="34" x2="32" y2="44" stroke={accent} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="2 3" />
-      {/* Legs — hanging */}
-      <rect x="26" y="50" width="6.5" height="20" rx="3.25" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(8, 29, 50)" />
-      <rect x="31" y="50" width="6.5" height="20" rx="3.25" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-6, 34, 50)" />
-    </svg>
-  )
-}
-
-/* ── Hybrid 1: box jump, airborne (Functional / Pro / legacy) ── */
-function HybridSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      <circle cx="32" cy="9" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      <polygon points="27,17 37,17 35,35 29,35" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="20" y="20" width="5" height="15" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-48, 25, 20)" />
-      <rect x="39" y="20" width="5" height="15" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(48, 39, 20)" />
-      <rect x="23" y="35" width="6" height="17" rx="3" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-42, 26, 35)" />
-      <rect x="35" y="35" width="6" height="17" rx="3" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(42, 38, 35)" />
-      <rect x="14" y="66" width="36" height="9" rx="3" fill={accent} fillOpacity="0.15" stroke={accent} strokeWidth="1" strokeOpacity="0.4" />
-      <line x1="24" y1="58" x2="24" y2="65" stroke={accent} strokeWidth="1.2" strokeOpacity="0.3" strokeDasharray="2 2" strokeLinecap="round" />
-      <line x1="40" y1="58" x2="40" y2="65" stroke={accent} strokeWidth="1.2" strokeOpacity="0.3" strokeDasharray="2 2" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-/* ── Hybrid 2: kettlebell swing, hip hinge (Cross / Endurance / Performance) ── */
-function HybridFunctionalSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      {/* Kettlebell */}
-      <circle cx="46" cy="14" r="5.5" fill={accent} fillOpacity="0.18" stroke={accent} strokeWidth="1.5" />
-      <rect x="43.5" y="6" width="5" height="4" rx="1.5" fill={accent} fillOpacity="0.5" />
-      {/* Motion arc */}
-      <path d="M 38 26 Q 52 20 48 9" stroke={accent} strokeWidth="1.2" strokeOpacity="0.28" fill="none" strokeDasharray="3 4" strokeLinecap="round" />
-      {/* Head */}
-      <circle cx="24" cy="14" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      {/* Torso — slight hip hinge */}
-      <polygon points="18,21 30,21 36,40 24,40" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      {/* Right arm — reaching toward kettlebell */}
-      <rect x="32" y="33" width="5" height="17" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-38, 34, 33)" />
-      {/* Left arm — counterbalance */}
-      <rect x="12" y="24" width="5" height="14" rx="2.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(22, 14, 24)" />
-      {/* Upper legs */}
-      <rect x="20" y="40" width="7.5" height="18" rx="3.75" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-12, 23, 40)" />
-      <rect x="30" y="40" width="7.5" height="18" rx="3.75" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(18, 33, 40)" />
-      {/* Lower legs — planted */}
-      <rect x="15" y="55" width="7" height="16" rx="3.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" />
-      <rect x="31" y="55" width="7" height="16" rx="3.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" />
-      {/* Feet */}
-      <ellipse cx="19" cy="72" rx="5.5" ry="1.8" fill={accent} fillOpacity="0.5" />
-      <ellipse cx="35" cy="72" rx="5.5" ry="1.8" fill={accent} fillOpacity="0.5" />
-    </svg>
-  )
-}
-
-/* ── Hybrid 3: warrior lunge, arm raised (Mobility / Tactical) ── */
-function HybridMobilitySVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      {/* Energy at raised arm tip */}
-      <circle cx="48" cy="5" r="4.5" fill={accent} fillOpacity="0.12" />
-      <circle cx="48" cy="5" r="2.5" fill={accent} fillOpacity="0.7" />
-      {/* Raised arm — extended upward */}
-      <rect x="35" y="7" width="5" height="18" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(25, 37, 7)" />
-      {/* Head */}
-      <circle cx="30" cy="14" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      {/* Torso */}
-      <polygon points="24,22 36,22 34,43 26,43" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      {/* Left arm — extended down-back */}
-      <rect x="14" y="26" width="5" height="14" rx="2.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(45, 16, 26)" />
-      {/* Front leg — bent knee (lunge) */}
-      <rect x="20" y="43" width="8" height="19" rx="4" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(-8, 24, 43)" />
-      {/* Back leg — extended */}
-      <rect x="32" y="43" width="7" height="26" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(20, 35, 43)" />
-      {/* Front foot */}
-      <ellipse cx="18" cy="63" rx="6.5" ry="2" fill={accent} fillOpacity="0.6" />
-      {/* Back foot */}
-      <ellipse cx="46" cy="68" rx="5" ry="1.5" fill={accent} fillOpacity="0.35" />
-    </svg>
-  )
-}
-
-/* ── Power Athlete: deadlift hip hinge (legacy) ── */
-function PowerSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      <circle cx="18" cy="18" r="6.5" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      <polygon points="14,24 24,24 36,46 26,46" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="16" y="28" width="5" height="22" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(15, 18, 28)" />
-      <rect x="25" y="28" width="5" height="22" rx="2.5" fill={bodyFill} stroke={accent} strokeWidth="1.2" transform="rotate(8, 27, 28)" />
-      <rect x="10" y="56" width="44" height="5" rx="2.5" fill={accent} />
-      <rect x="7" y="52" width="5" height="13" rx="1.5" fill={accent} fillOpacity="0.6" />
-      <rect x="52" y="52" width="5" height="13" rx="1.5" fill={accent} fillOpacity="0.6" />
-      <rect x="28" y="46" width="7" height="17" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(-20, 31, 46)" />
-      <rect x="26" y="59" width="7" height="16" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="38" y="46" width="7" height="17" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" transform="rotate(20, 41, 46)" />
-      <rect x="38" y="59" width="7" height="16" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <circle cx="30" cy="62" r="3" fill={accent} fillOpacity="0.45" />
-      <circle cx="42" cy="62" r="3" fill={accent} fillOpacity="0.45" />
-    </svg>
-  )
-}
-
-/* ── Default fallback ── */
-function DefaultSVG({ accent, ...svg }: SVGBaseProps) {
-  return (
-    <svg {...svg}>
-      <circle cx="32" cy="11" r="7" fill={bodyFill} stroke={accent} strokeWidth="1.5" />
-      <polygon points="26,20 38,20 36,44 28,44" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="25" y="44" width="7" height="22" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <rect x="34" y="44" width="7" height="22" rx="3.5" fill={bodyFill} stroke={bodyStroke} strokeWidth="1" />
-      <ellipse cx="32" cy="73" rx="7" ry="2.5" fill={accent} fillOpacity="0.5" />
+      {category === 'running' && (
+        <g filter={`url(#${uid}-glow)`}>
+          <path d="M12 34H23M9 43H20M13 52H23" stroke={accent} strokeOpacity="0.38" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      )}
+      {category === 'gym' && (
+        <g filter={`url(#${uid}-glow)`}>
+          <rect x="18" y="23" width="60" height="4" rx="2" fill={accent} fillOpacity="0.5" />
+          <rect x="14" y="19" width="5" height="12" rx="2" fill={secondary} fillOpacity="0.45" />
+          <rect x="77" y="19" width="5" height="12" rx="2" fill={secondary} fillOpacity="0.45" />
+        </g>
+      )}
+      {isHybrid && (
+        <g filter={`url(#${uid}-glow)`}>
+          <path d="M15 32H26M70 24L80 34M75 21L83 29" stroke={accent} strokeOpacity="0.35" strokeWidth="2" strokeLinecap="round" />
+          <path d="M13 51H23M72 51H82" stroke={secondary} strokeOpacity="0.35" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      )}
+      {isPremium && (
+        <g filter={`url(#${uid}-glow)`}>
+          <path d="M34 17L40 8L48 16L56 8L62 17" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M24 78C31 83 39 86 48 86C57 86 65 83 72 78" stroke={accent} strokeOpacity="0.42" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      )}
+      {rarity !== 'core' && (
+        <path
+          d="M13 18C22 10 34 6 48 6C62 6 74 10 83 18"
+          stroke={rarity === 'legendary' || rarity === 'seasonal' ? '#FACC15' : secondary}
+          strokeOpacity="0.34"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      )}
     </svg>
   )
 }

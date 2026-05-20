@@ -15,6 +15,7 @@ export interface ProfileData {
   levelProgress: number
   rank: string
   isAdmin: boolean
+  unlockedAvatarIds: string[]
   timezone: string
   createdAt: string | null
 }
