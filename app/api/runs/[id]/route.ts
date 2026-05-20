@@ -4,11 +4,12 @@ import { NextResponse } from "next/server";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { deleteFeedEvent } from "@/lib/feed";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { syncStreaksForUser } from "@/lib/streaks";
 import { syncUserXP } from "@/lib/xp";
 
 type Params = { params: Promise<{ id: string }> };
 
-const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo"] as const;
+const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo", "caminhada", "esteira"] as const;
 const MAX_RUN_DISTANCE_KM = 200;
 
 async function revalidateAll(competitionIds: string[] = []) {
@@ -17,6 +18,8 @@ async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/treinos");
   revalidatePath("/feed");
   revalidatePath("/metas");
+  revalidatePath("/perfil");
+  revalidatePath("/social");
   revalidatePath("/competicoes");
   revalidatePath("/desafios-competicoes");
   for (const id of competitionIds) {
@@ -44,8 +47,11 @@ export async function DELETE(_req: Request, { params }: Params) {
 
   await deleteFeedEvent(supabase, user.id, "run", id);
 
-  const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
-  const xpFeedback = await syncUserXP(supabase, user.id);
+  const [progressUpdates, xpFeedback] = await Promise.all([
+    updateActiveCompetitionProgressForUser(supabase, user.id),
+    syncUserXP(supabase, user.id),
+    syncStreaksForUser(supabase, user.id),
+  ]);
 
   await revalidateAll(progressUpdates.map((u) => u.competitionId));
 

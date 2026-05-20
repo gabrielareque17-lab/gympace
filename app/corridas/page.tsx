@@ -94,6 +94,8 @@ const RUN_TYPES = [
   { value: "regenerativo", label: "Regenerativo", icon: RefreshCw, color: "#A78BFA", desc: "Recuperação" },
   { value: "prova", label: "Prova", icon: Trophy, color: "#EAB308", desc: "Competição" },
   { value: "ritmo", label: "Treino ritmo", icon: Gauge, color: "#F472B6", desc: "Pace específico" },
+  { value: "caminhada", label: "Caminhada", icon: Route, color: "#10B981", desc: "Caminhada ao ar livre" },
+  { value: "esteira", label: "Corrida na esteira", icon: Activity, color: "#F97316", desc: "Treino indoor" },
 ] as const;
 
 const initialForm: FormState = { distance: "", duration: "", pace: "", run_type: "leve", notes: "" };

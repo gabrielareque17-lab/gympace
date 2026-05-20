@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Dumbbell, Flame, Timer, Trophy } from "lucide-react";
+import { Dumbbell, Flame, Medal, Timer, Trophy } from "lucide-react";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { AvatarSelector } from "@/components/ui/avatar/avatar-selector";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
 import { getLevelProgress, syncUserXP } from "@/lib/xp";
-import { getUserStreaks } from "@/lib/streaks";
+import { syncStreaksForUser } from "@/lib/streaks";
 import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
   ACHIEVEMENT_REGISTRY,
@@ -24,6 +24,7 @@ import {
   LatestTrophiesSection,
   type TrophyGrant,
 } from "@/components/profile/latest-trophies-section";
+import { MonthlyActivityCalendar } from "@/components/profile/monthly-activity-calendar";
 import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
 
 export const dynamic = "force-dynamic";
@@ -104,36 +105,6 @@ function hasPerfectWeek(isoDates: string[]): boolean {
     weeks[key].add(dayKey);
   }
   return Object.values(weeks).some((days) => days.size >= 5);
-}
-
-function buildHeatmap(runs: Run[]): { date: string; km: number; isFuture: boolean }[][] {
-  const dayKm = new Map<string, number>();
-  for (const r of runs) {
-    const d = getLocalDateKey(r.created_at);
-    dayKm.set(d, (dayKm.get(d) ?? 0) + r.distance);
-  }
-
-  const today = new Date(`${getLocalDateKey(new Date())}T12:00:00`);
-  const todayMs = today.getTime();
-
-  // Start from the Monday 15 full weeks before this week's Monday (= 16 weeks total)
-  const dayOfWeek = (today.getDay() + 6) % 7; // 0 = Mon
-  const start = new Date(today);
-  start.setDate(today.getDate() - dayOfWeek - 105);
-
-  const weeks: { date: string; km: number; isFuture: boolean }[][] = [];
-  const cur = new Date(start);
-
-  for (let w = 0; w < 16; w++) {
-    const week: { date: string; km: number; isFuture: boolean }[] = [];
-    for (let d = 0; d < 7; d++) {
-      const ds = getLocalDateKey(cur);
-      week.push({ date: ds, km: dayKm.get(ds) ?? 0, isFuture: cur.getTime() > todayMs });
-      cur.setDate(cur.getDate() + 1);
-    }
-    weeks.push(week);
-  }
-  return weeks;
 }
 
 // ─── Achievement definitions → lib/achievements.ts ───────────────────────────
@@ -219,7 +190,7 @@ export default async function PerfilPage() {
       ? supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id)
       : Promise.resolve({ count: 0 }),
     user
-      ? getUserStreaks(supabase, user.id)
+      ? syncStreaksForUser(supabase, user.id)
       : Promise.resolve(null),
     user
       ? supabase
@@ -331,8 +302,6 @@ export default async function PerfilPage() {
   const exclusiveTrophies: TrophyGrant[] = trophiesResult.error
     ? []
     : ((trophiesResult.data ?? []) as unknown as TrophyGrant[]);
-
-  const heatmapWeeks = buildHeatmap(runs);
 
   // Recent activities (runs + workouts combined, latest 8)
   type RecentActivity =
@@ -588,6 +557,45 @@ export default async function PerfilPage() {
             exclusiveTrophies={exclusiveTrophies}
           />
 
+          {/* ── Troféus exclusivos ── */}
+          {exclusiveTrophies.length > 0 && (
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+              <div className="relative border-b border-white/[0.05] px-5 py-4">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
+                      Conquistas
+                    </p>
+                    <h2 className="flex items-center gap-2 font-display text-base font-semibold">
+                      <Medal className="size-4 text-[#EAB308]" />
+                      Troféus exclusivos
+                    </h2>
+                  </div>
+                  <span className="rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1 text-xs font-semibold tabular-nums text-[#F5F5F5]/50">
+                    {exclusiveTrophies.length}
+                  </span>
+                </div>
+              </div>
+              <div className="grid gap-3 p-4 sm:grid-cols-2">
+                {exclusiveTrophies.map((grant) => {
+                  const trophy = Array.isArray(grant.exclusive_trophies)
+                    ? grant.exclusive_trophies[0]
+                    : grant.exclusive_trophies;
+                  if (!trophy) return null;
+                  return (
+                    <article key={grant.id} className="rounded-2xl border border-[#EAB308]/20 bg-[#EAB308]/[0.05] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#EAB308]/70">{trophy.rarity}</p>
+                      <h3 className="mt-1 font-display text-base font-bold text-[#F5F5F5]/90">{trophy.name}</h3>
+                      {trophy.description && <p className="mt-1 text-xs leading-5 text-[#F5F5F5]/42">{trophy.description}</p>}
+                      <p className="mt-3 text-[10px] text-[#F5F5F5]/25">Entregue em {new Date(grant.awarded_at).toLocaleDateString("pt-BR")}</p>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
           {/* ── Avatar Customization ── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             <div className="relative border-b border-white/[0.05] px-5 py-4">
@@ -603,92 +611,16 @@ export default async function PerfilPage() {
             </div>
           </section>
 
-          {/* ── Activity Heatmap ── */}
+          {/* ── Atividade Mensal ── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             <div className="relative border-b border-white/[0.05] px-5 py-4">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
                 Consistência
               </p>
-              <h2 className="font-display text-base font-semibold">Atividade semanal</h2>
+              <h2 className="font-display text-base font-semibold">Atividade mensal</h2>
             </div>
-
-            <div className="p-5">
-              <div className="overflow-x-auto">
-                <div className="flex min-w-max gap-1.5">
-                  {/* Day labels */}
-                  <div className="flex flex-col gap-1 pt-5">
-                    {["S", "T", "Q", "Q", "S", "S", "D"].map((d, i) => (
-                      <div
-                        key={i}
-                        className="flex size-[14px] items-center justify-center text-[9px] font-bold text-[#F5F5F5]/20"
-                      >
-                        {d}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Week columns */}
-                  <div className="flex gap-1">
-                    {heatmapWeeks.map((week, wi) => (
-                      <div key={wi} className="flex flex-col gap-1">
-                        {/* Month label for first week of month */}
-                        <div className="mb-1 h-4 text-[9px] font-bold text-[#F5F5F5]/22">
-                          {wi === 0 || new Date(week[0].date).getDate() <= 7
-                            ? new Date(week[0].date).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "")
-                            : ""}
-                        </div>
-                        {week.map((cell) => (
-                          <div
-                            key={cell.date}
-                            title={
-                              cell.isFuture
-                                ? ""
-                                : cell.km > 0
-                                ? `${new Date(cell.date + "T12:00:00").toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}: ${formatDecimal(cell.km)} km`
-                                : new Date(cell.date + "T12:00:00").toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
-                            }
-                            className="size-[14px] rounded-[3px] transition-transform duration-100 hover:scale-125"
-                            style={
-                              cell.isFuture
-                                ? { background: "rgba(255,255,255,0.02)" }
-                                : cell.km <= 0
-                                ? { background: "rgba(255,255,255,0.06)" }
-                                : cell.km < 3
-                                ? { background: "rgba(182,255,0,0.22)" }
-                                : cell.km < 7
-                                ? { background: "rgba(182,255,0,0.52)", boxShadow: "0 0 4px rgba(182,255,0,0.2)" }
-                                : { background: "rgba(182,255,0,0.88)", boxShadow: "0 0 6px rgba(182,255,0,0.4)" }
-                            }
-                          />
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div className="mt-4 flex items-center gap-3">
-                <span className="text-[10px] text-[#F5F5F5]/28">Menos</span>
-                {[
-                  "rgba(255,255,255,0.06)",
-                  "rgba(182,255,0,0.22)",
-                  "rgba(182,255,0,0.52)",
-                  "rgba(182,255,0,0.88)",
-                ].map((bg, i) => (
-                  <div
-                    key={i}
-                    className="size-[12px] rounded-[3px]"
-                    style={{ background: bg }}
-                  />
-                ))}
-                <span className="text-[10px] text-[#F5F5F5]/28">Mais</span>
-                <span className="ml-auto text-[10px] text-[#F5F5F5]/20">
-                  Baseado em corridas registradas
-                </span>
-              </div>
-            </div>
+            <MonthlyActivityCalendar runDays={runActiveDays} workoutDays={gymActiveDays} />
           </section>
 
           {/* ── Personal Bests ── */}

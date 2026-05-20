@@ -23,6 +23,7 @@ export interface AvatarDefinition {
   glowColor: string
   rarity: AvatarRarity
   unlock: AvatarUnlockRule
+  female?: boolean
 }
 
 const running = {
@@ -114,6 +115,7 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     accentColor: '#B6FF00',
     secondaryColor: '#86EFAC',
     glowColor: 'rgba(182,255,0,0.34)',
+    female: true,
   },
   {
     id: 'neon-runner-luma',
@@ -123,6 +125,7 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     accentColor: '#84FF5F',
     secondaryColor: '#22D3EE',
     glowColor: 'rgba(132,255,95,0.30)',
+    female: true,
   },
 
   {
@@ -189,6 +192,7 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     accentColor: '#C084FC',
     secondaryColor: '#F0ABFC',
     glowColor: 'rgba(192,132,252,0.34)',
+    female: true,
   },
   {
     id: 'neon-lifter-nova',
@@ -198,6 +202,7 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     accentColor: '#E879F9',
     secondaryColor: '#A855F7',
     glowColor: 'rgba(232,121,249,0.30)',
+    female: true,
   },
 
   {
@@ -271,6 +276,7 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     accentColor: '#B6FF00',
     secondaryColor: '#D946EF',
     glowColor: 'rgba(182,255,0,0.28)',
+    female: true,
   },
   {
     id: 'neon-hybrid-sable',
@@ -329,6 +335,7 @@ export const AVATAR_REGISTRY: AvatarDefinition[] = [
     glowColor: 'rgba(250,204,21,0.36)',
     rarity: 'seasonal',
     unlock: { kind: 'season', seasonKey: 'elite-02', label: 'Temporada' },
+    female: true,
   },
 ]
 

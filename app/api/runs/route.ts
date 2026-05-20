@@ -11,7 +11,7 @@ import { awardXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
-const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo"] as const;
+const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo", "caminhada", "esteira"] as const;
 const MAX_ROUTE_POINTS = 2000;
 const MAX_RUN_DISTANCE_KM = 200;
 const MAX_RUN_DURATION_SECONDS = 24 * 60 * 60;

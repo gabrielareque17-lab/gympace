@@ -34,6 +34,7 @@ export function AvatarSVG({
   const shoulderWide = category === 'gym' || category === 'premium'
   const isHybrid = category === 'hybrid'
   const isPremium = category === 'premium'
+  const isFemale = definition?.female === true
 
   return (
     <svg
@@ -81,6 +82,13 @@ export function AvatarSVG({
         strokeLinecap="round"
       />
 
+      {isFemale && (
+        <>
+          <path d="M34 17C27 29 22 47 24 67C27 73 34 77 39 75C36 58 33 37 34 17Z" fill="#050505" />
+          <path d="M62 17C69 29 74 47 72 67C69 73 62 77 57 75C60 58 63 37 62 17Z" fill="#050505" />
+        </>
+      )}
+
       <path
         d={jaw === 0
           ? 'M29 31C31 20 38 14 48 14C58 14 65 20 67 31L64 49C62 60 56 66 48 66C40 66 34 60 32 49L29 31Z'
@@ -92,10 +100,16 @@ export function AvatarSVG({
         strokeWidth="1.5"
       />
 
-      {hair === 0 && <path d="M30 31C35 17 46 11 63 22C57 18 48 19 39 25C35 27 32 29 30 31Z" fill="#050505" />}
-      {hair === 1 && <path d="M30 29C36 15 51 10 66 27C55 22 43 22 30 29Z" fill="#050505" />}
-      {hair === 2 && <path d="M29 32C30 20 38 13 49 13C58 13 65 19 67 31C56 25 43 24 29 32Z" fill="#050505" />}
-      {hair === 3 && <path d="M33 27C39 15 52 13 63 24C54 21 45 22 33 27Z" fill="#050505" />}
+      {isFemale ? (
+        <path d="M27 28C32 13 50 8 66 24C54 17 41 17 30 23Z" fill="#050505" />
+      ) : (
+        <>
+          {hair === 0 && <path d="M30 31C35 17 46 11 63 22C57 18 48 19 39 25C35 27 32 29 30 31Z" fill="#050505" />}
+          {hair === 1 && <path d="M30 29C36 15 51 10 66 27C55 22 43 22 30 29Z" fill="#050505" />}
+          {hair === 2 && <path d="M29 32C30 20 38 13 49 13C58 13 65 19 67 31C56 25 43 24 29 32Z" fill="#050505" />}
+          {hair === 3 && <path d="M33 27C39 15 52 13 63 24C54 21 45 22 33 27Z" fill="#050505" />}
+        </>
+      )}
 
       <g transform={`rotate(${visorTilt} 48 40)`} filter={`url(#${uid}-glow)`}>
         <path
