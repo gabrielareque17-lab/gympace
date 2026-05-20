@@ -15,6 +15,7 @@ import {
   Timer,
   Trophy,
   UserRound,
+  Users,
   X,
   Zap,
 } from "lucide-react";
@@ -62,6 +63,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Social",
     items: [
+      { label: "Hub Social",   href: "/social",        icon: Users          },
+      { label: "Explorar",     href: "/explorar",      icon: Compass        },
       { label: "Desafios",     href: "/desafios",      icon: Swords         },
       { label: "Competições",  href: "/competicoes",   icon: Trophy         },
       { label: "Convites",     href: "/convites",      icon: Bell           },

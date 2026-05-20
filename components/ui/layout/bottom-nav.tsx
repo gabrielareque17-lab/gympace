@@ -10,6 +10,7 @@ import {
   Swords,
   Timer,
   UserRound,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
@@ -19,8 +20,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const LEFT_NAV = [
-  { label: "Início",   href: "/",       icon: Home    },
-  { label: "Explorar", href: "/explorar", icon: Compass },
+  { label: "Início",  href: "/",       icon: Home  },
+  { label: "Social",  href: "/social", icon: Users },
 ] as const;
 
 const RIGHT_NAV = [
@@ -48,15 +49,6 @@ const ACTIONS = [
     border:"rgba(34,211,238,0.14)",
   },
   {
-    label: "Criar post",
-    desc:  "Compartilhe algo",
-    href:  "/feed",
-    icon:  FileText,
-    color: "#A78BFA",
-    bg:    "rgba(167,139,250,0.06)",
-    border:"rgba(167,139,250,0.14)",
-  },
-  {
     label: "Criar desafio",
     desc:  "Duelo 1×1 direto",
     href:  "/desafios/novo",
@@ -64,6 +56,15 @@ const ACTIONS = [
     color: "#FB923C",
     bg:    "rgba(251,146,60,0.06)",
     border:"rgba(251,146,60,0.14)",
+  },
+  {
+    label: "Explorar atletas",
+    desc:  "Descubra a comunidade",
+    href:  "/explorar",
+    icon:  Compass,
+    color: "#A78BFA",
+    bg:    "rgba(167,139,250,0.06)",
+    border:"rgba(167,139,250,0.14)",
   },
 ] as const;
 

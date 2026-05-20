@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
-import { Activity, Compass, Dumbbell, Flame, LucideIcon, Rss, Trophy } from "lucide-react";
+import { Activity, Compass, Dumbbell, Flame, LucideIcon, Rss, Trophy, Zap, Star } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { ReactionButton } from "@/components/feed/ReactionButton";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
@@ -135,6 +137,24 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
     badgeBg: "bg-[#F97316]/20",
     cardCn: "border-[#F97316]/12 bg-[#F97316]/[0.025] hover:border-[#F97316]/22 hover:shadow-[0_2px_20px_rgba(249,115,22,0.07)]",
   },
+  personal_record: {
+    Icon: Star,
+    color: "#A78BFA",
+    badgeBg: "bg-[#A78BFA]/20",
+    cardCn: "border-[#A78BFA]/15 bg-[#A78BFA]/[0.025] hover:border-[#A78BFA]/25 hover:shadow-[0_2px_20px_rgba(167,139,250,0.07)]",
+  },
+  streak_milestone: {
+    Icon: Flame,
+    color: "#FB923C",
+    badgeBg: "bg-[#FB923C]/20",
+    cardCn: "border-[#FB923C]/15 bg-[#FB923C]/[0.025] hover:border-[#FB923C]/25 hover:shadow-[0_2px_20px_rgba(251,146,60,0.07)]",
+  },
+  hybrid_bonus: {
+    Icon: Zap,
+    color: "#22D3EE",
+    badgeBg: "bg-[#22D3EE]/20",
+    cardCn: "border-[#22D3EE]/15 bg-[#22D3EE]/[0.025] hover:border-[#22D3EE]/25 hover:shadow-[0_2px_20px_rgba(34,211,238,0.07)]",
+  },
 };
 
 function UserAvatar({ profile, name }: { profile?: FeedProfile; name: string }) {
@@ -222,6 +242,37 @@ function FeedCard({ event }: { event: FeedEvent }) {
         <span className="font-semibold" style={{ color }}>{p.streak_days ?? 0} dias</span>!
       </span>
     );
+  } else if (type === "personal_record") {
+    const p = payload as { label?: string; distance?: number; pace?: string };
+    action = (
+      <span className="text-[#F5F5F5]/55">
+        novo recorde pessoal:{" "}
+        <span className="font-semibold" style={{ color }}>{p.label ?? "PR"}</span>!
+      </span>
+    );
+    tags = (
+      <>
+        {p.distance != null && <Tag color="neutral">{Number(p.distance).toFixed(1)} km</Tag>}
+        {p.pace && <Tag color="neutral">{p.pace}/km</Tag>}
+      </>
+    );
+  } else if (type === "streak_milestone") {
+    const p = payload as { streak_days?: number; streak_type?: string };
+    action = (
+      <span className="text-[#F5F5F5]/55">
+        alcançou{" "}
+        <span className="font-semibold" style={{ color }}>{p.streak_days} dias</span>{" "}
+        de sequência! 🔥
+      </span>
+    );
+  } else if (type === "hybrid_bonus") {
+    action = (
+      <span className="text-[#F5F5F5]/55">
+        completou o{" "}
+        <span className="font-semibold" style={{ color }}>bônus híbrido</span>{" "}
+        — corrida + treino no mesmo dia! ⚡
+      </span>
+    );
   }
 
   return (
@@ -269,8 +320,15 @@ function FeedCard({ event }: { event: FeedEvent }) {
           <div className="mt-2 flex flex-wrap items-center gap-1.5">{tags}</div>
         )}
 
-        {/* Absolute timestamp */}
-        <p className="mt-2 text-[10px] text-[#F5F5F5]/20">{dateDetail}</p>
+        {/* Footer: timestamp + reactions */}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <p className="text-[10px] text-[#F5F5F5]/20">{dateDetail}</p>
+          <ReactionButton
+            feedEventId={event.id}
+            initialCount={event.reaction_count}
+            initialReacted={event.user_has_reacted}
+          />
+        </div>
       </div>
     </article>
   );

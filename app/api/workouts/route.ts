@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { insertFeedEvent } from "@/lib/feed";
+import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { syncUserXP } from "@/lib/xp";
 
@@ -47,7 +48,6 @@ export async function POST(req: Request) {
     const intensity = String(b?.intensity ?? "").trim() || null;
     const notes = String(b?.notes ?? "").trim() || null;
 
-    // Accept muscle_groups[] (new) or muscle_group string (legacy)
     const muscleGroups: string[] = Array.isArray(b?.muscle_groups)
       ? (b.muscle_groups as unknown[]).map((g) => String(g).trim()).filter(Boolean)
       : b?.muscle_group
@@ -85,6 +85,8 @@ export async function POST(req: Request) {
 
     let progressUpdates: Awaited<ReturnType<typeof updateActiveCompetitionProgressForUser>> = [];
     let xpFeedback: Awaited<ReturnType<typeof syncUserXP>> | null = null;
+    let streakMilestone: number | null = null;
+    let hybridBonus = false;
 
     try {
       progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
@@ -98,6 +100,32 @@ export async function POST(req: Request) {
       console.error("[workouts] xp sync failed:", err);
     }
 
+    // Streak sync
+    try {
+      const { data: prevStreakRow } = await supabase
+        .from("streaks")
+        .select("current_streak")
+        .eq("user_id", user.id)
+        .eq("streak_type", "general")
+        .maybeSingle();
+
+      const prevStreak = (prevStreakRow as { current_streak?: number } | null)?.current_streak ?? 0;
+      const newStreaks = await syncStreaksForUser(supabase, user.id);
+      const newGeneral = newStreaks.general.currentStreak;
+      streakMilestone = getNewMilestone(prevStreak, newGeneral);
+    } catch (err) {
+      console.error("[workouts] streak sync failed:", err);
+    }
+
+    // Hybrid bonus
+    try {
+      hybridBonus = await checkHybridBonusToday(supabase, user.id);
+    } catch (err) {
+      console.error("[workouts] hybrid bonus check failed:", err);
+    }
+
+    // ── Feed events ──────────────────────────────────────────────────────────
+
     await insertFeedEvent(supabase, user.id, "workout", {
       id: data.id,
       title: data.title ?? undefined,
@@ -106,6 +134,7 @@ export async function POST(req: Request) {
       duration_minutes: data.duration_minutes ?? undefined,
       intensity: data.intensity ?? undefined,
     });
+
     if (xpFeedback?.leveledUp) {
       await insertFeedEvent(supabase, user.id, "level_up", {
         new_level: xpFeedback.currentLevel,
@@ -114,16 +143,32 @@ export async function POST(req: Request) {
       });
     }
 
+    if (streakMilestone !== null) {
+      await insertFeedEvent(supabase, user.id, "streak_milestone", {
+        streak_days: streakMilestone,
+        streak_type: "general",
+      });
+    }
+
+    if (hybridBonus) {
+      await insertFeedEvent(supabase, user.id, "hybrid_bonus", {
+        workout_id: data.id,
+        workout_title: data.title,
+      });
+    }
+
     revalidatePath("/");
     revalidatePath("/academia");
     revalidatePath("/feed");
     revalidatePath("/metas");
     revalidatePath("/competicoes");
+    revalidatePath("/social");
+    revalidatePath("/perfil");
     for (const update of progressUpdates) {
       revalidatePath(`/competicoes/${update.competitionId}`);
     }
 
-    return NextResponse.json({ workout: data, progressUpdates, xpFeedback }, { status: 201 });
+    return NextResponse.json({ workout: data, progressUpdates, xpFeedback, hybridBonus }, { status: 201 });
   } catch (err) {
     console.error("[workouts] UNHANDLED ERROR:", err);
     const message = err instanceof Error ? err.message : String(err);

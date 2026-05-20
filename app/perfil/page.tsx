@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { Flame } from "lucide-react";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { AvatarSelector } from "@/components/ui/avatar/avatar-selector";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
+import { StreakCard } from "@/components/social/StreakCard";
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getAvatarById } from "@/lib/avatar-registry";
 import { getLevelProgress } from "@/lib/xp";
+import { getUserStreaks } from "@/lib/streaks";
 import {
   ACHIEVEMENT_REGISTRY,
   CATEGORIES,
@@ -206,6 +209,7 @@ export default async function PerfilPage() {
     workoutsResult,
     { count: followersCount },
     { count: followingCount },
+    userStreaks,
   ] = await Promise.all([
     user
       ? supabase
@@ -226,6 +230,9 @@ export default async function PerfilPage() {
     user
       ? supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", user.id)
       : Promise.resolve({ count: 0 }),
+    user
+      ? getUserStreaks(supabase, user.id)
+      : Promise.resolve(null),
   ]);
 
   const runs: Run[] = (rawRuns ?? []) as Run[];
@@ -318,6 +325,13 @@ export default async function PerfilPage() {
   }));
 
   const heatmapWeeks = buildHeatmap(runs);
+
+  // Streak active-day sets for mini-timelines
+  const runActiveDays = runs.map((r) => r.created_at.slice(0, 10));
+  const gymActiveDays = workouts.map((w) => w.created_at.slice(0, 10));
+  const gymDaySet = new Set(gymActiveDays);
+  const hybridActiveDays = runActiveDays.filter((d) => gymDaySet.has(d));
+  const allActiveDays = [...new Set([...runActiveDays, ...gymActiveDays])];
 
   return (
     <AppShell>
@@ -608,6 +622,38 @@ export default async function PerfilPage() {
               />
             </div>
           </section>
+
+          {/* ── Streaks ── */}
+          {userStreaks && (
+            <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+              <div className="relative border-b border-white/[0.05] px-5 py-4">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
+                      Consistência
+                    </p>
+                    <h2 className="font-display text-base font-semibold flex items-center gap-2">
+                      <Flame className="size-4 text-[#FB923C]" strokeWidth={2} />
+                      Sequências
+                    </h2>
+                  </div>
+                  <Link
+                    href="/social"
+                    className="rounded-lg border border-white/[0.07] px-3 py-1.5 text-[11px] text-[#F5F5F5]/35 transition-colors hover:border-white/[0.14] hover:text-[#F5F5F5]/60"
+                  >
+                    Ver ranking →
+                  </Link>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
+                <StreakCard data={userStreaks.run}     activeDays={runActiveDays}    />
+                <StreakCard data={userStreaks.gym}     activeDays={gymActiveDays}    />
+                <StreakCard data={userStreaks.hybrid}  activeDays={hybridActiveDays} />
+                <StreakCard data={userStreaks.general} activeDays={allActiveDays}    />
+              </div>
+            </section>
+          )}
 
           {/* ── Achievements ── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">

@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { insertFeedEvent } from "@/lib/feed";
+import { checkAndUpdatePersonalRecords, PR_LABELS } from "@/lib/personal-records";
+import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { syncUserXP } from "@/lib/xp";
 
@@ -48,7 +50,6 @@ export async function POST(req: Request) {
     const runType = String(b?.run_type ?? "leve").trim();
     const notes = String(b?.notes ?? "").trim() || null;
 
-    // Optional GPS fields
     const durationSeconds = b?.duration_seconds != null ? Number(b.duration_seconds) : null;
     const avgSpeed = b?.avg_speed != null ? Number(b.avg_speed) : null;
     const calories = b?.calories != null ? Number(b.calories) : null;
@@ -88,6 +89,9 @@ export async function POST(req: Request) {
 
     let progressUpdates: Awaited<ReturnType<typeof updateActiveCompetitionProgressForUser>> = [];
     let xpFeedback: Awaited<ReturnType<typeof syncUserXP>> | null = null;
+    let newPersonalRecords: string[] = [];
+    let streakMilestone: number | null = null;
+    let hybridBonus = false;
 
     try {
       progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
@@ -100,6 +104,44 @@ export async function POST(req: Request) {
     } catch (err) {
       console.error("[runs] xp sync failed:", err);
     }
+
+    // Streak sync — capture prev general streak before update
+    try {
+      const { data: prevStreakRow } = await supabase
+        .from("streaks")
+        .select("current_streak")
+        .eq("user_id", user.id)
+        .eq("streak_type", "general")
+        .maybeSingle();
+
+      const prevStreak = (prevStreakRow as { current_streak?: number } | null)?.current_streak ?? 0;
+      const newStreaks = await syncStreaksForUser(supabase, user.id);
+      const newGeneral = newStreaks.general.currentStreak;
+      streakMilestone = getNewMilestone(prevStreak, newGeneral);
+    } catch (err) {
+      console.error("[runs] streak sync failed:", err);
+    }
+
+    // Personal records
+    try {
+      const broken = await checkAndUpdatePersonalRecords(supabase, user.id, {
+        id: data.id,
+        distance: Number(data.distance),
+        pace: data.pace ?? null,
+      });
+      newPersonalRecords = broken;
+    } catch (err) {
+      console.error("[runs] personal records failed:", err);
+    }
+
+    // Hybrid bonus — check if user also has a workout today
+    try {
+      hybridBonus = await checkHybridBonusToday(supabase, user.id);
+    } catch (err) {
+      console.error("[runs] hybrid bonus check failed:", err);
+    }
+
+    // ── Feed events ──────────────────────────────────────────────────────────
 
     await insertFeedEvent(supabase, user.id, "run", {
       id: data.id,
@@ -119,16 +161,44 @@ export async function POST(req: Request) {
       });
     }
 
+    for (const prType of newPersonalRecords) {
+      await insertFeedEvent(supabase, user.id, "personal_record", {
+        record_type: prType,
+        label: PR_LABELS[prType as keyof typeof PR_LABELS],
+        distance: data.distance,
+        pace: data.pace ?? undefined,
+      });
+    }
+
+    if (streakMilestone !== null) {
+      await insertFeedEvent(supabase, user.id, "streak_milestone", {
+        streak_days: streakMilestone,
+        streak_type: "general",
+      });
+    }
+
+    if (hybridBonus) {
+      await insertFeedEvent(supabase, user.id, "hybrid_bonus", {
+        run_id: data.id,
+        distance: data.distance,
+      });
+    }
+
     revalidatePath("/");
     revalidatePath("/corridas");
     revalidatePath("/feed");
     revalidatePath("/metas");
     revalidatePath("/competicoes");
+    revalidatePath("/social");
+    revalidatePath("/perfil");
     for (const update of progressUpdates) {
       revalidatePath(`/competicoes/${update.competitionId}`);
     }
 
-    return NextResponse.json({ run: data, progressUpdates, xpFeedback }, { status: 201 });
+    return NextResponse.json(
+      { run: data, progressUpdates, xpFeedback, newPersonalRecords, hybridBonus },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("[runs] UNHANDLED ERROR:", err);
     const message = err instanceof Error ? err.message : String(err);

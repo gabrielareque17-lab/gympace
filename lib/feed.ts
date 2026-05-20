@@ -1,6 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type FeedEventType = "run" | "workout" | "level_up" | "streak";
+export type FeedEventType =
+  | "run"
+  | "workout"
+  | "level_up"
+  | "streak"
+  | "personal_record"
+  | "streak_milestone"
+  | "hybrid_bonus";
 
 export type FeedProfile = {
   user_id: string;
@@ -18,6 +25,8 @@ export type FeedEvent = {
   payload: Record<string, unknown>;
   created_at: string;
   profile?: FeedProfile;
+  reaction_count: number;
+  user_has_reacted: boolean;
 };
 
 export async function insertFeedEvent(
@@ -75,21 +84,44 @@ export async function getFeedEvents(
   const { data: events } = await query;
   if (!events?.length) return [];
 
-  const uniqueUserIds = [
-    ...new Set((events as { user_id: string }[]).map((e) => e.user_id)),
-  ];
+  const eventIds = (events as { id: string }[]).map((e) => e.id);
+  const uniqueUserIds = [...new Set((events as { user_id: string }[]).map((e) => e.user_id))];
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("user_id,username,display_name,avatar_id,rank,current_level")
-    .in("user_id", uniqueUserIds);
+  const [profilesRes, reactionsRes, userReactionsRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("user_id,username,display_name,avatar_id,rank,current_level")
+      .in("user_id", uniqueUserIds),
+    supabase
+      .from("feed_reactions")
+      .select("feed_event_id")
+      .in("feed_event_id", eventIds),
+    supabase
+      .from("feed_reactions")
+      .select("feed_event_id")
+      .in("feed_event_id", eventIds)
+      .eq("user_id", userId),
+  ]);
 
   const profileMap = Object.fromEntries(
-    (profiles ?? []).map((p: FeedProfile) => [p.user_id, p])
+    ((profilesRes.data ?? []) as FeedProfile[]).map((p) => [p.user_id, p])
   );
 
-  return (events as FeedEvent[]).map((event) => ({
+  // Count reactions per event
+  const reactionCountMap: Record<string, number> = {};
+  for (const r of (reactionsRes.data ?? []) as { feed_event_id: string }[]) {
+    reactionCountMap[r.feed_event_id] = (reactionCountMap[r.feed_event_id] ?? 0) + 1;
+  }
+
+  // Set of event IDs the current user has reacted to
+  const userReactedSet = new Set(
+    ((userReactionsRes.data ?? []) as { feed_event_id: string }[]).map((r) => r.feed_event_id)
+  );
+
+  return (events as Omit<FeedEvent, "profile" | "reaction_count" | "user_has_reacted">[]).map((event) => ({
     ...event,
     profile: profileMap[event.user_id],
+    reaction_count: reactionCountMap[event.id] ?? 0,
+    user_has_reacted: userReactedSet.has(event.id),
   }));
 }
