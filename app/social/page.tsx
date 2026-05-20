@@ -208,12 +208,9 @@ export default async function SocialPage() {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-mono text-lg font-bold text-[#B6FF00]">
-                {(profile?.xp_into_level ?? 0).toLocaleString("pt-BR")}
-                {profile?.xp_for_next_level ? (
-                  <span className="text-[#F5F5F5]/30 text-sm">/{profile.xp_for_next_level}</span>
-                ) : null}
+                {(profile?.total_xp ?? 0).toLocaleString("pt-BR")}
               </p>
-              <p className="text-[9px] text-[#F5F5F5]/28">XP</p>
+              <p className="text-[9px] text-[#F5F5F5]/28">XP total</p>
             </div>
           </section>
 

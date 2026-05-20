@@ -70,9 +70,8 @@ export function XPCard() {
             </span>
           </div>
           <p className="mt-2 text-xs text-[#F5F5F5]/32">
-            {xpForNextLevel
-              ? `${xpIntoLevel} / ${xpForNextLevel} XP para o próximo nível`
-              : `${totalXp.toLocaleString('pt-BR')} XP total`}
+            {totalXp.toLocaleString('pt-BR')} XP total
+            {xpForNextLevel ? ` · ${xpIntoLevel}/${xpForNextLevel} no nível` : ''}
           </p>
         </div>
 

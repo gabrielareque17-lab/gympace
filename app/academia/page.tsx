@@ -1077,13 +1077,38 @@ function ProgressPulse({ updates }: { updates: ProgressUpdate[] }) {
 }
 
 function XPToast({ feedback }: { feedback: XPFeedback }) {
+  const accent = "#B6FF00";
   return (
-    <div className="rounded-2xl border border-[#B6FF00]/20 bg-[#B6FF00]/[0.07] px-4 py-3">
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#B6FF00]">
-        <Sparkles className="size-4" />
-        {feedback.leveledUp ? "Level up" : "XP ganho"}
-      </p>
-      <p className="mt-1 text-sm font-semibold text-[#F5F5F5]/75">+{feedback.gainedXp} XP · Nível {feedback.currentLevel}</p>
+    <div
+      className="rounded-2xl px-4 py-3.5"
+      style={{
+        border: `1px solid ${accent}20`,
+        background: `${accent}08`,
+        boxShadow: `0 0 24px ${accent}10`,
+      }}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: accent }}>
+            {feedback.leveledUp ? "Level up" : "XP ganho"}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[#F5F5F5]/78">
+            +{feedback.gainedXp} XP · Nível {feedback.currentLevel}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="font-display text-lg font-bold tabular-nums" style={{ color: accent }}>
+            {feedback.totalXp.toLocaleString("pt-BR")}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F5F5]/30">total xp</p>
+        </div>
+      </div>
+      <div className="mt-3 h-[4px] overflow-hidden rounded-full bg-white/[0.08]">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${feedback.levelProgress}%`, background: accent, boxShadow: `0 0 10px ${accent}66` }}
+        />
+      </div>
     </div>
   );
 }
