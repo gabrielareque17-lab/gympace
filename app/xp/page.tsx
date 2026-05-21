@@ -111,6 +111,7 @@ export default function XPPage() {
             <RankSection />
           </div>
           <ExampleSection />
+          <SeasonSection />
           <TrustSection />
         </div>
       </main>
@@ -293,9 +294,40 @@ function TrustSection() {
       />
       <InfoCard
         icon={Info}
-        title="Transparência no perfil"
-        text="Perfil e dashboard mostram XP total, XP no nível e quanto falta para os próximos níveis."
+        title="XP total x progresso no nível"
+        text="Ranking usa o XP total (profiles.total_xp). Perfil e dashboard mostram esse total + a fatia dentro do nível atual."
       />
+    </section>
+  );
+}
+
+function SeasonSection() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+      <div className="border-b border-white/[0.05] p-4 sm:p-5">
+        <SectionTitle eyebrow="Temporadas" title="Como funciona no ranking" compact />
+        <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
+          A temporada não troca sua fonte oficial de XP: o XP total continua sendo único e vem de{" "}
+          <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[11px]">profiles.total_xp</code>.
+        </p>
+      </div>
+      <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
+        <InfoCard
+          icon={Zap}
+          title="XP Global (principal)"
+          text="É o ranking padrão. Ordena os atletas pelo XP total acumulado da conta inteira."
+        />
+        <InfoCard
+          icon={Trophy}
+          title="Ranking da temporada"
+          text="É paralelo ao global. Usa pontuação sazonal da janela da temporada ativa (corridas + treinos no período)."
+        />
+        <InfoCard
+          icon={Flame}
+          title="Perfil e Dashboard"
+          text="Mostram o mesmo XP oficial do ranking global e também o progresso dentro do nível atual."
+        />
+      </div>
     </section>
   );
 }

@@ -8,7 +8,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
-import { syncUserXP } from "@/lib/xp";
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from "@/lib/xp";
 import { syncStreaksForUser } from "@/lib/streaks";
 import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
@@ -144,15 +144,14 @@ export default async function PerfilPage() {
   const nickname = email ? getNickname(email) : "Atleta";
   const initials = email ? email[0].toUpperCase() : "?";
 
-  const [profileRes, xpSync] = await Promise.all([
+  const [profileRes] = await Promise.all([
     user
       ? supabase
           .from("profiles")
-          .select("avatar_id, avatar_type, username, display_name, bio")
+          .select("avatar_id, avatar_type, username, display_name, bio, total_xp, current_level, rank")
           .eq("user_id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    user ? syncUserXP(supabase, user.id) : Promise.resolve(null),
   ]);
   const profile = profileRes.data as {
     avatar_id: string | null;
@@ -160,6 +159,9 @@ export default async function PerfilPage() {
     username: string | null;
     display_name: string | null;
     bio: string | null;
+    total_xp: number | null;
+    current_level: number | null;
+    rank: string | null;
   } | null;
 
   const [
@@ -239,12 +241,14 @@ export default async function PerfilPage() {
 
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const dbLevel = xpSync?.currentLevel ?? 1;
-  const dbRank = xpSync?.rank ?? "rookie";
+  const profileTotalXp = Number(profile?.total_xp ?? 0);
+  const dbLevel = Number(profile?.current_level ?? calculateLevelFromXP(profileTotalXp));
+  const dbRank = profile?.rank ?? getRankForLevel(dbLevel);
   const rankStyle = RANK_STYLES[dbRank] ?? RANK_STYLES.rookie;
-  const xpLevelProgress = xpSync?.levelProgress ?? 0;
-  const xpIntoLevel = xpSync?.xpIntoLevel ?? 0;
-  const xpForNextLevel = xpSync?.xpForNextLevel ?? null;
+  const progress = getLevelProgress(profileTotalXp);
+  const xpLevelProgress = progress.levelProgress;
+  const xpIntoLevel = progress.xpIntoLevel;
+  const xpForNextLevel = progress.xpForNextLevel;
 
   const avatarDef = profile?.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteType = profile?.avatar_type ?? "runner";
