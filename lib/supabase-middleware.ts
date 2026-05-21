@@ -18,6 +18,7 @@ function getSupabaseEnv() {
 
 const protectedRoutes = ["/", "/corridas"];
 const authRoutes = ["/login", "/register"];
+const marketingRoutes = ["/landing"];
 
 function isProtectedRoute(pathname: string) {
   return protectedRoutes.some(
@@ -27,6 +28,12 @@ function isProtectedRoute(pathname: string) {
 
 function isAuthRoute(pathname: string) {
   return authRoutes.some((route) => pathname === route);
+}
+
+function isMarketingRoute(pathname: string) {
+  return marketingRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 }
 
 export async function updateSession(request: NextRequest) {
@@ -62,6 +69,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthRoute(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && isMarketingRoute(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
