@@ -31,7 +31,7 @@ export type LeaderboardCategory = "xp" | "season" | "km" | "workouts" | "streak"
 
 async function backfillStaleXpEntries(supabase: SupabaseClient, entries: LeaderboardEntry[]) {
   const staleIds = entries
-    .filter((e) => e.totalXp <= 0 && (e.weeklyKm > 0 || e.weeklyWorkouts > 0 || e.currentStreak > 0))
+    .filter((e) => e.totalXp <= 0)
     .map((e) => e.userId);
 
   if (staleIds.length === 0) return;
