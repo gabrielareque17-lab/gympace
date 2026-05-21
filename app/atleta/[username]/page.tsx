@@ -327,7 +327,7 @@ export default async function AthleteProfilePage({ params }: Props) {
                     <div className="flex items-center gap-1.5">
                       <span
                         className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
-                        style={{ background: level.color + "20", color: level.color }}
+                        style={{ background: rank.color + "20", color: rank.color }}
                       >
                         Nível {currentLevel}
                       </span>
