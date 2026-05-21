@@ -518,6 +518,14 @@ export default async function PerfilPage() {
                     }}
                   />
                 </div>
+                <div className="mt-2.5 flex justify-end">
+                  <Link
+                    href="/xp#jornada-xp"
+                    className="inline-flex items-center rounded-lg border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-2.5 py-1 text-[11px] font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15"
+                  >
+                    Ver jornada XP (níveis)
+                  </Link>
+                </div>
               </div>
 
               {/* Quick stats grid */}

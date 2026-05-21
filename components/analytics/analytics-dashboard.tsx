@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Dumbbell, Flame, Gauge, Route } from "lucide-react";
 import {
   Area,
@@ -328,6 +329,14 @@ function PerformanceScoreSection({
           <ScoreBar label="Volume" value={score.volume} color="#B6FF00" />
           <ScoreBar label="Sequência" value={score.streak} color="#FB923C" />
           <ScoreBar label="Nível XP" value={score.level} color={rankStyle.color} />
+        </div>
+        <div className="mt-4 flex justify-end">
+          <Link
+            href="/xp#jornada-xp"
+            className="inline-flex items-center rounded-lg border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-2.5 py-1 text-[11px] font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15"
+          >
+            Ver jornada XP (game)
+          </Link>
         </div>
       </div>
     </section>

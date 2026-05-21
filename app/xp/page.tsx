@@ -193,7 +193,7 @@ function SourceGrid() {
 
 function LevelSection() {
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+    <section id="jornada-xp" className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
       <div className="border-b border-white/[0.05] p-4 sm:p-5">
       <SectionTitle eyebrow="Níveis" title="Curva de progressão" compact />
         <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
@@ -307,8 +307,8 @@ function SeasonSection() {
       <div className="border-b border-white/[0.05] p-4 sm:p-5">
         <SectionTitle eyebrow="Temporadas" title="Como funciona no ranking" compact />
         <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
-          A temporada não troca sua fonte oficial de XP: o XP total continua sendo único e vem de{" "}
-          <code className="rounded bg-white/[0.06] px-1 py-0.5 text-[11px]">profiles.total_xp</code>.
+          Aqui no app existem dois painéis: o ranking geral por XP e o ranking da temporada.
+          Pense como um game: um mostra sua jornada completa da conta, o outro mostra só a fase atual.
         </p>
       </div>
       <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
