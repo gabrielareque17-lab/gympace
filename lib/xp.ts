@@ -78,22 +78,22 @@ type CompetitionParticipantRow = {
 export const XP_RULES = {
   levelBaseXp: 150,
   levelGrowth: 1.16,
-  runBaseXp: 30,
-  runXpPerKm: 10,
-  workoutBaseXp: 50,
-  workoutDurationXpPerMinute: 0.5,
-  workoutDurationXpCap: 45,
-  streakXpPerDay: 20,
-  competitionBaseXp: 75,
-  competitionProgressXp: 5,
-  competitionFinishBonusXp: 125,
+  runBaseXp: 20,
+  runXpPerKm: 6,
+  workoutBaseXp: 30,
+  workoutDurationXpPerMinute: 0.3,
+  workoutDurationXpCap: 30,
+  streakXpPerDay: 8,
+  competitionBaseXp: 40,
+  competitionProgressXp: 2,
+  competitionFinishBonusXp: 60,
 } as const;
 
 const ACHIEVEMENT_XP_BY_RARITY = {
-  comum: 100,
-  raro: 175,
-  epico: 275,
-  lendario: 450,
+  comum: 60,
+  raro: 100,
+  epico: 160,
+  lendario: 260,
 } as const;
 
 export async function syncUserXP(

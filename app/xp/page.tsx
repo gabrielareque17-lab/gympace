@@ -52,7 +52,7 @@ const XP_SOURCES = [
     title: "Conquistas",
     icon: Award,
     color: "#A78BFA",
-    formula: "100 a 450 XP por conquista",
+    formula: "60 a 260 XP por conquista",
     detail: "A raridade define o peso: comum, raro, épico ou lendário.",
   },
   {
@@ -147,8 +147,8 @@ function HeroSection() {
 
         <div className="grid gap-2 sm:grid-cols-3">
           <HeroMetric label="Primeira subida de nível" value="150 XP" />
-          <HeroMetric label="Base da corrida" value="+30 XP" />
-          <HeroMetric label="Base do treino" value="+50 XP" />
+          <HeroMetric label="Base da corrida" value="+20 XP" />
+          <HeroMetric label="Base do treino" value="+30 XP" />
         </div>
       </div>
     </section>
