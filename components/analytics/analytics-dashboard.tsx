@@ -259,24 +259,16 @@ function PerformanceScoreSection({
   score,
   level,
   rankStyle,
-  totalXp,
   levelProgress,
   xpIntoLevel,
   xpForNextLevel,
-  xpRemainingForNextLevel,
-  nextLevelXp,
-  nextLevels,
 }: {
   score: PerformanceScoreData;
   level: number;
   rankStyle: { label: string; color: string };
-  totalXp: number;
   levelProgress: number;
   xpIntoLevel: number;
   xpForNextLevel: number | null;
-  xpRemainingForNextLevel: number;
-  nextLevelXp: number | null;
-  nextLevels: AnalyticsData["profile"]["nextLevels"];
 }) {
   const conicAngle = Math.round((score.overall / 100) * 360);
 
@@ -314,14 +306,11 @@ function PerformanceScoreSection({
               {rankStyle.label}
             </span>
           </div>
-          <p className="mt-1 text-xs text-[#F5F5F5]/32">
-            {totalXp.toLocaleString("pt-BR")} XP total
-          </p>
         </div>
 
         <div className="mb-5 rounded-xl border border-white/[0.055] bg-white/[0.025] p-3">
           <div className="mb-2 flex items-center justify-between gap-3 text-[11px]">
-            <span className="font-semibold text-[#F5F5F5]/62">
+            <span className="font-mono text-sm font-semibold tabular-nums text-[#F5F5F5]/62">
               {xpIntoLevel.toLocaleString("pt-BR")} / {xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
             </span>
             <span className="font-mono tabular-nums text-[#F5F5F5]/36">{levelProgress}%</span>
@@ -332,20 +321,6 @@ function PerformanceScoreSection({
               style={{ width: `${levelProgress}%`, background: rankStyle.color, boxShadow: `0 0 8px ${rankStyle.color}55` }}
             />
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] text-[#F5F5F5]/36">
-            <span>Faltam {xpRemainingForNextLevel.toLocaleString("pt-BR")} XP</span>
-            <span className="text-right">Nivel {level + 1}: {nextLevelXp?.toLocaleString("pt-BR") ?? "max"} XP</span>
-          </div>
-          {nextLevels.length > 0 && (
-            <div className="mt-3 space-y-1">
-              {nextLevels.slice(0, 3).map((item) => (
-                <div key={item.level} className="flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
-                  <span>Nivel {item.level}</span>
-                  <span className="font-mono tabular-nums">faltam {item.xpRemaining.toLocaleString("pt-BR")} XP</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="space-y-3">
@@ -731,13 +706,9 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
           score={performanceScore}
           level={profile.currentLevel}
           rankStyle={rankStyle}
-          totalXp={profile.totalXp}
           levelProgress={profile.levelProgress}
           xpIntoLevel={profile.xpIntoLevel}
           xpForNextLevel={profile.xpForNextLevel}
-          xpRemainingForNextLevel={profile.xpRemainingForNextLevel}
-          nextLevelXp={profile.nextLevelXp}
-          nextLevels={profile.nextLevels}
         />
       </div>
 

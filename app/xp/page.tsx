@@ -42,7 +42,7 @@ const XP_SOURCES = [
     detail: `O bônus é ${XP_RULES.workoutDurationXpPerMinute} XP por minuto, limitado a ${XP_RULES.workoutDurationXpCap} XP.`,
   },
   {
-    title: "Sequencias",
+    title: "Sequências",
     icon: Flame,
     color: "#FB923C",
     formula: `${XP_RULES.streakXpPerDay} XP por dia da melhor sequência`,
@@ -56,7 +56,7 @@ const XP_SOURCES = [
     detail: "A raridade define o peso: comum, raro, épico ou lendário.",
   },
   {
-    title: "Competicoes",
+    title: "Competições",
     icon: Trophy,
     color: "#EAB308",
     formula: `${XP_RULES.competitionBaseXp} XP base + progresso`,
@@ -81,7 +81,7 @@ const EXAMPLES = [
       ),
   },
   {
-    label: "Competicao ativa",
+    label: "Competição ativa",
     detail: "20 pontos de progresso",
     xp: XP_RULES.competitionBaseXp + 20 * XP_RULES.competitionProgressXp,
   },
@@ -145,7 +145,7 @@ function HeroSection() {
         </div>
 
         <div className="grid gap-2 sm:grid-cols-3">
-          <HeroMetric label="Primeiro level up" value="150 XP" />
+          <HeroMetric label="Primeira subida de nível" value="150 XP" />
           <HeroMetric label="Base da corrida" value="+30 XP" />
           <HeroMetric label="Base do treino" value="+50 XP" />
         </div>
@@ -213,7 +213,7 @@ function LevelSection() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold">Nivel {item.level}</p>
+                  <p className="text-sm font-semibold">Nível {item.level}</p>
                   <p className="font-mono text-xs tabular-nums text-[#F5F5F5]/54">
                     {item.totalXp.toLocaleString("pt-BR")} XP
                   </p>
@@ -288,12 +288,12 @@ function TrustSection() {
       />
       <InfoCard
         icon={Flag}
-        title="Sem premio duplicado"
+        title="Sem prêmio duplicado"
         text="Como o total é derivado dos dados salvos, o sistema evita somar a mesma atividade duas vezes."
       />
       <InfoCard
         icon={Info}
-        title="Transparencia no perfil"
+        title="Transparência no perfil"
         text="Perfil e dashboard mostram XP total, XP no nível e quanto falta para os próximos níveis."
       />
     </section>

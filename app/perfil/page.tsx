@@ -239,16 +239,12 @@ export default async function PerfilPage() {
 
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const dbTotalXp = xpSync?.totalXp ?? 0;
   const dbLevel = xpSync?.currentLevel ?? 1;
   const dbRank = xpSync?.rank ?? "rookie";
   const rankStyle = RANK_STYLES[dbRank] ?? RANK_STYLES.rookie;
   const xpLevelProgress = xpSync?.levelProgress ?? 0;
   const xpIntoLevel = xpSync?.xpIntoLevel ?? 0;
   const xpForNextLevel = xpSync?.xpForNextLevel ?? null;
-  const xpRemainingForNextLevel = xpSync?.xpRemainingForNextLevel ?? 0;
-  const nextLevelXp = xpSync?.nextLevelXp ?? null;
-  const nextLevels = xpSync?.nextLevels ?? [];
 
   const avatarDef = profile?.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteType = profile?.avatar_type ?? "runner";
@@ -504,7 +500,7 @@ export default async function PerfilPage() {
                       {rankStyle.label}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[10px] text-[#F5F5F5]/34">
+                  <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
                     {xpIntoLevel.toLocaleString("pt-BR")} / {xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                   </span>
                 </div>
@@ -518,41 +514,6 @@ export default async function PerfilPage() {
                     }}
                   />
                 </div>
-                <div className="mt-2 grid gap-2 text-[10px] text-[#F5F5F5]/34 sm:grid-cols-3">
-                  <p>
-                    <span className="font-bold text-[#F5F5F5]/70">{dbTotalXp.toLocaleString("pt-BR")}</span>{" "}
-                    XP total
-                  </p>
-                  <p>
-                    <span className="font-bold text-[#F5F5F5]/70">{xpRemainingForNextLevel.toLocaleString("pt-BR")}</span>{" "}
-                    XP para o proximo nivel
-                  </p>
-                  <p>
-                    Nivel {dbLevel + 1} em{" "}
-                    <span className="font-bold text-[#F5F5F5]/70">{nextLevelXp?.toLocaleString("pt-BR") ?? "max"}</span>{" "}
-                    XP
-                  </p>
-                </div>
-                {nextLevels.length > 0 && (
-                  <div className="mt-3 grid gap-1.5 sm:grid-cols-3">
-                    {nextLevels.slice(0, 3).map((item) => (
-                      <div key={item.level} className="rounded-lg border border-white/[0.05] bg-black/10 px-2.5 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/36">
-                            Nivel {item.level}
-                          </span>
-                          <span className="text-[10px] font-semibold" style={{ color: RANK_STYLES[item.rank]?.color ?? rankStyle.color }}>
-                            {RANK_STYLES[item.rank]?.label ?? item.rank}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-[10px] text-[#F5F5F5]/32">
-                          {item.totalXpRequired.toLocaleString("pt-BR")} XP total - faltam{" "}
-                          {item.xpRemaining.toLocaleString("pt-BR")}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Quick stats grid */}

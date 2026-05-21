@@ -183,7 +183,6 @@ export default async function PublicProfilePage({ params }: Props) {
   const bestPaceSeconds = allPaceSeconds.length > 0 ? Math.min(...allPaceSeconds) : null;
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const profileTotalXp = xpSync.totalXp;
   const profileLevel = xpSync.currentLevel;
   const rankStyle = RANK_STYLES[xpSync.rank] ?? RANK_STYLES.rookie;
   const xpLevelProgress = xpSync.levelProgress;
@@ -414,17 +413,11 @@ export default async function PublicProfilePage({ params }: Props) {
                       style={{ width: `${xpLevelProgress}%`, background: rankStyle.color }}
                     />
                   </div>
-                  <div className="mt-2 grid gap-1.5 text-[10px] text-[#F5F5F5]/34 sm:grid-cols-2">
-                    <span>{profileTotalXp.toLocaleString("pt-BR")} XP total</span>
-                    <span className="sm:text-right">
-                      faltam {xpSync.xpRemainingForNextLevel.toLocaleString("pt-BR")} XP
+                  <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
+                    <span className="font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
+                      {xpSync.xpIntoLevel.toLocaleString("pt-BR")} / {xpSync.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                     </span>
-                    <span>
-                      {xpSync.xpIntoLevel.toLocaleString("pt-BR")} / {xpSync.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP no nivel
-                    </span>
-                    <span className="sm:text-right">
-                      nivel {profileLevel + 1} em {xpSync.nextLevelXp?.toLocaleString("pt-BR") ?? "max"} XP
-                    </span>
+                    <span className="font-mono tabular-nums">{xpLevelProgress}%</span>
                   </div>
                 </div>
               </div>

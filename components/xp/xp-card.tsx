@@ -28,13 +28,9 @@ export function XPCard() {
   const rank = profile?.rank ?? 'rookie'
   const rankStyle = RANK_STYLES[rank] ?? RANK_STYLES.rookie
   const level = profile?.currentLevel ?? 1
-  const totalXp = profile?.totalXp ?? 0
   const levelProgress = profile?.levelProgress ?? 0
   const xpIntoLevel = profile?.xpIntoLevel ?? 0
   const xpForNextLevel = profile?.xpForNextLevel ?? null
-  const xpRemaining = profile?.xpRemainingForNextLevel ?? 0
-  const nextLevelXp = profile?.nextLevelXp ?? null
-  const nextLevels = profile?.nextLevels ?? []
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-5 transition-all duration-300 hover:border-white/[0.11] hover:bg-[#141414] hover:shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
@@ -73,9 +69,8 @@ export function XPCard() {
               {rankStyle.label}
             </span>
           </div>
-          <p className="mt-2 text-xs font-medium leading-relaxed text-[#F5F5F5]/36">
-            {totalXp.toLocaleString('pt-BR')} XP total
-            {xpForNextLevel ? ` · ${xpIntoLevel.toLocaleString('pt-BR')}/${xpForNextLevel.toLocaleString('pt-BR')} neste nível` : ''}
+          <p className="mt-2 font-mono text-sm font-semibold tabular-nums text-[#F5F5F5]/60">
+            {xpIntoLevel.toLocaleString('pt-BR')} / {xpForNextLevel?.toLocaleString('pt-BR') ?? 'max'} XP
           </p>
         </div>
 
@@ -94,38 +89,7 @@ export function XPCard() {
             {levelProgress}%
           </span>
         </div>
-
-        {nextLevelXp !== null && (
-          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-lg border border-white/[0.055] bg-white/[0.025] p-2">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#F5F5F5]/30">Faltam</p>
-              <p className="mt-1 font-display text-lg font-bold tabular-nums text-[#F5F5F5]/86">
-                {xpRemaining.toLocaleString('pt-BR')} XP
-              </p>
-            </div>
-            <div className="rounded-lg border border-white/[0.055] bg-white/[0.025] p-2">
-              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#F5F5F5]/30">Nivel {level + 1}</p>
-              <p className="mt-1 font-display text-lg font-bold tabular-nums" style={{ color: rankStyle.color }}>
-                {nextLevelXp.toLocaleString('pt-BR')} XP
-              </p>
-            </div>
-          </div>
-        )}
-
-        {nextLevels.length > 0 && (
-          <div className="mt-3 space-y-1.5">
-            {nextLevels.slice(0, 3).map((item) => (
-              <div key={item.level} className="flex items-center justify-between gap-3 text-[11px] text-[#F5F5F5]/36">
-                <span>Nivel {item.level}</span>
-                <span className="font-mono tabular-nums">
-                  faltam {item.xpRemaining.toLocaleString('pt-BR')} XP
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </article>
   )
 }
-
