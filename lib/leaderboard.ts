@@ -199,7 +199,12 @@ export async function getGlobalLeaderboard(
     ? entries
     : entries.filter((e) => (category === "km" ? e.weeklyKm > 0 : e.weeklyWorkouts > 0));
 
-  if (category === "xp") await backfillStaleXpEntries(supabase, filtered);
+  if (category === "xp") {
+    const candidate = filtered
+      .sort(sorters.xp)
+      .slice(0, 80);
+    await backfillStaleXpEntries(supabase, candidate);
+  }
   return filtered.sort(sorters[category]).slice(0, 50);
 }
 
@@ -328,6 +333,11 @@ export async function getFriendsLeaderboard(
   };
 
   const filtered = entries;
-  if (category === "xp") await backfillStaleXpEntries(supabase, filtered);
+  if (category === "xp") {
+    const candidate = filtered
+      .sort(sorters.xp)
+      .slice(0, 80);
+    await backfillStaleXpEntries(supabase, candidate);
+  }
   return filtered.sort(sorters[category]).slice(0, 50);
 }
