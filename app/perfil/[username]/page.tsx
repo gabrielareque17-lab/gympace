@@ -421,6 +421,14 @@ export default async function PublicProfilePage({ params }: Props) {
                     </span>
                     <span className="font-mono tabular-nums">{xpLevelProgress}%</span>
                   </div>
+                  <div className="mt-2.5 flex justify-center">
+                    <Link
+                      href="/xp#jornada-xp"
+                      className="inline-flex w-full items-center justify-center rounded-xl border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-3 py-2 text-xs font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15 sm:w-auto sm:px-2.5 sm:py-1 sm:text-[11px]"
+                    >
+                      Ver jornada XP
+                    </Link>
+                  </div>
                 </div>
               </div>
 

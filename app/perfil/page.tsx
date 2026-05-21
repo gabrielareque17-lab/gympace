@@ -521,12 +521,25 @@ export default async function PerfilPage() {
                 <div className="mt-2.5 flex justify-end">
                   <Link
                     href="/xp#jornada-xp"
-                    className="inline-flex items-center rounded-lg border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-2.5 py-1 text-[11px] font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15"
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-3 py-2 text-xs font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15 sm:w-auto sm:px-2.5 sm:py-1 sm:text-[11px]"
                   >
                     Ver jornada XP (níveis)
                   </Link>
                 </div>
               </div>
+
+              {profile?.username && (
+                <div className="mt-2.5 flex justify-center">
+                  <Link
+                    href={`/perfil/${profile.username}/trofeus`}
+                    prefetch
+                    className="inline-flex w-full max-w-xs items-center justify-center gap-1.5 rounded-xl border border-[#EAB308]/30 bg-[#EAB308]/10 px-3 py-2 text-xs font-bold text-[#EAB308] shadow-[0_0_18px_rgba(234,179,8,0.08)] transition-all duration-150 hover:border-[#EAB308]/40 hover:bg-[#EAB308]/[0.14] sm:w-auto"
+                  >
+                    <Trophy className="size-3.5" strokeWidth={2} />
+                    Abrir troféus
+                  </Link>
+                </div>
+              )}
 
               {/* Quick stats grid */}
               <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">
