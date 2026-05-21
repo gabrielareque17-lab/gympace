@@ -53,10 +53,9 @@ export default async function SocialPage() {
     level_progress: xpFeedback.levelProgress,
   } : null;
 
-  const leaderboardCategory = activeSeason ? "season" : "xp";
   const [globalEntries, friendsEntries] = await Promise.all([
-    getGlobalLeaderboard(supabase, leaderboardCategory, activeSeason),
-    getFriendsLeaderboard(supabase, user.id, leaderboardCategory, activeSeason),
+    getGlobalLeaderboard(supabase, "xp"),
+    getFriendsLeaderboard(supabase, user.id, "xp"),
   ]);
 
   // Garantir que a entrada do usuário atual no leaderboard reflita o XP recém-sincronizado.
@@ -67,16 +66,13 @@ export default async function SocialPage() {
     if (idx === -1) return entries;
     const patched = [...entries];
     patched[idx] = { ...patched[idx], totalXp: xpFeedback.totalXp, currentLevel: xpFeedback.currentLevel, rank: xpFeedback.rank };
-    return activeSeason
-      ? patched
-      : patched.sort((a, b) => b.totalXp - a.totalXp);
+    return patched.sort((a, b) => b.totalXp - a.totalXp);
   }
   const patchedGlobal = patchCurrentUser(globalEntries);
   const patchedFriends = patchCurrentUser(friendsEntries);
 
-  const myEntry = patchedGlobal.find((e) => e.userId === user.id);
-  const displayScore = activeSeason ? (myEntry?.seasonPoints ?? 0) : (profile?.total_xp ?? 0);
-  const scoreLabel = activeSeason ? "pts temporada" : "XP total";
+  const displayScore = profile?.total_xp ?? 0;
+  const scoreLabel = "XP total";
 
   const rankColor = RANK_COLORS[profile?.rank ?? "rookie"] ?? "#94A3B8";
   const seasonDays = activeSeason ? daysRemaining(activeSeason) : 0;
@@ -95,7 +91,7 @@ export default async function SocialPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Ranking</h1>
           <p className="mt-2 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
             {activeSeason
-              ? "Placar por pontos da temporada, separado do XP permanente."
+              ? "Ranking principal por XP total, com a temporada ativa acompanhando em paralelo."
               : "Ranking por XP, sequências e conquistas da comunidade."}
           </p>
         </header>
@@ -211,18 +207,16 @@ export default async function SocialPage() {
                 <Medal className="size-4 text-[#EAB308]" strokeWidth={2} />
                 Leaderboard
               </h2>
-              {activeSeason && (
-                <p className="mt-1 text-xs text-[#F5F5F5]/32">
-                  Pontos da temporada: corridas, treinos, dias ativos e bônus híbrido.
-                </p>
-              )}
+              <p className="mt-1 text-xs text-[#F5F5F5]/32">
+                XP global acumulado em perfil, dashboard, feed e progressão.
+              </p>
             </div>
             <div className="p-4">
               <WeeklyLeaderboard
                 globalEntries={patchedGlobal}
                 friendsEntries={patchedFriends}
                 currentUserId={user.id}
-                mode={activeSeason ? "season" : "xp"}
+                mode="xp"
               />
             </div>
           </section>
