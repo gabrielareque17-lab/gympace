@@ -8,7 +8,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
-import { getLevelProgress, syncUserXP } from "@/lib/xp";
+import { syncUserXP } from "@/lib/xp";
 import { syncStreaksForUser } from "@/lib/streaks";
 import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
@@ -243,7 +243,12 @@ export default async function PerfilPage() {
   const dbLevel = xpSync?.currentLevel ?? 1;
   const dbRank = xpSync?.rank ?? "rookie";
   const rankStyle = RANK_STYLES[dbRank] ?? RANK_STYLES.rookie;
-  const { levelProgress: xpLevelProgress, xpIntoLevel, xpForNextLevel } = getLevelProgress(dbTotalXp);
+  const xpLevelProgress = xpSync?.levelProgress ?? 0;
+  const xpIntoLevel = xpSync?.xpIntoLevel ?? 0;
+  const xpForNextLevel = xpSync?.xpForNextLevel ?? null;
+  const xpRemainingForNextLevel = xpSync?.xpRemainingForNextLevel ?? 0;
+  const nextLevelXp = xpSync?.nextLevelXp ?? null;
+  const nextLevels = xpSync?.nextLevels ?? [];
 
   const avatarDef = profile?.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteType = profile?.avatar_type ?? "runner";
@@ -500,7 +505,7 @@ export default async function PerfilPage() {
                     </span>
                   </div>
                   <span className="shrink-0 text-[10px] text-[#F5F5F5]/34">
-                    {xpIntoLevel} / {xpForNextLevel ?? "∞"} XP
+                    {xpIntoLevel.toLocaleString("pt-BR")} / {xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                   </span>
                 </div>
                 <div className="h-[4px] overflow-hidden rounded-full bg-white/[0.07]">
@@ -513,11 +518,40 @@ export default async function PerfilPage() {
                     }}
                   />
                 </div>
-                {xpForNextLevel !== null && (
-                  <p className="mt-1.5 text-[10px] text-[#F5F5F5]/30">
-                    {xpForNextLevel - xpIntoLevel} XP para o próximo nível ·{" "}
-                    {dbTotalXp.toLocaleString("pt-BR")} XP total
+                <div className="mt-2 grid gap-2 text-[10px] text-[#F5F5F5]/34 sm:grid-cols-3">
+                  <p>
+                    <span className="font-bold text-[#F5F5F5]/70">{dbTotalXp.toLocaleString("pt-BR")}</span>{" "}
+                    XP total
                   </p>
+                  <p>
+                    <span className="font-bold text-[#F5F5F5]/70">{xpRemainingForNextLevel.toLocaleString("pt-BR")}</span>{" "}
+                    XP para o proximo nivel
+                  </p>
+                  <p>
+                    Nivel {dbLevel + 1} em{" "}
+                    <span className="font-bold text-[#F5F5F5]/70">{nextLevelXp?.toLocaleString("pt-BR") ?? "max"}</span>{" "}
+                    XP
+                  </p>
+                </div>
+                {nextLevels.length > 0 && (
+                  <div className="mt-3 grid gap-1.5 sm:grid-cols-3">
+                    {nextLevels.slice(0, 3).map((item) => (
+                      <div key={item.level} className="rounded-lg border border-white/[0.05] bg-black/10 px-2.5 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/36">
+                            Nivel {item.level}
+                          </span>
+                          <span className="text-[10px] font-semibold" style={{ color: RANK_STYLES[item.rank]?.color ?? rankStyle.color }}>
+                            {RANK_STYLES[item.rank]?.label ?? item.rank}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[10px] text-[#F5F5F5]/32">
+                          {item.totalXpRequired.toLocaleString("pt-BR")} XP total - faltam{" "}
+                          {item.xpRemaining.toLocaleString("pt-BR")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 

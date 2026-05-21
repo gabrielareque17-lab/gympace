@@ -7,8 +7,15 @@ import {
   ArrowRight,
   Award,
   BarChart3,
+  Bell,
   Dumbbell,
   Flame,
+  Footprints,
+  MapPin,
+  MessageCircle,
+  Route,
+  Shield,
+  Smartphone,
   Star,
   Target,
   Trophy,
@@ -37,7 +44,7 @@ function useInView<T extends HTMLElement = HTMLElement>(threshold = 0.12) {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
+  }, [threshold]);
 
   return [ref, inView] as const;
 }
@@ -117,6 +124,7 @@ function NavBar() {
           {[
             ["Funcionalidades", "#features"],
             ["Analytics", "#analytics"],
+            ["PWA", "#mobile"],
             ["Competições", "#competitions"],
             ["Evolução", "#evolution"],
           ].map(([label, href]) => (
@@ -313,9 +321,9 @@ function HeroSection() {
           <span style={{ color: "#B6FF00" }}>Supere.</span>
         </h1>
 
-        <p className="mx-auto mb-10 max-w-[520px] text-[15px] leading-[1.75] text-[#F5F5F5]/42">
-          A plataforma definitiva para atletas sérios. Registre corridas e sessões de academia,
-          acompanhe analytics em tempo real e compita com outros atletas.
+        <p className="mx-auto mb-10 max-w-[560px] text-[15px] leading-[1.75] text-[#F5F5F5]/42">
+          O centro de comando para quem corre, treina, compete e evolui. Registre rotas por GPS,
+          musculação, XP, metas, feed, rankings e notificações em uma experiência mobile-first.
         </p>
 
         {/* CTAs */}
@@ -337,7 +345,7 @@ function HeroSection() {
 
         {/* Trust */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#F5F5F5]/26">
-          {["Sem cartão de crédito", "Configuração em 2 minutos", "Cancele quando quiser"].map(
+          {["Instale como PWA", "Feito para corrida + academia", "XP transparente"].map(
             (t) => (
               <div key={t} className="flex items-center gap-1.5">
                 <div className="size-1 rounded-full bg-[#B6FF00]/50" />
@@ -360,10 +368,10 @@ function HeroSection() {
 
 function StatsBar() {
   const stats = [
-    { label: "Atletas ativos", value: 2400, suffix: "+" },
-    { label: "Treinos registrados", value: 85000, suffix: "+" },
-    { label: "KM rastreados", value: 1200000, suffix: "" },
-    { label: "Competições criadas", value: 340, suffix: "+" },
+    { label: "Modalidades integradas", value: 2, suffix: "" },
+    { label: "Fontes de XP", value: 5, suffix: "" },
+    { label: "Dias no heatmap", value: 84, suffix: "" },
+    { label: "Ranks competitivos", value: 6, suffix: "" },
   ];
 
   return (
@@ -388,52 +396,100 @@ function StatsBar() {
 
 const FEATURES = [
   {
-    icon: BarChart3,
-    title: "Analytics Premium",
+    icon: Route,
+    title: "Corridas com GPS",
     description:
-      "Heatmap de consistência, tendências de pace mês a mês, volume semanal e score de performance baseado em dados reais.",
-    tag: "Inteligente",
+      "Registre distância, pace, duração, calorias, velocidade média e rota no mapa para acompanhar cada treino com contexto.",
+    tag: "Corrida",
     color: "#B6FF00",
   },
   {
-    icon: Trophy,
-    title: "Competições ao vivo",
+    icon: Dumbbell,
+    title: "Academia completa",
     description:
-      "Crie ou participe de competições com outros atletas. Rankings em tempo real, convites e resultados automáticos.",
-    tag: "Competitivo",
-    color: "#FACC15",
+      "Cadastre treinos por grupo muscular, músculos específicos, divisão, intensidade, duração e observações.",
+    tag: "Força",
+    color: "#60A5FA",
   },
   {
     icon: TrendingUp,
-    title: "XP & Evolução",
+    title: "XP, níveis e ranks",
     description:
-      "Sistema de progressão gamificado com níveis, ranks e conquistas. Cada treino te coloca mais perto do topo.",
+      "Sistema de progressão com XP recalculado, nível atual, quanto falta para o próximo nível e faixas de rank.",
     tag: "Gamificado",
     color: "#A78BFA",
   },
   {
-    icon: Users,
-    title: "Comunidade",
+    icon: BarChart3,
+    title: "Analytics de evolução",
     description:
-      "Explore atletas, compare rankings e construa sua reputação na plataforma de atletas híbridos.",
-    tag: "Social",
-    color: "#22D3EE",
+      "Heatmap, pace mensal, volume semanal, carga de academia, score do atleta e visão dos últimos 84 dias.",
+    tag: "Dados",
+    color: "#B6FF00",
   },
   {
-    icon: Activity,
-    title: "Corridas & Academia",
+    icon: Trophy,
+    title: "Competições",
     description:
-      "Registre corridas com pace e distância, ou sessões de academia por grupo muscular. Fluxo rápido, dados reais.",
-    tag: "Registro",
+      "Crie disputas por corrida, academia, streak ou híbrido, convide atletas e acompanhe rankings atualizados.",
+    tag: "Ranking",
+    color: "#FACC15",
+  },
+  {
+    icon: Footprints,
+    title: "Desafios 1x1",
+    description:
+      "Desafie outro atleta diretamente e acompanhe respostas, progresso e resultados dentro do ecossistema.",
+    tag: "Duelo",
     color: "#FB923C",
   },
   {
-    icon: Target,
-    title: "Metas semanais",
+    icon: MessageCircle,
+    title: "Feed social",
     description:
-      "Defina metas de KM, volume ou consistência. Acompanhe o progresso com barras e feedbacks visuais em tempo real.",
-    tag: "Metas",
+      "Compartilhe corridas, treinos, level ups, recordes, streaks e troféus com curtidas e comentários.",
+    tag: "Comunidade",
+    color: "#22D3EE",
+  },
+  {
+    icon: Users,
+    title: "Perfis de atletas",
+    description:
+      "Siga atletas, veja seguidores, conquistas, troféus, avatar, bio e histórico de evolução pública.",
+    tag: "Perfil",
+    color: "#38BDF8",
+  },
+  {
+    icon: Award,
+    title: "Conquistas e troféus",
+    description:
+      "Desbloqueie conquistas por marcos de corrida e academia, além de troféus exclusivos concedidos no app.",
+    tag: "Coleção",
+    color: "#EAB308",
+  },
+  {
+    icon: Target,
+    title: "Metas e calendário",
+    description:
+      "Acompanhe metas de KM, frequência, pace, calendário mensal, streaks e consistência diária.",
+    tag: "Foco",
     color: "#F472B6",
+  },
+  {
+    icon: Bell,
+    title: "Notificações e updates",
+    description:
+      "Receba convites, interações, avisos, novidades do GymPace e atualizações importantes no painel.",
+    tag: "Alertas",
+    color: "#C084FC",
+  },
+  {
+    icon: Smartphone,
+    title: "PWA mobile-first",
+    description:
+      "Interface otimizada para celular, navegação inferior, instalação como app e experiência rápida no treino.",
+    tag: "Mobile",
+    color: "#34D399",
   },
 ];
 
@@ -450,13 +506,13 @@ function FeaturesSection() {
             Funcionalidades
           </div>
           <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            Tudo que um atleta
+            Todas as funções
             <br />
-            <span style={{ color: "#B6FF00" }}>sério precisa</span>
+            <span style={{ color: "#B6FF00" }}>do GymPace</span>
           </h2>
           <p className="mx-auto max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
-            Não é um app de fitness genérico. É uma plataforma de performance construída para
-            quem leva o treino a sério.
+            Do registro ao feed, do XP ao ranking: o app conecta corrida, academia e comunidade
+            em uma experiência pensada para uso diário no celular.
           </p>
         </div>
 
@@ -681,6 +737,151 @@ function AnalyticsSection() {
 
 // ─── Competitions Section ─────────────────────────────────────────────────────
 
+function MobilePWAMockup() {
+  const nav = [
+    { icon: Activity, label: "Início", active: true },
+    { icon: MessageCircle, label: "Feed", active: false },
+    { icon: Trophy, label: "Ranking", active: false },
+    { icon: Users, label: "Perfil", active: false },
+  ];
+
+  return (
+    <div className="relative mx-auto max-w-[330px]">
+      <div className="absolute inset-0 rounded-[42px] bg-[#22D3EE]/[0.08] blur-3xl" />
+      <div className="relative overflow-hidden rounded-[34px] border border-white/[0.1] bg-[#090909] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+        <div className="rounded-[26px] border border-white/[0.06] bg-[#0D0D0D]">
+          <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3">
+            <div className="flex items-center gap-2">
+              <div className="grid size-7 place-items-center rounded-xl bg-[#B6FF00]">
+                <Zap className="size-3.5 text-[#080808]" strokeWidth={2.8} />
+              </div>
+              <span className="text-sm font-bold">GymPace</span>
+            </div>
+            <Bell className="size-4 text-white/35" />
+          </div>
+
+          <div className="space-y-3 p-4">
+            <div className="rounded-2xl border border-[#B6FF00]/15 bg-[#B6FF00]/[0.06] p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#B6FF00]/70">
+                  Hoje
+                </span>
+                <span className="rounded-full bg-[#B6FF00]/15 px-2 py-1 text-[10px] font-bold text-[#B6FF00]">
+                  PWA
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ["5.2", "km"],
+                  ["60", "min"],
+                  ["Nv. 8", "Silver"],
+                  ["82%", "meta"],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-xl bg-black/20 p-3">
+                    <p className="font-display text-xl font-bold">{value}</p>
+                    <p className="text-[10px] text-white/35">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.06] bg-[#111111] p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <MapPin className="size-4 text-[#B6FF00]" />
+                <span className="text-xs font-semibold">Rota GPS salva</span>
+              </div>
+              <div className="h-20 rounded-xl border border-white/[0.05] bg-[linear-gradient(135deg,rgba(182,255,0,0.18),rgba(34,211,238,0.08))]">
+                <div className="relative h-full">
+                  <div className="absolute left-8 top-10 h-1 w-28 rotate-[-18deg] rounded-full bg-[#B6FF00]/75" />
+                  <div className="absolute left-28 top-8 h-1 w-20 rotate-[22deg] rounded-full bg-[#B6FF00]/75" />
+                  <div className="absolute left-7 top-9 size-2 rounded-full bg-[#22D3EE]" />
+                  <div className="absolute right-10 top-12 size-2 rounded-full bg-[#B6FF00]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.06] bg-[#111111] p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold">Atalhos rápidos</span>
+                <Smartphone className="size-4 text-white/35" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Corrida</span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Academia</span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Desafio</span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Competição</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 border-t border-white/[0.05] px-2 pb-3 pt-2">
+            {nav.map(({ icon: Icon, label, active }) => (
+              <div key={label} className={`flex flex-col items-center gap-1 text-[9px] ${active ? "text-[#B6FF00]" : "text-white/25"}`}>
+                <Icon className="size-4" />
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileSection() {
+  const [ref, inView] = useInView<HTMLElement>();
+
+  return (
+    <section id="mobile" ref={ref} className="bg-[#080808] py-24">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+          <div
+            className={`transition-all duration-700 ${inView ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
+          >
+            <MobilePWAMockup />
+          </div>
+
+          <div
+            className={`transition-all delay-150 duration-700 ${inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+          >
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#22D3EE]/20 bg-[#22D3EE]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#22D3EE]">
+              <Smartphone className="size-3" />
+              Mobile & PWA
+            </div>
+            <h2 className="mb-5 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+              Feito para usar
+              <br />
+              <span style={{ color: "#22D3EE" }}>durante o treino</span>
+            </h2>
+            <p className="mb-8 text-[14px] leading-[1.75] text-[#F5F5F5]/40">
+              A experiência principal é mobile: navegação inferior, atalhos de registro, telas densas
+              e instalação como PWA para abrir o GymPace como app no celular.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                "Instalação como aplicativo",
+                "Navegação inferior para uma mão",
+                "Registro rápido de corrida e academia",
+                "Layout com safe area para iOS e Android",
+                "Push e central de notificações",
+                "Páginas otimizadas para PWA",
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
+                  <div className="grid size-5 shrink-0 place-items-center rounded-full bg-[#22D3EE]/15">
+                    <div className="size-1.5 rounded-full bg-[#22D3EE]" />
+                  </div>
+                  <span className="text-[13px] text-[#F5F5F5]/55">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function CompetitionsMockup() {
   const competitors = [
     { initials: "LM", name: "Lucas M.", sub: "Atleta Silver", value: "47.3 km", rank: 1, color: "#FACC15" },
@@ -782,10 +983,10 @@ function CompetitionsSection() {
 
             <div className="space-y-3">
               {[
-                "Rankings atualizados a cada novo treino",
-                "Modalidades: corrida, academia ou híbrido",
-                "Convites por link ou código único",
-                "Histórico completo de competições e resultados",
+                "Rankings atualizados a cada novo registro",
+                "Modalidades: corrida, academia, streak ou híbrido",
+                "Convites, respostas e progresso sincronizado",
+                "Desafios 1x1 e competições em grupo",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3">
                   <div className="flex size-5 items-center justify-center rounded-full bg-[#FACC15]/15">
@@ -806,11 +1007,11 @@ function CompetitionsSection() {
 
 const RANKS = [
   { name: "Rookie", color: "#71717A", xp: "0 XP" },
-  { name: "Bronze", color: "#CD7F32", xp: "500 XP" },
-  { name: "Silver", color: "#A1A1AA", xp: "1.5k XP" },
-  { name: "Gold", color: "#EAB308", xp: "3.5k XP" },
-  { name: "Platinum", color: "#22D3EE", xp: "7k XP" },
-  { name: "Elite", color: "#B6FF00", xp: "15k XP" },
+  { name: "Bronze", color: "#CD7F32", xp: "324 XP" },
+  { name: "Silver", color: "#A1A1AA", xp: "1.712 XP" },
+  { name: "Gold", color: "#EAB308", xp: "6.551 XP" },
+  { name: "Platinum", color: "#22D3EE", xp: "20.225 XP" },
+  { name: "Elite", color: "#B6FF00", xp: "68.443 XP" },
 ];
 
 function XPSection() {
@@ -832,9 +1033,16 @@ function XPSection() {
             <span style={{ color: "#A78BFA" }}>mais longe</span>
           </h2>
           <p className="mx-auto max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
-            Sistema de progressão gamificado. Ganhe XP por cada corrida e sessão de academia. Suba
-            de rank. Conquiste badges exclusivos.
+            Sistema de progressão transparente. Ganhe XP por corrida, academia, streak,
+            conquistas e competições, com cálculo visível de quanto falta para cada nível.
           </p>
+          <Link
+            href="/xp"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl border border-[#A78BFA]/20 bg-[#A78BFA]/[0.07] px-4 py-2 text-[12px] font-bold text-[#D8B4FE] transition-colors hover:bg-[#A78BFA]/[0.11]"
+          >
+            Ver regras completas de XP
+            <ArrowRight className="size-3.5" />
+          </Link>
         </div>
 
         {/* Rank progression */}
@@ -882,21 +1090,21 @@ function XPSection() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
-              icon: Activity,
-              title: "+10 XP por corrida",
-              sub: "Mais distância = mais XP",
+              icon: Route,
+              title: "30 XP + 10/km",
+              sub: "Corridas com distância, pace e rota",
               color: "#B6FF00",
             },
             {
               icon: Dumbbell,
-              title: "+5 XP por treino",
-              sub: "Academia conta tanto quanto corrida",
+              title: "50 XP + duração",
+              sub: "Treinos de força também evoluem o rank",
               color: "#60A5FA",
             },
             {
               icon: Award,
-              title: "Badges exclusivos",
-              sub: "Conquistas desbloqueadas por marcos",
+              title: "Conquistas e troféus",
+              sub: "Marcos raros aceleram a progressão",
               color: "#A78BFA",
             },
           ].map((b, i) => {
@@ -926,23 +1134,23 @@ function XPSection() {
 function SocialSection() {
   const [ref, inView] = useInView<HTMLElement>();
 
-  const testimonials = [
+  const socialFeatures = [
     {
-      name: "Rafael M.",
-      role: "Triatleta amador",
-      text: "O GymPace mudou como eu acompanho meu volume. Ter corrida + academia no mesmo analytics é game changer.",
+      icon: MessageCircle,
+      title: "Feed de atividades",
+      text: "Corridas, treinos, level ups, recordes, streaks, bônus híbrido e troféus aparecem em um feed vivo.",
       color: "#B6FF00",
     },
     {
-      name: "Camila T.",
-      role: "Corredora de rua",
-      text: "As competições são viciantes. Comecei só para ver o ranking e virei atleta de verdade.",
+      icon: Users,
+      title: "Perfis e seguidores",
+      text: "Cada atleta tem bio, avatar, seguidores, seguindo, histórico público, conquistas e vitrine de evolução.",
       color: "#22D3EE",
     },
     {
-      name: "Bruno L.",
-      role: "Personal trainer",
-      text: "Indico para todos os meus alunos. O sistema de XP motiva muito mais do que qualquer app genérico.",
+      icon: Shield,
+      title: "Privacidade e controle",
+      text: "Campos sensíveis de XP, rank, admin e feed são protegidos por regras de escrita confiável no servidor.",
       color: "#A78BFA",
     },
   ];
@@ -958,44 +1166,38 @@ function SocialSection() {
             Comunidade
           </div>
           <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            Atletas reais.
+            Comunidade,
             <br />
-            <span style={{ color: "#22D3EE" }}>Resultados reais.</span>
+            <span style={{ color: "#22D3EE" }}>feed e reputação.</span>
           </h2>
+          <p className="mx-auto max-w-xl text-[14px] leading-relaxed text-[#F5F5F5]/38">
+            O GymPace transforma cada atividade em contexto social: atletas podem seguir, reagir,
+            comentar, comparar ranking e acompanhar conquistas.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">
-          {testimonials.map((t, i) => (
-            <div
-              key={i}
-              className={`relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] ${inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+          {socialFeatures.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.title}
+                className={`relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] ${inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+                style={{ transitionDelay: `${i * 100}ms` }}
+              >
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
 
-              <div className="mb-4 flex gap-0.5">
-                {Array.from({ length: 5 }, (_, j) => (
-                  <Star key={j} className="size-3.5 fill-current" style={{ color: t.color }} />
-                ))}
-              </div>
-              <p className="mb-5 text-[13px] leading-[1.7] text-[#F5F5F5]/55">"{t.text}"</p>
-              <div className="flex items-center gap-3">
                 <div
-                  className="grid size-8 place-items-center rounded-full text-[11px] font-bold"
-                  style={{ background: `${t.color}18`, color: t.color }}
+                  className="mb-5 grid size-11 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04]"
+                  style={{ color: item.color }}
                 >
-                  {t.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                  <Icon className="size-5" strokeWidth={1.8} />
                 </div>
-                <div>
-                  <div className="text-[13px] font-semibold">{t.name}</div>
-                  <div className="text-[11px] text-white/30">{t.role}</div>
-                </div>
+                <h3 className="mb-2 font-display text-lg font-semibold">{item.title}</h3>
+                <p className="text-[13px] leading-[1.7] text-[#F5F5F5]/45">{item.text}</p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -1119,6 +1321,7 @@ export function LandingPage() {
       <StatsBar />
       <FeaturesSection />
       <AnalyticsSection />
+      <MobileSection />
       <CompetitionsSection />
       <XPSection />
       <SocialSection />

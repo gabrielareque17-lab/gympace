@@ -1,6 +1,7 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 import { getMuscleGroupLabel, normalizeMuscleGroups } from "@/lib/muscles";
 import { getLocalDateKey } from "@/lib/date-utils";
+import { getLevelProgress, type XPLevelMilestone } from "@/lib/xp";
 
 export type WeeklyVolumePoint = { label: string; km: number; runs: number };
 
@@ -43,7 +44,18 @@ export type AnalyticsSummary = {
   avgWeeklyKm: number;
 };
 
-export type ProfileInfo = { totalXp: number; currentLevel: number; rank: string };
+export type ProfileInfo = {
+  totalXp: number;
+  currentLevel: number;
+  rank: string;
+  levelProgress: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number | null;
+  xpRemainingForNextLevel: number;
+  currentLevelXp: number;
+  nextLevelXp: number | null;
+  nextLevels: XPLevelMilestone[];
+};
 
 export type AnalyticsData = {
   weeklyVolume: WeeklyVolumePoint[];
@@ -290,6 +302,8 @@ export function computeAnalytics(
 
   const allDates = [...runs.map((r) => r.created_at), ...workouts.map((w) => w.created_at)];
   const currentStreak = calculateCurrentStreak(allDates);
+  const profileTotalXp = Number(profile?.total_xp ?? 0);
+  const profileLevelState = getLevelProgress(profileTotalXp);
 
   return {
     weeklyVolume: computeWeeklyVolume(runs),
@@ -307,9 +321,10 @@ export function computeAnalytics(
       avgWeeklyKm: Math.round((recentKm / 8) * 10) / 10,
     },
     profile: {
-      totalXp: Number(profile?.total_xp ?? 0),
+      totalXp: profileTotalXp,
       currentLevel: Number(profile?.current_level ?? 1),
       rank: profile?.rank ?? "rookie",
+      ...profileLevelState,
     },
   };
 }
@@ -355,6 +370,11 @@ export function buildEmptyAnalytics(): AnalyticsData {
       currentStreak: 0,
       avgWeeklyKm: 0,
     },
-    profile: { totalXp: 0, currentLevel: 1, rank: "rookie" },
+    profile: {
+      totalXp: 0,
+      currentLevel: 1,
+      rank: "rookie",
+      ...getLevelProgress(0),
+    },
   };
 }

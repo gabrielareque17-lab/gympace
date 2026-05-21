@@ -1,4 +1,5 @@
 import type { AvatarType } from './avatar-registry'
+import type { XPLevelMilestone } from './xp'
 
 export interface ProfileData {
   userId: string
@@ -12,6 +13,10 @@ export interface ProfileData {
   totalXp: number
   xpIntoLevel: number
   xpForNextLevel: number | null
+  xpRemainingForNextLevel: number
+  currentLevelXp: number
+  nextLevelXp: number | null
+  nextLevels: XPLevelMilestone[]
   levelProgress: number
   rank: string
   isAdmin: boolean

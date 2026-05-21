@@ -56,14 +56,7 @@ function LoginForm() {
       <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.04] blur-[100px]" />
 
       <div className="relative w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-2.5">
-          <div className="grid size-11 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_32px_rgba(182,255,0,0.28)]">
-            <Zap className="size-5 text-[#080808]" strokeWidth={2.8} />
-          </div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B6FF00]/60">
-            GymPace
-          </p>
-        </div>
+        <AuthLogo />
 
         <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
           <div className="relative px-7 pb-7 pt-6">
@@ -141,6 +134,28 @@ function LoginForm() {
         </div>
       </div>
     </main>
+  );
+}
+
+function AuthLogo() {
+  return (
+    <Link
+      href="/landing"
+      aria-label="Voltar para a landing page do GymPace"
+      className="group mb-8 flex flex-col items-center gap-2.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/35"
+    >
+      <div className="grid size-11 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_32px_rgba(182,255,0,0.28)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
+        <Zap className="size-5 text-[#080808]" strokeWidth={2.8} />
+      </div>
+      <div className="text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B6FF00]/60">
+          GymPace
+        </p>
+        <p className="mt-1 text-[11px] font-medium text-[#F5F5F5]/24 transition-colors group-hover:text-[#F5F5F5]/45">
+          Voltar para apresentação
+        </p>
+      </div>
+    </Link>
   );
 }
 

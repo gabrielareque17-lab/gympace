@@ -7,6 +7,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { NavBadgeProvider } from "@/components/providers/nav-badge-provider";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { SeasonStartOverlay } from "@/components/seasons/season-start-overlay";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "./bottom-nav";
 import { PageTransition } from "./page-transition";
@@ -136,6 +137,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* PWA install prompt — shows only when not installed */}
       <InstallPrompt />
+      <SeasonStartOverlay />
     </NavBadgeProvider>
     </ProfileProvider>
   );

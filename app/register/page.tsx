@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ArrowLeft, Loader2, UserPlus, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, UserPlus, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string>("runner-sprint");
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string>("neon-runner-velocity");
   const [selectedAvatarType, setSelectedAvatarType] = useState<AvatarType>("runner");
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -44,6 +44,10 @@ export default function RegisterPage() {
       email,
       password,
       options: {
+        data: {
+          avatar_id: selectedAvatarId,
+          avatar_type: selectedAvatarType,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
@@ -69,10 +73,11 @@ export default function RegisterPage() {
       return;
     }
 
-    // Email confirmation required — avatar can be set in settings
+    // Email confirmation required - the selected avatar is persisted in user metadata
+    // and applied in the auth callback after the session is exchanged.
     setIsSuccess(true);
     setMessage(
-      "Conta criada. Confirme seu email para continuar. Você pode configurar seu avatar nas Configurações."
+      "Conta criada. Confirme seu email para continuar. Seu avatar escolhido já aparecerá no perfil."
     );
     setIsLoading(false);
   }
@@ -81,16 +86,9 @@ export default function RegisterPage() {
     <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[#0D0D0D] px-5 py-12 text-[#F5F5F5]">
       <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.035] blur-[100px]" />
 
-      <div className="relative w-full max-w-sm">
+      <div className={`relative w-full ${step === "avatar" ? "max-w-2xl" : "max-w-sm"}`}>
         {/* Logo */}
-        <div className="mb-8 flex flex-col items-center gap-2.5">
-          <div className="grid size-11 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_32px_rgba(182,255,0,0.28)]">
-            <Zap className="size-5 text-[#080808]" strokeWidth={2.8} />
-          </div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B6FF00]/60">
-            GymPace
-          </p>
-        </div>
+        <AuthLogo />
 
         {step === "credentials" ? (
           <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
@@ -128,6 +126,7 @@ export default function RegisterPage() {
                   className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] text-sm font-bold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.18)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_rgba(182,255,0,0.28)] active:translate-y-0"
                 >
                   Continuar
+                  <ArrowRight className="size-4" />
                 </button>
               </form>
             </div>
@@ -162,7 +161,7 @@ export default function RegisterPage() {
                   Escolha seu avatar
                 </h1>
                 <p className="mt-1.5 text-sm text-[#F5F5F5]/40">
-                  Representa seu estilo de treino.
+                  Escolha um mascote que represente seu estilo de treino.
                 </p>
               </div>
 
@@ -237,6 +236,28 @@ export default function RegisterPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function AuthLogo() {
+  return (
+    <Link
+      href="/landing"
+      aria-label="Voltar para a landing page do GymPace"
+      className="group mb-8 flex flex-col items-center gap-2.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/35"
+    >
+      <div className="grid size-11 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_32px_rgba(182,255,0,0.28)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
+        <Zap className="size-5 text-[#080808]" strokeWidth={2.8} />
+      </div>
+      <div className="text-center">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B6FF00]/60">
+          GymPace
+        </p>
+        <p className="mt-1 text-[11px] font-medium text-[#F5F5F5]/24 transition-colors group-hover:text-[#F5F5F5]/45">
+          Voltar para apresentação
+        </p>
+      </div>
+    </Link>
   );
 }
 

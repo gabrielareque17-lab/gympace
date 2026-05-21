@@ -18,8 +18,8 @@ interface AvatarCardProps {
 const RARITY_LABELS = {
   core: 'Base',
   rare: 'Raro',
-  epic: 'Epico',
-  legendary: 'Lendario',
+  epic: 'Épico',
+  legendary: 'Lendário',
   seasonal: 'Temporada',
 } as const
 

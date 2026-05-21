@@ -22,6 +22,18 @@ export type XPFeedback = {
   levelProgress: number;
   xpIntoLevel: number;
   xpForNextLevel: number | null;
+  xpRemainingForNextLevel: number;
+  currentLevelXp: number;
+  nextLevelXp: number | null;
+  nextLevels: XPLevelMilestone[];
+};
+
+export type XPLevelMilestone = {
+  level: number;
+  totalXpRequired: number;
+  xpFromPreviousLevel: number;
+  xpRemaining: number;
+  rank: XPRank;
 };
 
 export type AwardXPSource =
@@ -51,6 +63,7 @@ type RunRow = {
 type WorkoutRow = {
   muscle_group: string | null;
   muscle_groups: string[] | null;
+  duration_minutes: number | null;
   created_at: string;
 };
 
@@ -62,8 +75,26 @@ type CompetitionParticipantRow = {
   } | null;
 };
 
-const LEVEL_BASE_XP = 120;
-const LEVEL_GROWTH = 1.18;
+export const XP_RULES = {
+  levelBaseXp: 150,
+  levelGrowth: 1.16,
+  runBaseXp: 30,
+  runXpPerKm: 10,
+  workoutBaseXp: 50,
+  workoutDurationXpPerMinute: 0.5,
+  workoutDurationXpCap: 45,
+  streakXpPerDay: 20,
+  competitionBaseXp: 75,
+  competitionProgressXp: 5,
+  competitionFinishBonusXp: 125,
+} as const;
+
+const ACHIEVEMENT_XP_BY_RARITY = {
+  comum: 100,
+  raro: 175,
+  epico: 275,
+  lendario: 450,
+} as const;
 
 export async function syncUserXP(
   supabase: SupabaseClient,
@@ -160,23 +191,41 @@ export async function calculateTotalXPForUser(
   ]);
 
   const stats = buildAchievementStats(runs, workouts);
-  const achievementXp = ACHIEVEMENT_REGISTRY.filter((achievement) =>
-    achievement.check(stats)
-  ).length * 125;
-
-  const runXp = runs.reduce(
-    (sum, run) => sum + 25 + Math.round(Number(run.distance ?? 0) * 8),
+  const achievementXp = ACHIEVEMENT_REGISTRY.reduce(
+    (sum, achievement) =>
+      achievement.check(stats)
+        ? sum + ACHIEVEMENT_XP_BY_RARITY[achievement.rarity]
+        : sum,
     0
   );
-  const workoutXp = workouts.length * 45;
-  const streakXp = Math.max(stats.currentStreak, stats.gymStreak) * 15;
+
+  const runXp = runs.reduce(
+    (sum, run) => sum + XP_RULES.runBaseXp + Math.round(Number(run.distance ?? 0) * XP_RULES.runXpPerKm),
+    0
+  );
+  const workoutXp = workouts.reduce(
+    (sum, workout) =>
+      sum +
+      XP_RULES.workoutBaseXp +
+      Math.min(
+        Math.round(Number(workout.duration_minutes ?? 0) * XP_RULES.workoutDurationXpPerMinute),
+        XP_RULES.workoutDurationXpCap
+      ),
+    0
+  );
+  const streakXp = Math.max(stats.currentStreak, stats.gymStreak) * XP_RULES.streakXpPerDay;
   const competitionXp = participants.reduce((sum, participant) => {
     const progress = Number(participant.progress ?? 0);
     const isEnded = participant.competitions?.end_date
       ? new Date(participant.competitions.end_date) < new Date()
       : false;
 
-    return sum + 60 + Math.round(progress * 4) + (isEnded ? 100 : 0);
+    return (
+      sum +
+      XP_RULES.competitionBaseXp +
+      Math.round(progress * XP_RULES.competitionProgressXp) +
+      (isEnded ? XP_RULES.competitionFinishBonusXp : 0)
+    );
   }, 0);
 
   return runXp + workoutXp + streakXp + achievementXp + competitionXp;
@@ -198,11 +247,16 @@ export function getLevelProgress(totalXp: number) {
   const nextThreshold = getXPRequiredForLevel(currentLevel + 1);
   const span = nextThreshold - currentThreshold;
   const xpIntoLevel = Math.max(totalXp - currentThreshold, 0);
+  const xpRemainingForNextLevel = Math.max(nextThreshold - totalXp, 0);
 
   return {
     levelProgress: Math.min(Math.round((xpIntoLevel / span) * 100), 100),
     xpIntoLevel,
     xpForNextLevel: span,
+    xpRemainingForNextLevel,
+    currentLevelXp: currentThreshold,
+    nextLevelXp: nextThreshold,
+    nextLevels: getUpcomingLevelMilestones(totalXp, 5),
   };
 }
 
@@ -215,15 +269,33 @@ export function getRankForLevel(level: number): XPRank {
   return "rookie";
 }
 
-function getXPRequiredForLevel(level: number) {
+export function getXPRequiredForLevel(level: number) {
   if (level <= 1) return 0;
 
   let total = 0;
   for (let current = 2; current <= level; current += 1) {
-    total += Math.round(LEVEL_BASE_XP * Math.pow(LEVEL_GROWTH, current - 2));
+    total += Math.round(XP_RULES.levelBaseXp * Math.pow(XP_RULES.levelGrowth, current - 2));
   }
 
   return total;
+}
+
+export function getUpcomingLevelMilestones(totalXp: number, count = 5): XPLevelMilestone[] {
+  const currentLevel = calculateLevelFromXP(totalXp);
+
+  return Array.from({ length: count }, (_, index) => {
+    const level = currentLevel + index + 1;
+    const totalXpRequired = getXPRequiredForLevel(level);
+    const previousLevelXp = getXPRequiredForLevel(level - 1);
+
+    return {
+      level,
+      totalXpRequired,
+      xpFromPreviousLevel: totalXpRequired - previousLevelXp,
+      xpRemaining: Math.max(totalXpRequired - totalXp, 0),
+      rank: getRankForLevel(level),
+    };
+  });
 }
 
 function buildAchievementStats(
@@ -282,7 +354,7 @@ async function fetchWorkouts(
 ): Promise<WorkoutRow[]> {
   const { data, error } = await supabase
     .from("workouts")
-    .select("muscle_group, muscle_groups, created_at")
+    .select("muscle_group, muscle_groups, duration_minutes, created_at")
     .eq("user_id", userId);
 
   if (error) {

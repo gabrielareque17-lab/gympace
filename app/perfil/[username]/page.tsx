@@ -22,7 +22,7 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { normalizeMuscleGroups } from "@/lib/muscles";
-import { getLevelProgress } from "@/lib/xp";
+import { syncUserXP } from "@/lib/xp";
 import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
 import { getLocalDateKey } from "@/lib/date-utils";
 
@@ -153,7 +153,7 @@ export default async function PublicProfilePage({ params }: Props) {
   type RunRow = { distance: number; pace: string | null; created_at: string };
   type GymRow = { muscle_group: string | null; muscle_groups: string[] | null; created_at: string };
 
-  const [{ data: rawRuns }, workoutsResult] = await Promise.all([
+  const [{ data: rawRuns }, workoutsResult, xpSync] = await Promise.all([
     adminSupabase
       .from("runs")
       .select("distance, pace, created_at")
@@ -162,6 +162,7 @@ export default async function PublicProfilePage({ params }: Props) {
       .from("workouts")
       .select("muscle_group, muscle_groups, created_at")
       .eq("user_id", profile.user_id),
+    syncUserXP(adminSupabase, profile.user_id),
   ]);
 
   const runs: RunRow[] = (rawRuns ?? []) as RunRow[];
@@ -182,10 +183,10 @@ export default async function PublicProfilePage({ params }: Props) {
   const bestPaceSeconds = allPaceSeconds.length > 0 ? Math.min(...allPaceSeconds) : null;
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const profileTotalXp = Number(profile.total_xp ?? 0);
-  const profileLevel = Number(profile.current_level ?? 1);
-  const rankStyle = RANK_STYLES[profile.rank ?? "rookie"] ?? RANK_STYLES.rookie;
-  const { levelProgress: xpLevelProgress } = getLevelProgress(profileTotalXp);
+  const profileTotalXp = xpSync.totalXp;
+  const profileLevel = xpSync.currentLevel;
+  const rankStyle = RANK_STYLES[xpSync.rank] ?? RANK_STYLES.rookie;
+  const xpLevelProgress = xpSync.levelProgress;
 
   const avatarDef = profile.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
@@ -412,6 +413,18 @@ export default async function PublicProfilePage({ params }: Props) {
                       className="h-full rounded-full"
                       style={{ width: `${xpLevelProgress}%`, background: rankStyle.color }}
                     />
+                  </div>
+                  <div className="mt-2 grid gap-1.5 text-[10px] text-[#F5F5F5]/34 sm:grid-cols-2">
+                    <span>{profileTotalXp.toLocaleString("pt-BR")} XP total</span>
+                    <span className="sm:text-right">
+                      faltam {xpSync.xpRemainingForNextLevel.toLocaleString("pt-BR")} XP
+                    </span>
+                    <span>
+                      {xpSync.xpIntoLevel.toLocaleString("pt-BR")} / {xpSync.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP no nivel
+                    </span>
+                    <span className="sm:text-right">
+                      nivel {profileLevel + 1} em {xpSync.nextLevelXp?.toLocaleString("pt-BR") ?? "max"} XP
+                    </span>
                   </div>
                 </div>
               </div>

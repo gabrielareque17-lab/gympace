@@ -23,10 +23,10 @@ interface AvatarSelectorProps {
 }
 
 const CATEGORY_DEFS: Array<{ id: AvatarCategory; label: string; hint: string; accentColor: string }> = [
-  { id: 'running', label: 'Corrida', hint: 'Velocidade e visor neon', accentColor: '#B6FF00' },
-  { id: 'gym', label: 'Musculacao', hint: 'Forca e intensidade', accentColor: '#A855F7' },
-  { id: 'hybrid', label: 'Hibrido', hint: 'Verde + roxo raro', accentColor: '#C084FC' },
-  { id: 'premium', label: 'Premium', hint: 'Temporada e trofeus', accentColor: '#FACC15' },
+  { id: 'running', label: 'Corrida', hint: 'Mascotes leves para ritmo e velocidade', accentColor: '#B6FF00' },
+  { id: 'gym', label: 'Musculação', hint: 'Mascotes fortes para treino de força', accentColor: '#A855F7' },
+  { id: 'hybrid', label: 'Híbrido', hint: 'Mascotes para quem mistura corrida e academia', accentColor: '#C084FC' },
+  { id: 'premium', label: 'Premium', hint: 'Temporada, troféus e conquistas especiais', accentColor: '#FACC15' },
 ]
 
 export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
