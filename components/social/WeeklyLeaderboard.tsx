@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Trophy } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
@@ -27,12 +28,18 @@ type Props = {
   mode?: "xp" | "season";
 };
 
+const TROPHY_COLORS = ["#EAB308", "#A1A1AA", "#CD7F32"] as const;
+
 function Medal({ pos }: { pos: number }) {
   if (pos < 3) {
     return (
-      <span className="w-6 text-center text-sm font-black tabular-nums text-[#B6FF00]">
-        #{pos + 1}
-      </span>
+      <div className="flex w-6 items-center justify-center">
+        <Trophy
+          className="size-4"
+          strokeWidth={2}
+          style={{ color: TROPHY_COLORS[pos], fill: `${TROPHY_COLORS[pos]}33` }}
+        />
+      </div>
     );
   }
   return (

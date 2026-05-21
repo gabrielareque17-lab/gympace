@@ -111,13 +111,14 @@ function NavBar() {
           ? "border-b border-white/[0.05] bg-[#080808]/85 shadow-[0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-xl"
           : ""
       }`}
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
-      <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-2.5">
+      <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center gap-2">
           <div className="grid size-[30px] place-items-center rounded-[8px] bg-[#B6FF00] shadow-[0_0_16px_rgba(182,255,0,0.4)]">
             <Zap className="size-[15px] text-[#080808]" strokeWidth={3} />
           </div>
-          <span className="font-display text-[17px] font-bold tracking-[-0.02em]">GymPace</span>
+          <span className="font-display text-[16px] font-bold tracking-[-0.02em] sm:text-[17px]">GymPace</span>
         </div>
 
         <nav className="hidden items-center gap-7 md:flex">
@@ -138,7 +139,7 @@ function NavBar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/login"
             className="hidden text-[13px] text-[#F5F5F5]/45 transition-colors hover:text-[#F5F5F5]/90 md:block"
@@ -147,7 +148,7 @@ function NavBar() {
           </Link>
           <Link
             href="/register"
-            className="rounded-[10px] bg-[#B6FF00] px-4 py-2 text-[13px] font-bold text-[#080808] transition-all duration-200 hover:bg-[#CAFF30] hover:shadow-[0_0_20px_rgba(182,255,0,0.4)]"
+            className="inline-flex min-h-[40px] items-center rounded-[10px] bg-[#B6FF00] px-3.5 py-1.5 text-[13px] font-bold text-[#080808] transition-all duration-200 hover:bg-[#CAFF30] hover:shadow-[0_0_20px_rgba(182,255,0,0.4)] sm:px-4 sm:py-2"
           >
             Começar grátis
           </Link>
@@ -283,7 +284,7 @@ function AppPreview() {
 
 function HeroSection() {
   return (
-    <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#080808] pt-16">
+    <section className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#080808] pt-16">
       {/* Grid */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.025]"
@@ -301,9 +302,9 @@ function HeroSection() {
         <div className="absolute bottom-1/4 left-0 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.03] blur-[60px]" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-20 text-center">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-20">
         {/* Badge */}
-        <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/22 bg-[#B6FF00]/[0.07] px-4 py-1.5">
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/22 bg-[#B6FF00]/[0.07] px-4 py-1.5 sm:mb-7">
           <Flame className="size-3 text-[#B6FF00]" />
           <span className="text-[11px] font-semibold tracking-wide text-[#B6FF00]">
             Para atletas híbridos — corrida + academia
@@ -311,7 +312,7 @@ function HeroSection() {
         </div>
 
         {/* Headline */}
-        <h1 className="mb-5 font-display font-bold leading-[1.02] tracking-[-0.03em] [font-size:clamp(3rem,9vw,7rem)]">
+        <h1 className="mb-5 font-display font-bold leading-[1.02] tracking-[-0.03em] [font-size:clamp(3rem,12vw,5rem)]">
           Treine.{" "}
           <span className="sm:hidden">
             <br />
@@ -321,23 +322,25 @@ function HeroSection() {
           <span style={{ color: "#B6FF00" }}>Supere.</span>
         </h1>
 
-        <p className="mx-auto mb-10 max-w-[560px] text-[15px] leading-[1.75] text-[#F5F5F5]/42">
+        <p className="mx-auto mb-8 max-w-[90vw] text-[15px] leading-[1.75] text-[#F5F5F5]/42 sm:mb-10 sm:max-w-[560px]">
           O centro de comando para quem corre, treina, compete e evolui. Registre rotas por GPS,
           musculação, XP, metas, feed, rankings e notificações em uma experiência mobile-first.
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
           <Link
             href="/register"
-            className="group flex items-center gap-2.5 rounded-[12px] bg-[#B6FF00] px-7 py-3.5 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.28)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.45)]"
+            className="group flex items-center justify-center gap-2.5 rounded-[12px] bg-[#B6FF00] px-7 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.28)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.45)] sm:w-auto"
+            style={{ minHeight: "52px" }}
           >
             Começar agora — é grátis
             <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
           <a
             href="#features"
-            className="flex items-center gap-2 rounded-[12px] border border-white/[0.09] bg-white/[0.04] px-6 py-3.5 text-[14px] font-medium text-[#F5F5F5]/60 backdrop-blur-sm transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-[#F5F5F5]/90"
+            className="flex items-center justify-center gap-2 rounded-[12px] border border-white/[0.09] bg-white/[0.04] px-6 text-[14px] font-medium text-[#F5F5F5]/60 backdrop-blur-sm transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-[#F5F5F5]/90 sm:w-auto"
+            style={{ minHeight: "52px" }}
           >
             Ver funcionalidades
           </a>
@@ -1269,7 +1272,10 @@ function CTASection() {
 
 function Footer() {
   return (
-    <footer className="border-t border-white/[0.04] bg-[#080808] py-10">
+    <footer
+      className="border-t border-white/[0.04] bg-[#080808] pt-10"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2.5rem)" }}
+    >
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="flex items-center gap-2.5">
@@ -1315,7 +1321,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#080808] text-[#F5F5F5] antialiased">
+    <div className="min-h-dvh overflow-x-hidden bg-[#080808] text-[#F5F5F5] antialiased">
       <NavBar />
       <HeroSection />
       <StatsBar />

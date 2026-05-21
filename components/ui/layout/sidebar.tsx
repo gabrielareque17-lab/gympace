@@ -113,7 +113,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
       {/* ── Navigation ── */}
       <nav
-        className="flex-1 overflow-y-auto overscroll-contain px-2.5 pb-2"
+        className="flex-1 overflow-y-auto overscroll-contain px-2.5"
         aria-label="Navegação principal"
       >
         {navGroups.map((group, gi) => (
@@ -143,21 +143,17 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             })}
           </div>
         ))}
+
+        {/* Logout — inside nav so it's reachable by scrolling on small screens */}
+        <div className="mt-2 border-t border-white/[0.05] pt-2 pb-3">
+          <SidebarLogout />
+          <p className="mt-2 pb-0.5 text-center text-[9px] tracking-[0.06em] text-[#F5F5F5]/14"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 4px)" }}
+          >
+            by <span className="font-semibold text-[#B6FF00]/28">Gravix Tech</span>
+          </p>
+        </div>
       </nav>
-
-      {/* ── Footer ── */}
-      <div
-        className="shrink-0 space-y-1.5 border-t border-white/[0.05] px-2.5 pt-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
-      >
-        {/* Logout */}
-        <SidebarLogout />
-
-        {/* Branding */}
-        <p className="pb-0.5 text-center text-[9px] tracking-[0.06em] text-[#F5F5F5]/14">
-          by <span className="font-semibold text-[#B6FF00]/28">Gravix Tech</span>
-        </p>
-      </div>
     </aside>
   );
 }

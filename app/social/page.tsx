@@ -74,6 +74,10 @@ export default async function SocialPage() {
   const patchedGlobal = patchCurrentUser(globalEntries);
   const patchedFriends = patchCurrentUser(friendsEntries);
 
+  const myEntry = patchedGlobal.find((e) => e.userId === user.id);
+  const displayScore = activeSeason ? (myEntry?.seasonPoints ?? 0) : (profile?.total_xp ?? 0);
+  const scoreLabel = activeSeason ? "pts temporada" : "XP total";
+
   const rankColor = RANK_COLORS[profile?.rank ?? "rookie"] ?? "#94A3B8";
   const seasonDays = activeSeason ? daysRemaining(activeSeason) : 0;
   const seasonPct = activeSeason ? seasonProgress(activeSeason) : 0;
@@ -190,9 +194,9 @@ export default async function SocialPage() {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-mono text-lg font-bold text-[#B6FF00]">
-                {(profile?.total_xp ?? 0).toLocaleString("pt-BR")}
+                {displayScore.toLocaleString("pt-BR")}
               </p>
-              <p className="text-[9px] text-[#F5F5F5]/28">XP total</p>
+              <p className="text-[9px] text-[#F5F5F5]/28">{scoreLabel}</p>
             </div>
           </section>
 

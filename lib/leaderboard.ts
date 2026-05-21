@@ -172,10 +172,8 @@ export async function getGlobalLeaderboard(
   };
 
   // For weekly categories only include users with activity this week
-  const filtered = category === "xp" || category === "streak"
+  const filtered = category === "xp" || category === "season" || category === "streak"
     ? entries
-    : category === "season"
-    ? entries.filter((e) => e.seasonPoints > 0)
     : entries.filter((e) => (category === "km" ? e.weeklyKm > 0 : e.weeklyWorkouts > 0));
 
   return filtered.sort(sorters[category]).slice(0, 50);
@@ -305,6 +303,6 @@ export async function getFriendsLeaderboard(
     streak:   (a, b) => b.currentStreak - a.currentStreak,
   };
 
-  const filtered = category === "season" ? entries.filter((e) => e.seasonPoints > 0) : entries;
+  const filtered = entries;
   return filtered.sort(sorters[category]).slice(0, 50);
 }
