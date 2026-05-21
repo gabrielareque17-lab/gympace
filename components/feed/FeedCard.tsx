@@ -21,6 +21,7 @@ import { memo, useState } from "react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { ReactionButton } from "@/components/feed/ReactionButton";
+import { FeedRoutePreview } from "@/components/feed/FeedRoutePreview";
 import type { FeedEvent, FeedProfile } from "@/lib/feed";
 import { getMuscleGroupLabel } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
@@ -111,6 +112,12 @@ function Tag({ children, color }: { children: ReactNode; color: TagColor }) {
       {children}
     </span>
   );
+}
+
+function formatLevelXp(profile?: FeedProfile) {
+  if (profile?.xp_into_level == null || profile?.xp_for_next_level == null) return null;
+
+  return `${profile.xp_into_level.toLocaleString("pt-BR")} / ${profile.xp_for_next_level.toLocaleString("pt-BR")} XP`;
 }
 
 // ── Stats grid for run/workout ────────────────────────────────────────────────
@@ -271,6 +278,7 @@ function UserAvatar({ profile, name }: { profile?: FeedProfile; name: string }) 
 
 function RunContent({ payload, color }: { payload: Record<string, unknown>; color: string }) {
   const p = payload as {
+    id?: string;
     distance?: number;
     pace?: string;
     duration?: string;
@@ -305,6 +313,8 @@ function RunContent({ payload, color }: { payload: Record<string, unknown>; colo
           )}
         </div>
       )}
+
+      {p.id && <FeedRoutePreview runId={p.id} />}
     </>
   );
 }
@@ -357,7 +367,7 @@ function WorkoutContent({ payload, color }: { payload: Record<string, unknown>; 
 function LevelUpContent({ payload, color, profile }: { payload: Record<string, unknown>; color: string; profile?: FeedProfile }) {
   const p = payload as { new_level?: number; new_rank?: string };
   const rankColor = p.new_rank ? (RANK_COLORS[p.new_rank] ?? color) : color;
-  const liveXp = profile?.total_xp;
+  const levelXp = formatLevelXp(profile);
   return (
     <>
       <p className="mt-0.5 text-sm text-[#F5F5F5]/55">
@@ -373,7 +383,7 @@ function LevelUpContent({ payload, color, profile }: { payload: Record<string, u
             {RANK_LABELS[p.new_rank] ?? p.new_rank}
           </span>
         )}
-        {liveXp != null && <Tag color="amber">{liveXp.toLocaleString("pt-BR")} XP total</Tag>}
+        {levelXp && <Tag color="amber">{levelXp}</Tag>}
       </div>
     </>
   );

@@ -24,6 +24,7 @@ type Props = {
   globalEntries: LeaderboardEntry[];
   friendsEntries: LeaderboardEntry[];
   currentUserId: string;
+  mode?: "xp" | "season";
 };
 
 function Medal({ pos }: { pos: number }) {
@@ -41,10 +42,11 @@ function Medal({ pos }: { pos: number }) {
   );
 }
 
-export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId }: Props) {
+export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId, mode = "xp" }: Props) {
   const [scope, setScope] = useState<"global" | "friends">("global");
   const entries = scope === "global" ? globalEntries : friendsEntries;
   const myPos = entries.findIndex((entry) => entry.userId === currentUserId);
+  const isSeason = mode === "season";
 
   return (
     <div className="flex flex-col gap-3">
@@ -68,7 +70,11 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
 
       {entries.length === 0 ? (
         <div className="py-8 text-center text-sm text-[#F5F5F5]/30">
-          {scope === "friends" ? "Siga atletas para ver o ranking de amigos." : "Nenhum atleta no ranking ainda."}
+          {isSeason
+            ? "Nenhum ponto registrado nesta temporada ainda."
+            : scope === "friends"
+            ? "Siga atletas para ver o ranking de amigos."
+            : "Nenhum atleta no ranking ainda."}
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-white/[0.04]">
@@ -109,9 +115,14 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
 
                 <div className="shrink-0 text-right">
                   <p className="font-mono text-sm font-bold tabular-nums text-[#F5F5F5]">
-                    {entry.totalXp.toLocaleString("pt-BR")}
+                    {(isSeason ? entry.seasonPoints : entry.totalXp).toLocaleString("pt-BR")}
                   </p>
-                  <p className="text-[9px] text-[#F5F5F5]/25">XP</p>
+                  <p className="text-[9px] text-[#F5F5F5]/25">{isSeason ? "pts" : "XP"}</p>
+                  {isSeason && (
+                    <p className="mt-0.5 text-[9px] text-[#F5F5F5]/22">
+                      {entry.seasonBreakdown.runs}C · {entry.seasonBreakdown.workouts}T
+                    </p>
+                  )}
                 </div>
 
                 {entry.username && (

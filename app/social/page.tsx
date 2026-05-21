@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Flame, Medal, Trophy, Zap, Dumbbell, Calendar, ChevronRight } from "lucide-react";
+import { Medal } from "lucide-react";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
-import { StreakCard } from "@/components/social/StreakCard";
 import { WeeklyLeaderboard } from "@/components/social/WeeklyLeaderboard";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getUserStreaks } from "@/lib/streaks";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
 import { getGlobalLeaderboard, getFriendsLeaderboard } from "@/lib/leaderboard";
-import { getLocalDateKey } from "@/lib/date-utils";
 import { syncUserXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +25,7 @@ export default async function SocialPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [streaks, activeSeason, xpFeedback, profileRes, runsRes, workoutsRes] = await Promise.all([
-    getUserStreaks(supabase, user.id),
+  const [activeSeason, xpFeedback, profileRes] = await Promise.all([
     getActiveSeason(supabase),
     syncUserXP(supabase, user.id),
     supabase
@@ -38,18 +33,6 @@ export default async function SocialPage() {
       .select("username, display_name, avatar_id")
       .eq("user_id", user.id)
       .maybeSingle(),
-    supabase
-      .from("runs")
-      .select("created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(60),
-    supabase
-      .from("workouts")
-      .select("created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(60),
   ]);
 
   const profileMeta = profileRes.data as {
@@ -70,15 +53,10 @@ export default async function SocialPage() {
     level_progress: xpFeedback.levelProgress,
   } : null;
 
-  // Build active-day sets for streak mini-timelines
-  const runActiveDays = new Set((runsRes.data ?? []).map((r: { created_at: string }) => getLocalDateKey(r.created_at)));
-  const gymActiveDays = new Set((workoutsRes.data ?? []).map((w: { created_at: string }) => getLocalDateKey(w.created_at)));
-  const allActiveDays = new Set([...runActiveDays, ...gymActiveDays]);
-  const hybridDays = new Set([...runActiveDays].filter((d) => gymActiveDays.has(d)));
-
+  const leaderboardCategory = activeSeason ? "season" : "xp";
   const [globalEntries, friendsEntries] = await Promise.all([
-    getGlobalLeaderboard(supabase, "xp"),
-    getFriendsLeaderboard(supabase, user.id, "xp"),
+    getGlobalLeaderboard(supabase, leaderboardCategory, activeSeason),
+    getFriendsLeaderboard(supabase, user.id, leaderboardCategory, activeSeason),
   ]);
 
   // Garantir que a entrada do usuário atual no leaderboard reflita o XP recém-sincronizado.
@@ -89,7 +67,9 @@ export default async function SocialPage() {
     if (idx === -1) return entries;
     const patched = [...entries];
     patched[idx] = { ...patched[idx], totalXp: xpFeedback.totalXp, currentLevel: xpFeedback.currentLevel, rank: xpFeedback.rank };
-    return patched.sort((a, b) => b.totalXp - a.totalXp);
+    return activeSeason
+      ? patched
+      : patched.sort((a, b) => b.totalXp - a.totalXp);
   }
   const patchedGlobal = patchCurrentUser(globalEntries);
   const patchedFriends = patchCurrentUser(friendsEntries);
@@ -110,7 +90,9 @@ export default async function SocialPage() {
           </p>
           <h1 className="font-display text-3xl font-bold tracking-tight">Ranking</h1>
           <p className="mt-2 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
-            Ranking por XP, sequências e conquistas da comunidade.
+            {activeSeason
+              ? "Placar por pontos da temporada, separado do XP permanente."
+              : "Ranking por XP, sequências e conquistas da comunidade."}
           </p>
         </header>
 
@@ -214,38 +196,6 @@ export default async function SocialPage() {
             </div>
           </section>
 
-          {/* ── Streaks ────────────────────────────────────────────────────── */}
-          <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
-            <div className="relative border-b border-white/[0.05] px-5 py-4">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
-                Consistência
-              </p>
-              <h2 className="font-display text-base font-semibold flex items-center gap-2">
-                <Flame className="size-4 text-[#FB923C]" strokeWidth={2} />
-                Sequências
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
-              <StreakCard
-                data={streaks.run}
-                activeDays={[...runActiveDays]}
-              />
-              <StreakCard
-                data={streaks.gym}
-                activeDays={[...gymActiveDays]}
-              />
-              <StreakCard
-                data={streaks.hybrid}
-                activeDays={[...hybridDays]}
-              />
-              <StreakCard
-                data={streaks.general}
-                activeDays={[...allActiveDays]}
-              />
-            </div>
-          </section>
-
           {/* ── Leaderboard ────────────────────────────────────────────────── */}
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             <div className="relative border-b border-white/[0.05] px-5 py-4">
@@ -257,42 +207,22 @@ export default async function SocialPage() {
                 <Medal className="size-4 text-[#EAB308]" strokeWidth={2} />
                 Leaderboard
               </h2>
+              {activeSeason && (
+                <p className="mt-1 text-xs text-[#F5F5F5]/32">
+                  Pontos da temporada: corridas, treinos, dias ativos e bônus híbrido.
+                </p>
+              )}
             </div>
             <div className="p-4">
               <WeeklyLeaderboard
                 globalEntries={patchedGlobal}
                 friendsEntries={patchedFriends}
                 currentUserId={user.id}
+                mode={activeSeason ? "season" : "xp"}
               />
             </div>
           </section>
 
-          {/* ── Quick Links ────────────────────────────────────────────────── */}
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { href: "/treinos", icon: Zap, label: "Treinos", color: "#B6FF00" },
-              { href: "/academia", icon: Dumbbell, label: "Musculação", color: "#22D3EE" },
-              { href: "/desafios-competicoes", icon: Trophy, label: "Desafios", color: "#FB923C" },
-              { href: "/desafios-competicoes", icon: Calendar, label: "Competições", color: "#A78BFA" },
-            ].map(({ href, icon: Icon, label, color }) => (
-              <Link
-                key={href}
-                href={href}
-                prefetch
-                className="mobile-tap group flex items-center justify-between gap-2 rounded-2xl border px-4 py-3.5 transition-transform duration-100 hover:opacity-90 active:scale-[0.97] active:opacity-80"
-                style={{
-                  borderColor: `${color}20`,
-                  background: `${color}07`,
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="size-4 shrink-0" style={{ color }} strokeWidth={2} />
-                  <span className="text-xs font-semibold text-[#F5F5F5]/70">{label}</span>
-                </div>
-                <ChevronRight className="size-3.5 text-[#F5F5F5]/20 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
-            ))}
-          </section>
         </div>
       </div>
     </AppShell>

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getGlobalLeaderboard, getFriendsLeaderboard, type LeaderboardCategory } from "@/lib/leaderboard";
+import { getActiveSeason } from "@/lib/seasons";
 
 export const dynamic = "force-dynamic";
 
-const VALID_CATEGORIES: LeaderboardCategory[] = ["xp", "km", "workouts", "streak"];
+const VALID_CATEGORIES: LeaderboardCategory[] = ["xp", "season", "km", "workouts", "streak"];
 
 export async function GET(req: Request) {
   const supabase = await createSupabaseServerClient();
@@ -19,10 +20,11 @@ export async function GET(req: Request) {
     ? (rawCat as LeaderboardCategory)
     : "xp";
 
+  const activeSeason = category === "season" ? await getActiveSeason(supabase) : null;
   const entries =
     scope === "friends"
-      ? await getFriendsLeaderboard(supabase, user.id, category)
-      : await getGlobalLeaderboard(supabase, category);
+      ? await getFriendsLeaderboard(supabase, user.id, category, activeSeason)
+      : await getGlobalLeaderboard(supabase, category, activeSeason);
 
   const myPosition = entries.findIndex((e) => e.userId === user.id);
 

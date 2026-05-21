@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getLocalDateKey } from "@/lib/date-utils";
+import type { Season } from "@/lib/seasons";
+import {
+  calculateSeasonScores,
+  getSeasonDateWindow,
+  type SeasonActivityRun,
+  type SeasonActivityWorkout,
+  type SeasonScoreBreakdown,
+} from "@/lib/season-points";
 
 export type LeaderboardEntry = {
   userId: string;
@@ -14,9 +22,11 @@ export type LeaderboardEntry = {
   weeklyWorkouts: number;
   weeklyScore: number;
   currentStreak: number;
+  seasonPoints: number;
+  seasonBreakdown: SeasonScoreBreakdown;
 };
 
-export type LeaderboardCategory = "xp" | "km" | "workouts" | "streak";
+export type LeaderboardCategory = "xp" | "season" | "km" | "workouts" | "streak";
 
 function currentWeekStartKey(): string {
   const todayKey = getLocalDateKey(new Date());
@@ -39,17 +49,19 @@ function weekStartQuerySince(): string {
  */
 export async function getGlobalLeaderboard(
   supabase: SupabaseClient,
-  category: LeaderboardCategory = "xp"
+  category: LeaderboardCategory = "xp",
+  season: Season | null = null
 ): Promise<LeaderboardEntry[]> {
   const since = weekStartQuerySince();
   const sinceKey = currentWeekStartKey();
+  const seasonWindow = season ? getSeasonDateWindow(season) : null;
 
-  const [profilesRes, runsRes, workoutsRes, streaksRes] = await Promise.all([
+  const [profilesRes, runsRes, workoutsRes, streaksRes, seasonRunsRes, seasonWorkoutsRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("user_id, username, display_name, avatar_id, rank, current_level, total_xp")
       .order("total_xp", { ascending: false })
-      .limit(200),
+      .limit(category === "season" ? 500 : 200),
     supabase
       .from("runs")
       .select("user_id, distance, created_at")
@@ -62,9 +74,23 @@ export async function getGlobalLeaderboard(
       .from("streaks")
       .select("user_id, current_streak")
       .eq("streak_type", "general"),
+    seasonWindow
+      ? supabase
+          .from("runs")
+          .select("user_id, distance, created_at")
+          .gte("created_at", seasonWindow.start)
+          .lte("created_at", seasonWindow.end)
+      : Promise.resolve({ data: [] }),
+    seasonWindow
+      ? supabase
+          .from("workouts")
+          .select("user_id, duration_minutes, created_at")
+          .gte("created_at", seasonWindow.start)
+          .lte("created_at", seasonWindow.end)
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const profiles = (profilesRes.data ?? []) as {
+  let profiles = (profilesRes.data ?? []) as {
     user_id: string;
     username: string | null;
     display_name: string | null;
@@ -73,6 +99,21 @@ export async function getGlobalLeaderboard(
     current_level: number | null;
     total_xp: number | null;
   }[];
+  const seasonRuns = (seasonRunsRes.data ?? []) as SeasonActivityRun[];
+  const seasonWorkouts = (seasonWorkoutsRes.data ?? []) as SeasonActivityWorkout[];
+  const seasonScores = calculateSeasonScores(season, seasonRuns, seasonWorkouts);
+
+  if (category === "season") {
+    const knownIds = new Set(profiles.map((p) => p.user_id));
+    const seasonUserIds = Object.keys(seasonScores).filter((id) => !knownIds.has(id));
+    if (seasonUserIds.length > 0) {
+      const { data: seasonProfiles } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name, avatar_id, rank, current_level, total_xp")
+        .in("user_id", seasonUserIds);
+      profiles = [...profiles, ...((seasonProfiles ?? []) as typeof profiles)];
+    }
+  }
 
   // Aggregate weekly km per user
   const weeklyKmMap: Record<string, number> = {};
@@ -97,6 +138,14 @@ export async function getGlobalLeaderboard(
   const entries: LeaderboardEntry[] = profiles.map((p) => {
     const km = Math.round((weeklyKmMap[p.user_id] ?? 0) * 10) / 10;
     const workouts = weeklyWorkoutMap[p.user_id] ?? 0;
+    const seasonBreakdown = seasonScores[p.user_id] ?? {
+      points: 0,
+      runs: 0,
+      workouts: 0,
+      km: 0,
+      activeDays: 0,
+      hybridDays: 0,
+    };
     return {
       userId: p.user_id,
       username: p.username,
@@ -109,11 +158,14 @@ export async function getGlobalLeaderboard(
       weeklyWorkouts: workouts,
       weeklyScore: Math.round(km * 10 + workouts * 8),
       currentStreak: streakMap[p.user_id] ?? 0,
+      seasonPoints: seasonBreakdown.points,
+      seasonBreakdown,
     };
   });
 
   const sorters: Record<LeaderboardCategory, (a: LeaderboardEntry, b: LeaderboardEntry) => number> = {
     xp:       (a, b) => b.totalXp - a.totalXp,
+    season:   (a, b) => b.seasonPoints - a.seasonPoints,
     km:       (a, b) => b.weeklyKm - a.weeklyKm,
     workouts: (a, b) => b.weeklyWorkouts - a.weeklyWorkouts,
     streak:   (a, b) => b.currentStreak - a.currentStreak,
@@ -122,6 +174,8 @@ export async function getGlobalLeaderboard(
   // For weekly categories only include users with activity this week
   const filtered = category === "xp" || category === "streak"
     ? entries
+    : category === "season"
+    ? entries.filter((e) => e.seasonPoints > 0)
     : entries.filter((e) => (category === "km" ? e.weeklyKm > 0 : e.weeklyWorkouts > 0));
 
   return filtered.sort(sorters[category]).slice(0, 50);
@@ -133,7 +187,8 @@ export async function getGlobalLeaderboard(
 export async function getFriendsLeaderboard(
   supabase: SupabaseClient,
   userId: string,
-  category: LeaderboardCategory = "xp"
+  category: LeaderboardCategory = "xp",
+  season: Season | null = null
 ): Promise<LeaderboardEntry[]> {
   const { data: followData } = await supabase
     .from("follows")
@@ -144,8 +199,9 @@ export async function getFriendsLeaderboard(
 
   const since = weekStartQuerySince();
   const sinceKey = currentWeekStartKey();
+  const seasonWindow = season ? getSeasonDateWindow(season) : null;
 
-  const [profilesRes, runsRes, workoutsRes, streaksRes] = await Promise.all([
+  const [profilesRes, runsRes, workoutsRes, streaksRes, seasonRunsRes, seasonWorkoutsRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("user_id, username, display_name, avatar_id, rank, current_level, total_xp")
@@ -165,6 +221,22 @@ export async function getFriendsLeaderboard(
       .select("user_id, current_streak")
       .in("user_id", friendIds)
       .eq("streak_type", "general"),
+    seasonWindow
+      ? supabase
+          .from("runs")
+          .select("user_id, distance, created_at")
+          .in("user_id", friendIds)
+          .gte("created_at", seasonWindow.start)
+          .lte("created_at", seasonWindow.end)
+      : Promise.resolve({ data: [] }),
+    seasonWindow
+      ? supabase
+          .from("workouts")
+          .select("user_id, duration_minutes, created_at")
+          .in("user_id", friendIds)
+          .gte("created_at", seasonWindow.start)
+          .lte("created_at", seasonWindow.end)
+      : Promise.resolve({ data: [] }),
   ]);
 
   const profiles = (profilesRes.data ?? []) as {
@@ -176,6 +248,11 @@ export async function getFriendsLeaderboard(
     current_level: number | null;
     total_xp: number | null;
   }[];
+  const seasonScores = calculateSeasonScores(
+    season,
+    (seasonRunsRes.data ?? []) as SeasonActivityRun[],
+    (seasonWorkoutsRes.data ?? []) as SeasonActivityWorkout[]
+  );
 
   const weeklyKmMap: Record<string, number> = {};
   for (const r of (runsRes.data ?? []) as { user_id: string; distance: number | null; created_at: string }[]) {
@@ -195,6 +272,14 @@ export async function getFriendsLeaderboard(
   const entries: LeaderboardEntry[] = profiles.map((p) => {
     const km = Math.round((weeklyKmMap[p.user_id] ?? 0) * 10) / 10;
     const workouts = weeklyWorkoutMap[p.user_id] ?? 0;
+    const seasonBreakdown = seasonScores[p.user_id] ?? {
+      points: 0,
+      runs: 0,
+      workouts: 0,
+      km: 0,
+      activeDays: 0,
+      hybridDays: 0,
+    };
     return {
       userId: p.user_id,
       username: p.username,
@@ -207,15 +292,19 @@ export async function getFriendsLeaderboard(
       weeklyWorkouts: workouts,
       weeklyScore: Math.round(km * 10 + workouts * 8),
       currentStreak: streakMap[p.user_id] ?? 0,
+      seasonPoints: seasonBreakdown.points,
+      seasonBreakdown,
     };
   });
 
   const sorters: Record<LeaderboardCategory, (a: LeaderboardEntry, b: LeaderboardEntry) => number> = {
     xp:       (a, b) => b.totalXp - a.totalXp,
+    season:   (a, b) => b.seasonPoints - a.seasonPoints,
     km:       (a, b) => b.weeklyKm - a.weeklyKm,
     workouts: (a, b) => b.weeklyWorkouts - a.weeklyWorkouts,
     streak:   (a, b) => b.currentStreak - a.currentStreak,
   };
 
-  return entries.sort(sorters[category]).slice(0, 50);
+  const filtered = category === "season" ? entries.filter((e) => e.seasonPoints > 0) : entries;
+  return filtered.sort(sorters[category]).slice(0, 50);
 }

@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { getLocalDateKey } from "@/lib/date-utils";
+
 export type Season = {
   id: string;
   name: string;
@@ -64,20 +66,25 @@ export async function getAllSeasons(supabase: SupabaseClient): Promise<Season[]>
   return ((data ?? []) as DbSeason[]).map(mapSeason);
 }
 
-/** Days remaining in the given season (0 if ended or not active). */
+/** Days remaining in the given season (0 if ended or not active). Uses Manaus timezone. */
 export function daysRemaining(season: Season): number {
-  const end = new Date(season.endDate);
-  const now = new Date();
-  const diff = Math.ceil((end.getTime() - now.getTime()) / 86_400_000);
+  const todayKey = getLocalDateKey(new Date());
+  const [ty, tm, td] = todayKey.split("-").map(Number);
+  const [ey, em, ed] = season.endDate.split("-").map(Number);
+  const diff = Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(ty, tm - 1, td)) / 86_400_000);
   return Math.max(0, diff);
 }
 
-/** Progress through the season as a 0–100 percentage. */
+/** Progress through the season as a 0–100 percentage. Uses Manaus timezone. */
 export function seasonProgress(season: Season): number {
-  const start = new Date(season.startDate).getTime();
-  const end = new Date(season.endDate).getTime();
-  const now = Date.now();
-  if (now <= start) return 0;
-  if (now >= end) return 100;
-  return Math.round(((now - start) / (end - start)) * 100);
+  const todayKey = getLocalDateKey(new Date());
+  const [ty, tm, td] = todayKey.split("-").map(Number);
+  const [sy, sm, sd] = season.startDate.split("-").map(Number);
+  const [ey, em, ed] = season.endDate.split("-").map(Number);
+  const startMs = Date.UTC(sy, sm - 1, sd);
+  const endMs = Date.UTC(ey, em - 1, ed);
+  const nowMs = Date.UTC(ty, tm - 1, td);
+  if (nowMs <= startMs) return 0;
+  if (nowMs >= endMs) return 100;
+  return Math.round(((nowMs - startMs) / (endMs - startMs)) * 100);
 }
