@@ -109,7 +109,7 @@ export default async function CompetitionDetailPage({ params }: Props) {
   const { data: profiles } = userIds.length > 0
     ? await supabase
         .from("profiles")
-        .select("user_id, username, display_name, avatar_id, avatar_type")
+        .select("user_id, username, display_name, avatar_id, avatar_type, total_xp")
         .in("user_id", userIds)
     : { data: [] };
 
@@ -121,6 +121,7 @@ export default async function CompetitionDetailPage({ params }: Props) {
     display_name: string | null;
     avatar_id: string | null;
     avatar_type: string | null;
+    total_xp: number;
   };
 
   const leaderboard: LeaderboardEntry[] = participants.map(p => {
@@ -133,6 +134,7 @@ export default async function CompetitionDetailPage({ params }: Props) {
       display_name: prof?.display_name ?? null,
       avatar_id: prof?.avatar_id ?? null,
       avatar_type: prof?.avatar_type ?? null,
+      total_xp: Number(prof?.total_xp ?? 0),
     };
   });
 
@@ -436,6 +438,9 @@ export default async function CompetitionDetailPage({ params }: Props) {
                             {entry.username && (
                               <p className="text-[10px] text-[#F5F5F5]/28">@{entry.username}</p>
                             )}
+                            <p className="text-[10px] font-semibold text-[#F5F5F5]/38">
+                              {entry.total_xp.toLocaleString("pt-BR")} XP
+                            </p>
                             <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
                               <div
                                 className="h-full rounded-full"
@@ -511,6 +516,9 @@ export default async function CompetitionDetailPage({ params }: Props) {
                             {entry.username && (
                               <p className="text-[10px] text-[#F5F5F5]/24">@{entry.username}</p>
                             )}
+                            <p className="text-[10px] font-semibold text-[#F5F5F5]/32">
+                              {entry.total_xp.toLocaleString("pt-BR")} XP
+                            </p>
                             <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
                               <div
                                 className="h-full rounded-full"

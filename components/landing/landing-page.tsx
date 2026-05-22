@@ -1040,7 +1040,7 @@ function XPSection() {
             conquistas e competições, com cálculo visível de quanto falta para cada nível.
           </p>
           <Link
-            href="/xp"
+            href="/landing/xp"
             className="mt-5 inline-flex items-center gap-2 rounded-xl border border-[#A78BFA]/20 bg-[#A78BFA]/[0.07] px-4 py-2 text-[12px] font-bold text-[#D8B4FE] transition-colors hover:bg-[#A78BFA]/[0.11]"
           >
             Ver regras completas de XP

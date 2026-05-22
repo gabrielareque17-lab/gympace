@@ -7,7 +7,7 @@ import { WeeklyLeaderboard } from "@/components/social/WeeklyLeaderboard";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
 import { getGlobalLeaderboard, getFriendsLeaderboard } from "@/lib/leaderboard";
-import { syncUserXP } from "@/lib/xp";
+import { getLevelProgress } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +25,11 @@ export default async function SocialPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [activeSeason, xpFeedback, profileRes] = await Promise.all([
+  const [activeSeason, profileRes] = await Promise.all([
     getActiveSeason(supabase),
-    syncUserXP(supabase, user.id),
     supabase
       .from("profiles")
-      .select("username, display_name, avatar_id")
+      .select("username, display_name, avatar_id, rank, current_level, total_xp")
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
@@ -39,37 +38,28 @@ export default async function SocialPage() {
     username: string | null;
     display_name: string | null;
     avatar_id: string | null;
+    rank: string | null;
+    current_level: number | null;
+    total_xp: number | null;
   } | null;
 
+  const profileProgress = getLevelProgress(Number(profileMeta?.total_xp ?? 0));
   const profile = profileMeta ? {
     username: profileMeta.username,
     display_name: profileMeta.display_name,
     avatar_id: profileMeta.avatar_id,
-    rank: xpFeedback.rank,
-    current_level: xpFeedback.currentLevel,
-    total_xp: xpFeedback.totalXp,
-    xp_into_level: xpFeedback.xpIntoLevel,
-    xp_for_next_level: xpFeedback.xpForNextLevel,
-    level_progress: xpFeedback.levelProgress,
+    rank: profileMeta.rank ?? "rookie",
+    current_level: profileMeta.current_level ?? 1,
+    total_xp: Number(profileMeta.total_xp ?? 0),
+    xp_into_level: profileProgress.xpIntoLevel,
+    xp_for_next_level: profileProgress.xpForNextLevel,
+    level_progress: profileProgress.levelProgress,
   } : null;
 
   const [globalEntries, friendsEntries] = await Promise.all([
     getGlobalLeaderboard(supabase, "xp"),
     getFriendsLeaderboard(supabase, user.id, "xp"),
   ]);
-
-  // Garantir que a entrada do usuário atual no leaderboard reflita o XP recém-sincronizado.
-  // profiles.total_xp pode estar defasado; xpFeedback.totalXp é a fonte de verdade.
-  const myUserId = user.id;
-  function patchCurrentUser<T extends { userId: string; totalXp: number; currentLevel: number; rank: string | null }>(entries: T[]): T[] {
-    const idx = entries.findIndex((e) => e.userId === myUserId);
-    if (idx === -1) return entries;
-    const patched = [...entries];
-    patched[idx] = { ...patched[idx], totalXp: xpFeedback.totalXp, currentLevel: xpFeedback.currentLevel, rank: xpFeedback.rank };
-    return patched.sort((a, b) => b.totalXp - a.totalXp);
-  }
-  const patchedGlobal = patchCurrentUser(globalEntries);
-  const patchedFriends = patchCurrentUser(friendsEntries);
 
   const displayScore = profile?.total_xp ?? 0;
   const scoreLabel = "XP total";
@@ -213,8 +203,8 @@ export default async function SocialPage() {
             </div>
             <div className="p-4">
               <WeeklyLeaderboard
-                globalEntries={patchedGlobal}
-                friendsEntries={patchedFriends}
+                globalEntries={globalEntries}
+                friendsEntries={friendsEntries}
                 currentUserId={user.id}
                 mode="xp"
               />

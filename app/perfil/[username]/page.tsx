@@ -22,7 +22,7 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { normalizeMuscleGroups } from "@/lib/muscles";
-import { syncUserXP } from "@/lib/xp";
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from "@/lib/xp";
 import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
 import { getLocalDateKey } from "@/lib/date-utils";
 
@@ -153,7 +153,7 @@ export default async function PublicProfilePage({ params }: Props) {
   type RunRow = { distance: number; pace: string | null; created_at: string };
   type GymRow = { muscle_group: string | null; muscle_groups: string[] | null; created_at: string };
 
-  const [{ data: rawRuns }, workoutsResult, xpSync] = await Promise.all([
+  const [{ data: rawRuns }, workoutsResult] = await Promise.all([
     adminSupabase
       .from("runs")
       .select("distance, pace, created_at")
@@ -162,7 +162,6 @@ export default async function PublicProfilePage({ params }: Props) {
       .from("workouts")
       .select("muscle_group, muscle_groups, created_at")
       .eq("user_id", profile.user_id),
-    syncUserXP(adminSupabase, profile.user_id),
   ]);
 
   const runs: RunRow[] = (rawRuns ?? []) as RunRow[];
@@ -183,9 +182,12 @@ export default async function PublicProfilePage({ params }: Props) {
   const bestPaceSeconds = allPaceSeconds.length > 0 ? Math.min(...allPaceSeconds) : null;
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const profileLevel = xpSync.currentLevel;
-  const rankStyle = RANK_STYLES[xpSync.rank] ?? RANK_STYLES.rookie;
-  const xpLevelProgress = xpSync.levelProgress;
+  const profileTotalXp = Number(profile.total_xp ?? 0);
+  const profileLevel = Number(profile.current_level ?? calculateLevelFromXP(profileTotalXp));
+  const profileRank = profile.rank ?? getRankForLevel(profileLevel);
+  const xpProgress = getLevelProgress(profileTotalXp);
+  const rankStyle = RANK_STYLES[profileRank] ?? RANK_STYLES.rookie;
+  const xpLevelProgress = xpProgress.levelProgress;
 
   const avatarDef = profile.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
@@ -415,9 +417,17 @@ export default async function PublicProfilePage({ params }: Props) {
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
                     <span className="font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
-                      {xpSync.xpIntoLevel.toLocaleString("pt-BR")} / {xpSync.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
+                      {xpProgress.xpIntoLevel.toLocaleString("pt-BR")} / {xpProgress.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                     </span>
                     <span className="font-mono tabular-nums">{xpLevelProgress}%</span>
+                  </div>
+                  <div className="mt-2.5 flex justify-center">
+                    <Link
+                      href="/xp#jornada-xp"
+                      className="inline-flex w-full items-center justify-center rounded-xl border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-3 py-2 text-xs font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15 sm:w-auto sm:px-2.5 sm:py-1 sm:text-[11px]"
+                    >
+                      Ver jornada XP
+                    </Link>
                   </div>
                 </div>
               </div>

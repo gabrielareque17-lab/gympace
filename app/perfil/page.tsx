@@ -8,7 +8,7 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { getAvatarById } from "@/lib/avatar-registry";
-import { syncUserXP } from "@/lib/xp";
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from "@/lib/xp";
 import { syncStreaksForUser } from "@/lib/streaks";
 import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
@@ -144,15 +144,14 @@ export default async function PerfilPage() {
   const nickname = email ? getNickname(email) : "Atleta";
   const initials = email ? email[0].toUpperCase() : "?";
 
-  const [profileRes, xpSync] = await Promise.all([
+  const [profileRes] = await Promise.all([
     user
       ? supabase
           .from("profiles")
-          .select("avatar_id, avatar_type, username, display_name, bio")
+          .select("avatar_id, avatar_type, username, display_name, bio, total_xp, current_level, rank")
           .eq("user_id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    user ? syncUserXP(supabase, user.id) : Promise.resolve(null),
   ]);
   const profile = profileRes.data as {
     avatar_id: string | null;
@@ -160,6 +159,9 @@ export default async function PerfilPage() {
     username: string | null;
     display_name: string | null;
     bio: string | null;
+    total_xp: number | null;
+    current_level: number | null;
+    rank: string | null;
   } | null;
 
   const [
@@ -239,12 +241,14 @@ export default async function PerfilPage() {
 
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const dbLevel = xpSync?.currentLevel ?? 1;
-  const dbRank = xpSync?.rank ?? "rookie";
+  const profileTotalXp = Number(profile?.total_xp ?? 0);
+  const dbLevel = Number(profile?.current_level ?? calculateLevelFromXP(profileTotalXp));
+  const dbRank = profile?.rank ?? getRankForLevel(dbLevel);
   const rankStyle = RANK_STYLES[dbRank] ?? RANK_STYLES.rookie;
-  const xpLevelProgress = xpSync?.levelProgress ?? 0;
-  const xpIntoLevel = xpSync?.xpIntoLevel ?? 0;
-  const xpForNextLevel = xpSync?.xpForNextLevel ?? null;
+  const progress = getLevelProgress(profileTotalXp);
+  const xpLevelProgress = progress.levelProgress;
+  const xpIntoLevel = progress.xpIntoLevel;
+  const xpForNextLevel = progress.xpForNextLevel;
 
   const avatarDef = profile?.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteType = profile?.avatar_type ?? "runner";
@@ -514,7 +518,28 @@ export default async function PerfilPage() {
                     }}
                   />
                 </div>
+                <div className="mt-2.5 flex justify-end">
+                  <Link
+                    href="/xp#jornada-xp"
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-3 py-2 text-xs font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15 sm:w-auto sm:px-2.5 sm:py-1 sm:text-[11px]"
+                  >
+                    Ver jornada XP (níveis)
+                  </Link>
+                </div>
               </div>
+
+              {profile?.username && (
+                <div className="mt-2.5 flex justify-center">
+                  <Link
+                    href={`/perfil/${profile.username}/trofeus`}
+                    prefetch
+                    className="inline-flex w-full max-w-xs items-center justify-center gap-1.5 rounded-xl border border-[#EAB308]/30 bg-[#EAB308]/10 px-3 py-2 text-xs font-bold text-[#EAB308] shadow-[0_0_18px_rgba(234,179,8,0.08)] transition-all duration-150 hover:border-[#EAB308]/40 hover:bg-[#EAB308]/[0.14] sm:w-auto"
+                  >
+                    <Trophy className="size-3.5" strokeWidth={2} />
+                    Abrir troféus
+                  </Link>
+                </div>
+              )}
 
               {/* Quick stats grid */}
               <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2">

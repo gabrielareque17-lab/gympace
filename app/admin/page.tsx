@@ -6,7 +6,8 @@ export const dynamic = "force-dynamic";
 
 async function fetchStats() {
   const supabase = createSupabaseAdminClient();
-  const [usersRes, notifsRes, competitionsRes] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const [usersRes, notifsRes, competitionsRes, profilesRes, runsRes, workoutsRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase
       .from("notifications")
@@ -16,11 +17,24 @@ async function fetchStats() {
       .from("competitions")
       .select("*", { count: "exact", head: true })
       .eq("status", "active"),
+    supabase.from("profiles").select("user_id,total_xp").limit(5000),
+    supabase.from("runs").select("user_id,created_at").gte("created_at", since).limit(5000),
+    supabase.from("workouts").select("user_id,created_at").gte("created_at", since).limit(5000),
   ]);
+  const activeIds = new Set<string>([
+    ...((runsRes.data ?? []) as { user_id: string }[]).map((r) => r.user_id),
+    ...((workoutsRes.data ?? []) as { user_id: string }[]).map((w) => w.user_id),
+  ]);
+  const staleXp = ((profilesRes.data ?? []) as { user_id: string; total_xp: number | null }[])
+    .filter((p) => Number(p.total_xp ?? 0) <= 0 && activeIds.has(p.user_id))
+    .length;
+
   return {
     users: usersRes.count ?? 0,
     notifs: notifsRes.count ?? 0,
     competitions: competitionsRes.count ?? 0,
+    staleXp,
+    recentActive: activeIds.size,
   };
 }
 
@@ -29,6 +43,8 @@ export default async function AdminDashboardPage() {
     users: 0,
     notifs: 0,
     competitions: 0,
+    staleXp: 0,
+    recentActive: 0,
   }));
 
   return (
@@ -50,7 +66,7 @@ export default async function AdminDashboardPage() {
       </Link>
 
       {/* Stats grid */}
-      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-5">
         <StatCard
           label="Usuários"
           value={stats.users}
@@ -71,6 +87,20 @@ export default async function AdminDashboardPage() {
           icon={Trophy}
           color="#EAB308"
           glow="rgba(234,179,8,0.12)"
+        />
+        <StatCard
+          label="Ativos 30d"
+          value={stats.recentActive}
+          icon={Zap}
+          color="#A78BFA"
+          glow="rgba(167,139,250,0.12)"
+        />
+        <StatCard
+          label="XP inconsistente"
+          value={stats.staleXp}
+          icon={Flag}
+          color="#FB923C"
+          glow="rgba(251,146,60,0.12)"
         />
       </div>
 
@@ -95,6 +125,14 @@ export default async function AdminDashboardPage() {
             description="Usuários, troféus e updates direcionados"
             color="#22D3EE"
             glow="rgba(34,211,238,0.08)"
+          />
+          <QuickAction
+            href="/admin/social#xp-reconcile"
+            icon={Zap}
+            label="Reconciliar XP"
+            description="Recalcular XP em lote e por usuário"
+            color="#A78BFA"
+            glow="rgba(167,139,250,0.08)"
           />
         </div>
       </div>

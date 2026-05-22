@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Bell, Gift, Loader2, Lock, Search, Shield, Sparkles, Trophy, UserRound } from "lucide-react";
+import { Bell, Gift, Loader2, Lock, Search, Shield, Sparkles, Trophy, UserRound, Zap } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { AvatarSVG } from "@/components/ui/avatar/avatar-svg";
@@ -197,6 +197,32 @@ export default function AdminSocialPage() {
     });
   }
 
+  function reconcileXP(userOnly: boolean) {
+    setNotice("");
+    setError("");
+    startTransition(async () => {
+      const body = userOnly
+        ? { user_id: selectedUserId }
+        : { limit: 250 };
+      const res = await fetch("/api/admin/xp/recalculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Erro ao reconciliar XP.");
+        return;
+      }
+      if (userOnly) {
+        setNotice(`XP recalculado para usuário selecionado. Total: ${Number(json.total_xp ?? 0).toLocaleString("pt-BR")} XP.`);
+      } else {
+        setNotice(`Reconciliação XP em lote concluída. Atualizados: ${json.updated ?? 0}, falhas: ${json.failed ?? 0}.`);
+      }
+      await loadUsers(query);
+    });
+  }
+
   return (
     <div>
       <div className="mb-5 sm:mb-7">
@@ -265,6 +291,36 @@ export default function AdminSocialPage() {
         </section>
 
         <div className="space-y-4 sm:space-y-5">
+          <section id="xp-reconcile" className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Zap className="size-4 text-[#A78BFA]" />
+              <h2 className="font-display text-base font-semibold">Reconciliação de XP</h2>
+            </div>
+            <p className="mb-4 text-xs text-[#F5F5F5]/38">
+              Corrige inconsistências de XP/nível/rank em usuários antigos ou com dados defasados.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => reconcileXP(true)}
+                disabled={isPending || !selectedUserId}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#A78BFA] px-4 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50"
+              >
+                {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserRound className="size-4" />}
+                Recalcular usuário selecionado
+              </button>
+              <button
+                type="button"
+                onClick={() => reconcileXP(false)}
+                disabled={isPending}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#A78BFA]/30 bg-[#A78BFA]/15 px-4 py-2.5 text-sm font-bold text-[#D8B4FE] disabled:opacity-50"
+              >
+                {isPending ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
+                Recalcular ativos (30 dias)
+              </button>
+            </div>
+          </section>
+
           <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="size-4 text-[#FACC15]" />

@@ -52,7 +52,7 @@ const XP_SOURCES = [
     title: "Conquistas",
     icon: Award,
     color: "#A78BFA",
-    formula: "100 a 450 XP por conquista",
+    formula: "60 a 260 XP por conquista",
     detail: "A raridade define o peso: comum, raro, épico ou lendário.",
   },
   {
@@ -111,6 +111,7 @@ export default function XPPage() {
             <RankSection />
           </div>
           <ExampleSection />
+          <SeasonSection />
           <TrustSection />
         </div>
       </main>
@@ -146,8 +147,8 @@ function HeroSection() {
 
         <div className="grid gap-2 sm:grid-cols-3">
           <HeroMetric label="Primeira subida de nível" value="150 XP" />
-          <HeroMetric label="Base da corrida" value="+30 XP" />
-          <HeroMetric label="Base do treino" value="+50 XP" />
+          <HeroMetric label="Base da corrida" value="+20 XP" />
+          <HeroMetric label="Base do treino" value="+30 XP" />
         </div>
       </div>
     </section>
@@ -192,7 +193,7 @@ function SourceGrid() {
 
 function LevelSection() {
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+    <section id="jornada-xp" className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
       <div className="border-b border-white/[0.05] p-4 sm:p-5">
       <SectionTitle eyebrow="Níveis" title="Curva de progressão" compact />
         <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
@@ -293,9 +294,40 @@ function TrustSection() {
       />
       <InfoCard
         icon={Info}
-        title="Transparência no perfil"
-        text="Perfil e dashboard mostram XP total, XP no nível e quanto falta para os próximos níveis."
+        title="XP total x progresso no nível"
+        text="Ranking usa o XP total (profiles.total_xp). Perfil e dashboard mostram esse total + a fatia dentro do nível atual."
       />
+    </section>
+  );
+}
+
+function SeasonSection() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+      <div className="border-b border-white/[0.05] p-4 sm:p-5">
+        <SectionTitle eyebrow="Temporadas" title="Como funciona no ranking" compact />
+        <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
+          Aqui no app existem dois painéis: o ranking geral por XP e o ranking da temporada.
+          Pense como um game: um mostra sua jornada completa da conta, o outro mostra só a fase atual.
+        </p>
+      </div>
+      <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
+        <InfoCard
+          icon={Zap}
+          title="XP Global (principal)"
+          text="É o ranking padrão. Ordena os atletas pelo XP total acumulado da conta inteira."
+        />
+        <InfoCard
+          icon={Trophy}
+          title="Ranking da temporada"
+          text="É paralelo ao global. Usa pontuação sazonal da janela da temporada ativa (corridas + treinos no período)."
+        />
+        <InfoCard
+          icon={Flame}
+          title="Perfil e Dashboard"
+          text="Mostram o mesmo XP oficial do ranking global e também o progresso dentro do nível atual."
+        />
+      </div>
     </section>
   );
 }

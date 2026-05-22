@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Dumbbell, Flame, Gauge, Route } from "lucide-react";
 import {
   Area,
@@ -328,6 +329,14 @@ function PerformanceScoreSection({
           <ScoreBar label="Volume" value={score.volume} color="#B6FF00" />
           <ScoreBar label="Sequência" value={score.streak} color="#FB923C" />
           <ScoreBar label="Nível XP" value={score.level} color={rankStyle.color} />
+        </div>
+        <div className="mt-4 flex justify-end">
+          <Link
+            href="/xp#jornada-xp"
+            className="inline-flex items-center rounded-lg border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-2.5 py-1 text-[11px] font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15"
+          >
+            Ver jornada XP (game)
+          </Link>
         </div>
       </div>
     </section>
@@ -662,15 +671,31 @@ function ConsistencySection({
 export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
   const { summary, profile, performanceScore, weeklyVolume, paceTrends, heatmap, workoutGroups, weeklyWorkoutMinutes } = data;
   const rankStyle = RANK_STYLES[profile.rank] ?? RANK_STYLES.rookie;
+  const weeklyKmTrend = summary.weeklyKmDelta > 0 ? `+${formatKm(summary.weeklyKmDelta)} km` : `${formatKm(summary.weeklyKmDelta)} km`;
+  const weeklyWorkoutTrend = summary.weeklyWorkoutDelta > 0 ? `+${summary.weeklyWorkoutDelta}` : String(summary.weeklyWorkoutDelta);
 
   return (
     <div className="space-y-4">
+      <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#B6FF00]/60">XP oficial</p>
+          <p className="font-display text-3xl font-bold text-[#F5F5F5]">{profile.totalXp.toLocaleString("pt-BR")}</p>
+          <p className="text-xs text-[#F5F5F5]/38">Nível {profile.currentLevel} · {rankStyle.label}</p>
+          <Link
+            href="/xp#jornada-xp"
+            className="mt-1 inline-flex w-full max-w-xs items-center justify-center rounded-xl border border-[#B6FF00]/30 bg-[#B6FF00]/10 px-3 py-2 text-xs font-bold text-[#B6FF00] transition hover:bg-[#B6FF00]/15"
+          >
+            Ver jornada XP completa
+          </Link>
+        </div>
+      </section>
+
       <section aria-label="Resumo" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           label="KM total"
           value={formatKm(summary.totalKm)}
           unit="km"
-          detail={`${summary.totalRuns} corrida${summary.totalRuns !== 1 ? "s" : ""} registradas`}
+          detail={`${summary.totalRuns} corrida${summary.totalRuns !== 1 ? "s" : ""} registradas · semana ${weeklyKmTrend}`}
           icon={Route}
           accentColor="#B6FF00"
         />
@@ -694,7 +719,7 @@ export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
           label="Treinos"
           value={String(summary.totalWorkouts)}
           unit={summary.totalWorkouts === 1 ? "sessão" : "sessões"}
-          detail="na academia registradas"
+          detail={`na academia registradas · semana ${weeklyWorkoutTrend}`}
           icon={Dumbbell}
           accentColor="#60A5FA"
         />

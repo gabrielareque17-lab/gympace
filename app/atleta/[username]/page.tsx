@@ -12,6 +12,7 @@ import {
 } from "@/lib/achievements";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getLocalDateKey } from "@/lib/date-utils";
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from "@/lib/xp";
 import { Check, Flame, Route, Timer, TrendingUp, Zap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -20,20 +21,13 @@ type Props = { params: Promise<{ username: string }> };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const LEVELS = [
-  { name: "Iniciante",     threshold: 0,   next: 25,       color: "#71717A" },
-  { name: "Amador",        threshold: 25,  next: 100,      color: "#60A5FA" },
-  { name: "Intermediário", threshold: 100, next: 300,      color: "#A78BFA" },
-  { name: "Avançado",      threshold: 300, next: 600,      color: "#FB923C" },
-  { name: "Elite",         threshold: 600, next: Infinity, color: "#B6FF00" },
-];
-
 const RANK_CONFIG: Record<string, { label: string; color: string }> = {
+  rookie:   { label: "Rookie",   color: "#94A3B8" },
   bronze:   { label: "Bronze",   color: "#CD7F32" },
   silver:   { label: "Prata",    color: "#A1A1AA" },
   gold:     { label: "Ouro",     color: "#EAB308" },
   platinum: { label: "Platina",  color: "#67E8F9" },
-  diamond:  { label: "Diamante", color: "#A78BFA" },
+  elite:    { label: "Elite", color: "#B6FF00" },
 };
 
 const ATHLETE_LABELS: Record<string, string> = {
@@ -44,22 +38,6 @@ const ATHLETE_LABELS: Record<string, string> = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function computeLevel(totalKm: number) {
-  let idx = 0;
-  for (let i = 0; i < LEVELS.length; i++) {
-    if (totalKm >= LEVELS[i].threshold) idx = i;
-  }
-  const level = LEVELS[idx];
-  const isMax = level.next === Infinity;
-  const progress = isMax
-    ? 100
-    : Math.min(
-        Math.round(((totalKm - level.threshold) / (level.next - level.threshold)) * 100),
-        100
-      );
-  return { ...level, levelNumber: idx + 1, progress, isMax };
-}
 
 function parsePaceToSeconds(value: string | null): number | null {
   if (!value) return null;
@@ -140,7 +118,7 @@ export default async function AthleteProfilePage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("user_id, username, display_name, bio, avatar_id, avatar_type, level, rank")
+    .select("user_id, username, display_name, bio, avatar_id, avatar_type, total_xp, current_level, rank")
     .eq("username", username)
     .maybeSingle();
 
@@ -209,7 +187,9 @@ export default async function AthleteProfilePage({ params }: Props) {
   const best10kPace = paceFor10k.length > 0 ? Math.min(...paceFor10k) : null;
 
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
-  const level = computeLevel(totalKm);
+  const totalXp = Number(profile.total_xp ?? 0);
+  const currentLevel = Number(profile.current_level ?? calculateLevelFromXP(totalXp));
+  const levelProgress = getLevelProgress(totalXp);
 
   const heatmapWeeks = buildHeatmap(runs);
 
@@ -219,7 +199,8 @@ export default async function AthleteProfilePage({ params }: Props) {
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
   const displayName = profile.display_name || profile.username || "Atleta";
   const initials = displayName[0]?.toUpperCase() ?? "?";
-  const rank = RANK_CONFIG[profile.rank ?? "bronze"] ?? RANK_CONFIG.bronze;
+  const resolvedRank = profile.rank ?? getRankForLevel(currentLevel);
+  const rank = RANK_CONFIG[resolvedRank] ?? RANK_CONFIG.rookie;
 
   const achievementStats: AchievementStats = {
     totalRuns,
@@ -346,25 +327,23 @@ export default async function AthleteProfilePage({ params }: Props) {
                     <div className="flex items-center gap-1.5">
                       <span
                         className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
-                        style={{ background: level.color + "20", color: level.color }}
+                        style={{ background: rank.color + "20", color: rank.color }}
                       >
-                        Nível {level.levelNumber}
+                        Nível {currentLevel}
                       </span>
-                      <span className="text-xs font-semibold text-[#F5F5F5]/70">{level.name}</span>
+                      <span className="text-xs font-semibold text-[#F5F5F5]/70">{rank.label}</span>
                     </div>
-                    {!level.isMax && (
-                      <span className="text-[10px] text-[#F5F5F5]/28">
-                        {formatDecimal(totalKm)} / {level.next} km
-                      </span>
-                    )}
+                    <span className="text-[10px] text-[#F5F5F5]/28">
+                      {levelProgress.xpIntoLevel.toLocaleString("pt-BR")} / {levelProgress.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
+                    </span>
                   </div>
                   <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.07]">
                     <div
                       className="h-full rounded-full"
                       style={{
-                        width: `${level.progress}%`,
-                        background: level.color,
-                        boxShadow: `0 0 10px ${level.color}55`,
+                        width: `${levelProgress.levelProgress}%`,
+                        background: rank.color,
+                        boxShadow: `0 0 10px ${rank.color}55`,
                       }}
                     />
                   </div>

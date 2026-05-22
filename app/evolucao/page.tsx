@@ -9,7 +9,7 @@ import {
   type WorkoutRow,
   type ProfileRow,
 } from "@/lib/analytics";
-import { syncUserXP } from "@/lib/xp";
+import { calculateLevelFromXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ async function getAnalyticsData() {
       return buildEmptyAnalytics();
     }
 
-    const [runsResult, workoutsResult, xpSync] = await Promise.all([
+    const [runsResult, workoutsResult, profileResult] = await Promise.all([
       supabase
         .from("runs")
         .select("distance,pace,created_at")
@@ -41,7 +41,11 @@ async function getAnalyticsData() {
         .select("muscle_group,muscle_groups,duration_minutes,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true }),
-      syncUserXP(supabase, user.id),
+      supabase
+        .from("profiles")
+        .select("total_xp, current_level, rank")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
 
     const runs = (runsResult.data ?? []) as RunRow[];
@@ -56,12 +60,12 @@ async function getAnalyticsData() {
       workouts = (workoutsResult.data ?? []) as WorkoutRow[];
     }
 
-    const profile = {
-      total_xp: xpSync.totalXp,
-      current_level: xpSync.currentLevel,
-      rank: xpSync.rank,
-    } satisfies ProfileRow;
-    const data = computeAnalytics(runs, workouts, profile);
+    const profile = profileResult.data as ProfileRow | null;
+    const totalXp = Number(profile?.total_xp ?? 0);
+    const currentLevel = Number(profile?.current_level ?? calculateLevelFromXP(totalXp));
+    const rank = profile?.rank ?? "rookie";
+    const profileData = { total_xp: totalXp, current_level: currentLevel, rank } satisfies ProfileRow;
+    const data = computeAnalytics(runs, workouts, profileData);
 
     return data;
   } catch {

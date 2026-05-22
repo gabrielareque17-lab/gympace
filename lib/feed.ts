@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { getLevelProgress, syncUserXP, type XPFeedback } from "@/lib/xp";
+import { getLevelProgress } from "@/lib/xp";
 
 export type FeedEventType =
   | "run"
@@ -62,6 +62,7 @@ export async function createFeedEvent(
 ): Promise<{ id: string } | null> {
   const writeSupabase = createSupabaseAdminClient();
   const dedupeKey = input.dedupeKey ?? getPayloadDedupeKey(input.payload);
+  const recentWindowStart = new Date(Date.now() - 2 * 60 * 1000).toISOString();
 
   if (dedupeKey) {
     const { data: existing, error: existingError } = await writeSupabase
@@ -76,6 +77,19 @@ export async function createFeedEvent(
       console.error("[feed] dedupe lookup error:", existingError.message);
     }
     if (existing?.id) return { id: existing.id as string };
+  }
+
+  // Anti-spam guard for noisy event types within short time windows.
+  if (!dedupeKey && input.eventType !== "run" && input.eventType !== "workout") {
+    const { data: recent } = await writeSupabase
+      .from("activities_feed")
+      .select("id")
+      .eq("user_id", input.userId)
+      .eq("event_type", input.eventType)
+      .gte("created_at", recentWindowStart)
+      .limit(1)
+      .maybeSingle();
+    if (recent?.id) return { id: recent.id as string };
   }
 
   const payload = dedupeKey
@@ -139,18 +153,6 @@ function getPayloadDedupeKey(payload: Record<string, unknown>): string | undefin
   return undefined;
 }
 
-function applyXpState(profile: FeedProfile, xp: XPFeedback): FeedProfile {
-  return {
-    ...profile,
-    rank: xp.rank,
-    current_level: xp.currentLevel,
-    total_xp: xp.totalXp,
-    xp_into_level: xp.xpIntoLevel,
-    xp_for_next_level: xp.xpForNextLevel,
-    level_progress: xp.levelProgress,
-  };
-}
-
 function hydrateXpState(profile: FeedProfile): FeedProfile {
   const totalXp = Number(profile.total_xp ?? 0);
   const progress = getLevelProgress(totalXp);
@@ -166,7 +168,8 @@ export async function getFeedEvents(
   supabase: SupabaseClient,
   userId: string,
   limit = 20,
-  before?: string
+  before?: string,
+  beforeId?: string
 ): Promise<FeedEvent[]> {
   const { data: followedData } = await supabase
     .from("follows")
@@ -185,9 +188,14 @@ export async function getFeedEvents(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (before) query = query.lt("created_at", before);
+  if (before) query = query.lte("created_at", before);
 
-  const { data: events } = await query;
+  const { data: rawEvents } = await query;
+  const events = before && beforeId
+    ? (rawEvents ?? []).filter((e: { created_at: string; id: string }) =>
+        e.created_at < before || (e.created_at === before && e.id < beforeId)
+      )
+    : (rawEvents ?? []);
   if (!events?.length) return [];
 
   const eventIds = (events as { id: string }[]).map((e) => e.id);
@@ -217,25 +225,6 @@ export async function getFeedEvents(
     ((profilesRes.data ?? []) as FeedProfile[]).map((p) => [p.user_id, hydrateXpState(p)])
   );
 
-  const syncResults = await Promise.allSettled(
-    uniqueUserIds.map(async (profileUserId) => ({
-      userId: profileUserId,
-      xp: await syncUserXP(supabase, profileUserId),
-    }))
-  );
-
-  for (const result of syncResults) {
-    if (result.status !== "fulfilled") {
-      console.error("[feed] xp sync error:", result.reason);
-      continue;
-    }
-
-    const existingProfile = profileMap[result.value.userId];
-    if (existingProfile) {
-      profileMap[result.value.userId] = applyXpState(existingProfile, result.value.xp);
-    }
-  }
-
   // Count reactions per event
   const reactionCountMap: Record<string, number> = {};
   for (const r of (reactionsRes.data ?? []) as { feed_event_id: string }[]) {
@@ -255,7 +244,18 @@ export async function getFeedEvents(
 
   return (events as Omit<FeedEvent, "profile" | "reaction_count" | "user_has_reacted" | "comment_count">[]).map((event) => ({
     ...event,
-    profile: profileMap[event.user_id],
+    profile: profileMap[event.user_id] ?? {
+      user_id: event.user_id,
+      username: null,
+      display_name: null,
+      avatar_id: null,
+      rank: "rookie",
+      current_level: 1,
+      total_xp: 0,
+      xp_into_level: 0,
+      xp_for_next_level: 150,
+      level_progress: 0,
+    },
     reaction_count: reactionCountMap[event.id] ?? 0,
     user_has_reacted: userReactedSet.has(event.id),
     comment_count: commentCountMap[event.id] ?? 0,

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getLocalDateKey } from "@/lib/date-utils";
 import type { Season } from "@/lib/seasons";
+import { syncUserXP } from "@/lib/xp";
 import {
   calculateSeasonScores,
   getSeasonDateWindow,
@@ -27,6 +28,28 @@ export type LeaderboardEntry = {
 };
 
 export type LeaderboardCategory = "xp" | "season" | "km" | "workouts" | "streak";
+
+async function backfillStaleXpEntries(supabase: SupabaseClient, entries: LeaderboardEntry[]) {
+  const staleIds = entries
+    .filter((e) => e.totalXp <= 0)
+    .map((e) => e.userId);
+
+  if (staleIds.length === 0) return;
+
+  const syncResults = await Promise.allSettled(staleIds.map((id) => syncUserXP(supabase, id)));
+  const syncedById = new Map<string, Awaited<ReturnType<typeof syncUserXP>>>();
+  syncResults.forEach((result, index) => {
+    if (result.status === "fulfilled") syncedById.set(staleIds[index], result.value);
+  });
+
+  for (const entry of entries) {
+    const synced = syncedById.get(entry.userId);
+    if (!synced) continue;
+    entry.totalXp = synced.totalXp;
+    entry.currentLevel = synced.currentLevel;
+    entry.rank = synced.rank;
+  }
+}
 
 function currentWeekStartKey(): string {
   const todayKey = getLocalDateKey(new Date());
@@ -176,6 +199,12 @@ export async function getGlobalLeaderboard(
     ? entries
     : entries.filter((e) => (category === "km" ? e.weeklyKm > 0 : e.weeklyWorkouts > 0));
 
+  if (category === "xp") {
+    const candidate = filtered
+      .sort(sorters.xp)
+      .slice(0, 80);
+    await backfillStaleXpEntries(supabase, candidate);
+  }
   return filtered.sort(sorters[category]).slice(0, 50);
 }
 
@@ -304,5 +333,11 @@ export async function getFriendsLeaderboard(
   };
 
   const filtered = entries;
+  if (category === "xp") {
+    const candidate = filtered
+      .sort(sorters.xp)
+      .slice(0, 80);
+    await backfillStaleXpEntries(supabase, candidate);
+  }
   return filtered.sort(sorters[category]).slice(0, 50);
 }

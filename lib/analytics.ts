@@ -42,6 +42,8 @@ export type AnalyticsSummary = {
   bestPaceSeconds: number | null;
   currentStreak: number;
   avgWeeklyKm: number;
+  weeklyKmDelta: number;
+  weeklyWorkoutDelta: number;
 };
 
 export type ProfileInfo = {
@@ -304,13 +306,19 @@ export function computeAnalytics(
   const currentStreak = calculateCurrentStreak(allDates);
   const profileTotalXp = Number(profile?.total_xp ?? 0);
   const profileLevelState = getLevelProgress(profileTotalXp);
+  const weeklyVolume = computeWeeklyVolume(runs);
+  const weeklyWorkouts = computeWeeklyWorkoutMinutes(workouts);
+  const currentWeekKm = weeklyVolume[weeklyVolume.length - 1]?.km ?? 0;
+  const prevWeekKm = weeklyVolume[weeklyVolume.length - 2]?.km ?? 0;
+  const currentWeekWorkouts = weeklyWorkouts[weeklyWorkouts.length - 1]?.sessions ?? 0;
+  const prevWeekWorkouts = weeklyWorkouts[weeklyWorkouts.length - 2]?.sessions ?? 0;
 
   return {
-    weeklyVolume: computeWeeklyVolume(runs),
+    weeklyVolume,
     paceTrends: computePaceTrends(runs),
     heatmap: computeHeatmap(runs, workouts),
     workoutGroups: computeWorkoutGroups(workouts),
-    weeklyWorkoutMinutes: computeWeeklyWorkoutMinutes(workouts),
+    weeklyWorkoutMinutes: weeklyWorkouts,
     performanceScore: computePerformanceScore(runs, workouts, profile),
     summary: {
       totalKm: Math.round(totalKm * 10) / 10,
@@ -319,6 +327,8 @@ export function computeAnalytics(
       bestPaceSeconds,
       currentStreak,
       avgWeeklyKm: Math.round((recentKm / 8) * 10) / 10,
+      weeklyKmDelta: Math.round((currentWeekKm - prevWeekKm) * 10) / 10,
+      weeklyWorkoutDelta: currentWeekWorkouts - prevWeekWorkouts,
     },
     profile: {
       totalXp: profileTotalXp,
@@ -369,6 +379,8 @@ export function buildEmptyAnalytics(): AnalyticsData {
       bestPaceSeconds: null,
       currentStreak: 0,
       avgWeeklyKm: 0,
+      weeklyKmDelta: 0,
+      weeklyWorkoutDelta: 0,
     },
     profile: {
       totalXp: 0,
