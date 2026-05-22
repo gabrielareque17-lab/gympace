@@ -14,6 +14,7 @@ export type XPRank = "rookie" | "bronze" | "silver" | "gold" | "platinum" | "eli
 export type XPFeedback = {
   previousXp: number;
   totalXp: number;
+  netXpDelta: number;
   gainedXp: number;
   previousLevel: number;
   currentLevel: number;
@@ -132,6 +133,7 @@ export async function syncUserXP(
   return {
     previousXp,
     totalXp,
+    netXpDelta: totalXp - previousXp,
     gainedXp: Math.max(totalXp - previousXp, 0),
     previousLevel,
     currentLevel,
@@ -153,7 +155,7 @@ export async function awardXP(
   const feedback = await syncUserXP(supabase, input.userId);
   const adminSupabase = createSupabaseAdminClient();
 
-  if (feedback.gainedXp > 0 || feedback.leveledUp) {
+  if (feedback.netXpDelta !== 0 || feedback.leveledUp) {
     console.info("[xp] awarded", {
       userId: input.userId,
       source: input.source,
@@ -170,6 +172,7 @@ export async function awardXP(
         source: input.source,
         source_id: input.sourceId ?? null,
         reason: input.reason ?? null,
+        net_xp_delta: feedback.netXpDelta,
         gained_xp: feedback.gainedXp,
         total_xp: feedback.totalXp,
         current_level: feedback.currentLevel,
