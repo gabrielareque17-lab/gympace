@@ -28,6 +28,11 @@ const CATEGORY_DEFS: Array<{ id: AvatarCategory; label: string; hint: string; ac
   { id: 'hybrid', label: 'Híbrido', hint: 'Mascotes para quem mistura corrida e academia', accentColor: '#C084FC' },
   { id: 'premium', label: 'Premium', hint: 'Temporada, troféus e conquistas especiais', accentColor: '#FACC15' },
 ]
+const STATUS_TABS = [
+  { key: "unlocked", label: "Desbloqueados" },
+  { key: "progress", label: "Em progresso" },
+  { key: "locked", label: "Bloqueados" },
+] as const;
 
 export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
   const { profile, updateProfile } = useProfileContext()
@@ -39,6 +44,7 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
   const [selectedId, setSelectedId] = useState<string>(initialAvatar.id)
   const [selectedType, setSelectedType] = useState<AvatarType>(initialAvatar.type)
   const [savedId, setSavedId] = useState<string>(initialAvatar.id)
+  const [statusTab, setStatusTab] = useState<(typeof STATUS_TABS)[number]["key"]>("unlocked")
   const [isSaving, setIsSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,12 +52,30 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
   const selected = getAvatarById(selectedId) ?? getDefaultAvatar()
   const userLevel = profile?.currentLevel ?? profile?.level ?? 1
   const isAdmin = profile?.isAdmin ?? false
-  const unlockedAvatarIds = profile?.unlockedAvatarIds ?? []
+  const unlockedAvatarIds = useMemo(() => profile?.unlockedAvatarIds ?? [], [profile?.unlockedAvatarIds])
 
   const activeAvatars = useMemo(
     () => SELECTABLE_AVATARS.filter((avatar) => avatar.category === activeCategory),
     [activeCategory]
   )
+  const nextUnlock = useMemo(() => {
+    const locked = SELECTABLE_AVATARS
+      .filter((a) => !isAvatarUnlocked(a, { level: userLevel, isAdmin, unlockedAvatarIds }))
+      .map((a) => ({ avatar: a, need: a.unlock.kind === "level" ? Math.max((a.unlock.level ?? 1) - userLevel, 0) : 9999 }))
+      .sort((a, b) => a.need - b.need);
+    return locked[0] ?? null;
+  }, [isAdmin, unlockedAvatarIds, userLevel]);
+  const filteredAvatars = useMemo(() => {
+    return activeAvatars.filter((avatar) => {
+      const unlocked = isAvatarUnlocked(avatar, { level: userLevel, isAdmin, unlockedAvatarIds });
+      if (statusTab === "unlocked") return unlocked;
+      if (statusTab === "locked") return !unlocked;
+      if (statusTab === "progress") {
+        return !unlocked && avatar.unlock.kind === "level";
+      }
+      return true;
+    });
+  }, [activeAvatars, isAdmin, unlockedAvatarIds, statusTab, userLevel]);
 
   function handleSelect(id: string, type: AvatarType) {
     const avatar = getAvatarById(id)
@@ -132,6 +156,17 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
           </div>
         </div>
       </div>
+      {nextUnlock && (
+        <div className="rounded-xl border border-[#B6FF00]/20 bg-[#B6FF00]/[0.06] px-3 py-2.5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#B6FF00]/75">Próximo avatar</p>
+          <p className="mt-0.5 text-sm font-semibold text-[#F5F5F5]">{nextUnlock.avatar.label}</p>
+          <p className="text-xs text-[#F5F5F5]/45">
+            {nextUnlock.avatar.unlock.kind === "level"
+              ? `Faltam ${Math.max((nextUnlock.avatar.unlock.level ?? 1) - userLevel, 0)} nível(is)`
+              : nextUnlock.avatar.unlock.label}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-1.5">
         {CATEGORY_DEFS.map((cat) => {
@@ -156,6 +191,21 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
           )
         })}
       </div>
+      <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1.5">
+        {STATUS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setStatusTab(tab.key)}
+            className={cn(
+              "rounded-xl px-2 py-2 text-[10px] font-bold uppercase tracking-[0.08em] transition-all",
+              statusTab === tab.key ? "bg-[#B6FF00]/12 text-[#B6FF00]" : "text-white/40 hover:bg-white/[0.04]"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
@@ -167,12 +217,12 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
           </p>
         </div>
         <span className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-xs font-semibold tabular-nums text-white/42">
-          {activeAvatars.length}
+          {filteredAvatars.length}
         </span>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
-        {activeAvatars.map((def) => (
+        {filteredAvatars.map((def) => (
           <AvatarCard
             key={def.id}
             definition={def}
