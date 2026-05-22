@@ -12,8 +12,9 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const before = searchParams.get("before") ?? undefined;
+  const beforeId = searchParams.get("before_id") ?? undefined;
   const limit = Math.min(Number(searchParams.get("limit") ?? "20"), 50);
 
-  const events = await getFeedEvents(supabase, user.id, limit, before);
+  const events = await getFeedEvents(supabase, user.id, limit, before, beforeId);
   return NextResponse.json({ events });
 }

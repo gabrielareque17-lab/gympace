@@ -34,6 +34,22 @@ function FeedEmpty() {
         <Compass className="size-3.5" strokeWidth={2} />
         Explorar atletas
       </Link>
+      <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+        <Link
+          href="/corridas"
+          prefetch
+          className="mobile-tap inline-flex items-center rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/[0.05] px-3 py-1 text-[11px] font-semibold text-[#B6FF00]/75"
+        >
+          Registrar corrida
+        </Link>
+        <Link
+          href="/treinos"
+          prefetch
+          className="mobile-tap inline-flex items-center rounded-full border border-[#3B82F6]/20 bg-[#3B82F6]/[0.06] px-3 py-1 text-[11px] font-semibold text-[#60A5FA]"
+        >
+          Registrar treino
+        </Link>
+      </div>
     </div>
   );
 }
