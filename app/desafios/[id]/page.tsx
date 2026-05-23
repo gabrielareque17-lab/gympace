@@ -380,7 +380,7 @@ export default async function DesafioDetailPage({ params }: Props) {
                     {displayName(winnerProfile)}
                   </h2>
                   <p className="mt-1 text-sm font-semibold text-[#F5F5F5]/45">
-                    Trofeu exclusivo liberado no perfil
+                    Troféu exclusivo liberado no perfil
                   </p>
                 </div>
                 <div className="shrink-0 text-right">

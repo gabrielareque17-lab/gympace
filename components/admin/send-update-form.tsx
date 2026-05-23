@@ -118,7 +118,7 @@ export function SendUpdateForm() {
         </div>
 
         <Field
-          label="Titulo da atualizacao"
+          label="Título da atualização"
           value={title}
           onChange={setTitle}
           onDirty={handleChange}
@@ -364,7 +364,7 @@ function UpdatePreview({
               {type.label}
             </div>
             <h3 className="text-[15px] font-bold leading-snug text-[#F5F5F5]">
-              {title.trim() || "Titulo da atualizacao"}
+              {title.trim() || "Título da atualização"}
             </h3>
             <p className="mt-1.5 text-[12px] leading-relaxed text-[#F5F5F5]/48">
               {message.trim() || "Resumo curto da notificação para todos os usuários."}

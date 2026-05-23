@@ -47,7 +47,7 @@ export async function awardTrophy(
     .maybeSingle();
 
   if (targetError) return { ok: false, error: targetError.message, status: 500 };
-  if (!target) return { ok: false, error: "Usuario nao encontrado", status: 404 };
+  if (!target) return { ok: false, error: "Usuário não encontrado", status: 404 };
 
   const { data: trophy, error: trophyError } = await supabase
     .from("exclusive_trophies")
@@ -56,7 +56,7 @@ export async function awardTrophy(
     .maybeSingle();
 
   if (trophyError) return { ok: false, error: trophyError.message, status: 500 };
-  if (!trophy) return { ok: false, error: "Trofeu nao encontrado", status: 404 };
+  if (!trophy) return { ok: false, error: "Troféu não encontrado", status: 404 };
 
   const { data: existing, error: existingError } = await supabase
     .from("user_trophies")
@@ -112,7 +112,7 @@ async function notifyTrophyAwarded(
   await supabase.from("notifications").insert({
     user_id: input.userId,
     type: "exclusive_trophy",
-    title: "Trofeu exclusivo recebido",
+    title: "Troféu exclusivo recebido",
     message: `Você recebeu: ${trophy.name}`,
     data: { trophy_id: input.trophyId },
   });
@@ -121,7 +121,7 @@ async function notifyTrophyAwarded(
 
   await sendPushNotification({
     playerIds: [target.onesignal_player_id],
-    title: "Trofeu exclusivo recebido",
+    title: "Troféu exclusivo recebido",
     message: `Você recebeu: ${trophy.name}`,
     data: { type: "exclusive_trophy", trophy_id: input.trophyId },
   });

@@ -88,7 +88,7 @@ export function LatestTrophiesSection({
           <div className="mb-2.5 flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#B6FF00]/55">
-                Trofeus
+                Troféus
               </p>
               <h3 className="text-sm font-semibold text-[#F5F5F5]/85">Conquistas recentes</h3>
             </div>

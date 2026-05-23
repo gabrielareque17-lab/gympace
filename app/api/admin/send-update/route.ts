@@ -45,13 +45,13 @@ export async function POST(request: Request) {
     : "feature";
 
   if (!title?.trim()) {
-    return NextResponse.json({ error: "Titulo obrigatorio" }, { status: 400 });
+    return NextResponse.json({ error: "Título obrigatório" }, { status: 400 });
   }
   if (!message?.trim()) {
-    return NextResponse.json({ error: "Mensagem obrigatoria" }, { status: 400 });
+    return NextResponse.json({ error: "Mensagem obrigatória" }, { status: 400 });
   }
   if (!features?.trim()) {
-    return NextResponse.json({ error: "Detalhes da atualizacao obrigatorios" }, { status: 400 });
+    return NextResponse.json({ error: "Detalhes da atualização obrigatórios" }, { status: 400 });
   }
   if (title.length > MAX_TITLE_LEN) {
     return NextResponse.json(

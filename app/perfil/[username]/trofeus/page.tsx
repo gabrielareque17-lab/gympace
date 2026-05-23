@@ -300,7 +300,7 @@ export default async function ProfileTrophiesPage({ params }: Props) {
     return {
       id: `admin:${trophy.id}:${grant.id}`,
       name: trophy.name,
-      description: trophy.description ?? "Trofeu especial entregue pela equipe GymPace.",
+      description: trophy.description ?? "Troféu especial entregue pela equipe GymPace.",
       rarity: trophy.rarity,
       rarityLabel: rarity.label,
       rarityColor: rarity.color,
@@ -325,7 +325,7 @@ export default async function ProfileTrophiesPage({ params }: Props) {
       name: season.name,
       description:
         season.description ??
-        `Trofeu de participacao da temporada ${season.name}.`,
+        `Troféu de participação da temporada ${season.name}.`,
       rarity: season.isActive ? "active-season" : "season",
       rarityLabel: season.isActive ? "Temporada ativa" : "Temporada",
       rarityColor: season.color,
@@ -366,11 +366,11 @@ export default async function ProfileTrophiesPage({ params }: Props) {
             <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/65">
-                  Colecao social
+                  Coleção social
                 </p>
                 <h1 className="flex items-center gap-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
                   <Trophy className="size-8 text-[#EAB308]" />
-                  Trofeus de {displayName}
+                  Troféus de {displayName}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F5F5F5]/42">
                   Conquistas automáticas, troféus exclusivos, temporadas e raridades exibidas no perfil público.

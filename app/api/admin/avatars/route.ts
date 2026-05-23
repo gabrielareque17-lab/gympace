@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const avatar = getAvatarById(avatarId);
   if (!avatar) return NextResponse.json({ error: "Avatar desconhecido" }, { status: 400 });
   if (avatar.unlock.kind === "free") {
-    return NextResponse.json({ error: "Este avatar ja e livre para todos" }, { status: 400 });
+    return NextResponse.json({ error: "Este avatar já é livre para todos" }, { status: 400 });
   }
 
   const supabase = createOptionalSupabaseAdminClient();
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
   if (error) {
     if (error.code === "23505") {
-      return NextResponse.json({ error: "Usuario ja possui este avatar" }, { status: 409 });
+      return NextResponse.json({ error: "Usuário já possui este avatar" }, { status: 409 });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

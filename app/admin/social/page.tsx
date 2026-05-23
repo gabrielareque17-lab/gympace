@@ -135,7 +135,7 @@ export default function AdminSocialPage() {
         setError(json.error ?? "Erro ao criar troféu.");
         return;
       }
-      setNotice("Trofeu criado.");
+      setNotice("Troféu criado.");
       setTrophyDraft({ name: "", description: "", rarity: "rare", visual: "trophy" });
       await loadTrophies();
     });
@@ -159,7 +159,7 @@ export default function AdminSocialPage() {
         setError(json.error ?? "Erro ao entregar troféu.");
         return;
       }
-      setNotice("Trofeu entregue.");
+      setNotice("Troféu entregue.");
     });
   }
 
@@ -205,7 +205,7 @@ export default function AdminSocialPage() {
         setError(json.error ?? "Erro ao enviar notificação.");
         return;
       }
-      setNotice("Notificacao enviada.");
+      setNotice("Notificação enviada.");
     });
   }
 
@@ -328,7 +328,7 @@ export default function AdminSocialPage() {
                 >
                   <option value="admin">Admin</option>
                   <option value="season">Temporada</option>
-                  <option value="trophy">Trofeu</option>
+                  <option value="trophy">Troféu</option>
                   <option value="achievement">Conquista</option>
                 </select>
                 <input

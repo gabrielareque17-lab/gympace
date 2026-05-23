@@ -141,9 +141,9 @@ function EmptyState() {
       <div className="mx-auto mb-4 grid size-11 place-items-center rounded-2xl border border-[#B6FF00]/20 bg-[#B6FF00]/10">
         <Bell className="size-5 text-[#B6FF00]" strokeWidth={1.8} />
       </div>
-      <p className="text-sm font-semibold text-[#F5F5F5]/55">Nenhuma atualizacao publicada ainda</p>
+      <p className="text-sm font-semibold text-[#F5F5F5]/55">Nenhuma atualização publicada ainda</p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-[#F5F5F5]/30">
-        Quando o time publicar novidades, elas vao aparecer aqui.
+        Quando o time publicar novidades, elas vão aparecer aqui.
       </p>
     </div>
   );
