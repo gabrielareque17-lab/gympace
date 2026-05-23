@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { createFeedEvent } from "@/lib/feed";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type GoalType =
@@ -38,6 +40,19 @@ export interface ChallengeRow {
   winner_id: string | null;
   created_at: string;
 }
+
+type FinalizeChallengeInput = {
+  challenge: ChallengeRow;
+  winnerId: string | null;
+  winnerProgress: number;
+  targetProgress: number;
+};
+
+export type ChallengeVictoryUpdate = {
+  challengeId: string;
+  winnerId: string;
+  trophyId: string | null;
+};
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -149,4 +164,151 @@ export function formatProgress(value: number, goalType: GoalType): string {
   if (goalType === "distance_km") return `${value.toFixed(1)} km`;
   const unit = GOAL_CONFIG[goalType].unit;
   return `${value} ${unit}`;
+}
+
+export async function finalizeChallengeVictory(
+  supabase: SupabaseClient,
+  { challenge, winnerId, winnerProgress, targetProgress }: FinalizeChallengeInput
+) {
+  if (!winnerId || challenge.status !== "active" || challenge.winner_id) {
+    return { finalized: false };
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from("challenges")
+    .update({ status: "finished", winner_id: winnerId })
+    .eq("id", challenge.id)
+    .eq("status", "active")
+    .is("winner_id", null)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) {
+    console.error("[challenge] finish failed:", updateError.code, updateError.message);
+    return { finalized: false };
+  }
+  if (!updated) return { finalized: false };
+
+  const trophy = await ensureChallengeVictoryTrophy(supabase, challenge);
+  if (trophy?.id) {
+    const { error: grantError } = await supabase
+      .from("user_trophies")
+      .insert({
+        user_id: winnerId,
+        trophy_id: trophy.id,
+        awarded_by: null,
+        note: `Venceu "${challenge.title}" com ${formatProgress(winnerProgress, challenge.goal_type)} de ${formatProgress(targetProgress, challenge.goal_type)}.`,
+      });
+
+    if (grantError && grantError.code !== "23505") {
+      console.error("[challenge] trophy grant failed:", grantError.code, grantError.message);
+    }
+  }
+
+  await supabase.from("notifications").insert({
+    user_id: winnerId,
+    type: "challenge_won",
+    title: "Duelo vencido",
+    message: `Você venceu "${challenge.title}" e recebeu um troféu exclusivo.`,
+    data: { challenge_id: challenge.id, trophy_id: trophy?.id ?? null },
+  });
+
+  await createFeedEvent(supabase, {
+    userId: winnerId,
+    eventType: "challenge_won",
+    dedupeKey: `challenge_won:${challenge.id}`,
+    payload: {
+      challenge_id: challenge.id,
+      title: challenge.title,
+      trophy_id: trophy?.id ?? null,
+      progress: winnerProgress,
+      target: targetProgress,
+      goal_type: challenge.goal_type,
+    },
+  });
+
+  return { finalized: true, trophyId: trophy?.id ?? null };
+}
+
+export async function updateActiveChallengesForUser(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<ChallengeVictoryUpdate[]> {
+  const { data, error } = await supabase
+    .from("challenges")
+    .select("*")
+    .eq("status", "active")
+    .or(`creator_id.eq.${userId},challenged_id.eq.${userId}`);
+
+  if (error) {
+    console.error("[challenge] active challenge lookup failed:", error.code, error.message);
+    return [];
+  }
+
+  const updates: ChallengeVictoryUpdate[] = [];
+
+  for (const challenge of (data ?? []) as ChallengeRow[]) {
+    if (!challenge.start_date || !challenge.end_date) continue;
+
+    const [creatorProgress, challengedProgress] = await Promise.all([
+      getChallengeProgress(supabase, challenge.creator_id, challenge.goal_type, challenge.start_date, challenge.end_date),
+      getChallengeProgress(supabase, challenge.challenged_id, challenge.goal_type, challenge.start_date, challenge.end_date),
+    ]);
+
+    const target = Number(challenge.target_value);
+    const creatorReached = creatorProgress >= target;
+    const challengedReached = challengedProgress >= target;
+    const winnerId = creatorReached && challengedReached
+      ? creatorProgress === challengedProgress
+        ? null
+        : creatorProgress > challengedProgress
+          ? challenge.creator_id
+          : challenge.challenged_id
+      : creatorReached
+        ? challenge.creator_id
+        : challengedReached
+          ? challenge.challenged_id
+          : null;
+
+    if (!winnerId) continue;
+
+    const result = await finalizeChallengeVictory(supabase, {
+      challenge,
+      winnerId,
+      winnerProgress: winnerId === challenge.creator_id ? creatorProgress : challengedProgress,
+      targetProgress: target,
+    });
+
+    if (result.finalized) {
+      updates.push({ challengeId: challenge.id, winnerId, trophyId: result.trophyId ?? null });
+    }
+  }
+
+  return updates;
+}
+
+async function ensureChallengeVictoryTrophy(supabase: SupabaseClient, challenge: ChallengeRow) {
+  const slug = `duelo-1x1-${challenge.id}`;
+  const { data, error } = await supabase
+    .from("exclusive_trophies")
+    .upsert(
+      {
+        slug,
+        name: "Vencedor de Duelo 1x1",
+        description: `Venceu o duelo "${challenge.title}".`,
+        rarity: "epic",
+        visual: "trophy",
+        is_unique: true,
+      },
+      { onConflict: "slug" }
+    )
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("[challenge] trophy ensure failed:", error.code, error.message);
+    return null;
+  }
+
+  return data as { id: string };
 }

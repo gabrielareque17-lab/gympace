@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getLevelProgress, syncUserXP, type XPFeedback } from "@/lib/xp";
 
 export type FeedEventType =
@@ -14,6 +14,7 @@ export type FeedEventType =
   | "challenge_accepted"
   | "challenge_won"
   | "competition_joined"
+  | "competition_won"
   | "exclusive_trophy"
   | "rank_reached"
   | "season_started";
@@ -60,7 +61,12 @@ export async function createFeedEvent(
   supabase: SupabaseClient,
   input: CreateFeedEventInput
 ): Promise<{ id: string } | null> {
-  const writeSupabase = createSupabaseAdminClient();
+  const writeSupabase = createOptionalSupabaseAdminClient();
+  if (!writeSupabase) {
+    console.warn("[feed] SUPABASE_SERVICE_ROLE_KEY is not configured; feed event was skipped.");
+    return null;
+  }
+
   const dedupeKey = input.dedupeKey ?? getPayloadDedupeKey(input.payload);
 
   if (dedupeKey) {
@@ -122,7 +128,12 @@ export async function deleteFeedEvent(
   eventType: FeedEventType,
   activityId: string
 ): Promise<void> {
-  const writeSupabase = createSupabaseAdminClient();
+  const writeSupabase = createOptionalSupabaseAdminClient();
+  if (!writeSupabase) {
+    console.warn("[feed] SUPABASE_SERVICE_ROLE_KEY is not configured; feed event delete was skipped.");
+    return;
+  }
+
   const { error } = await writeSupabase
     .from("activities_feed")
     .delete()

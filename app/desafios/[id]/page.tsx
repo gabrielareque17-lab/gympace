@@ -6,12 +6,13 @@ import { AppShell } from "@/components/ui/layout/app-shell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { ChallengeRespondButtons } from "@/components/challenges/challenge-respond-buttons";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createSupabaseAdminClient, hasSupabaseAdminEnv } from "@/lib/supabase-admin";
 import {
   getChallengeProgress,
   GOAL_CONFIG,
   STATUS_CONFIG,
   daysLeft,
+  finalizeChallengeVictory,
   formatProgress,
   type ChallengeRow,
   type ChallengeProfile,
@@ -46,7 +47,7 @@ export default async function DesafioDetailPage({ params }: Props) {
     .single();
 
   if (!rawChallenge) notFound();
-  const challenge = rawChallenge as ChallengeRow;
+  let challenge = rawChallenge as ChallengeRow;
 
   // Authorization: only participants can view
   if (challenge.creator_id !== user.id && challenge.challenged_id !== user.id) {
@@ -54,8 +55,8 @@ export default async function DesafioDetailPage({ params }: Props) {
   }
 
   // Fetch profiles
-  const adminSupabase = createSupabaseAdminClient();
-  const { data: profilesData } = await adminSupabase
+  const dataSupabase = hasSupabaseAdminEnv() ? createSupabaseAdminClient() : supabase;
+  const { data: profilesData } = await dataSupabase
     .from("profiles")
     .select("user_id, username, display_name, avatar_id")
     .in("user_id", [challenge.creator_id, challenge.challenged_id]);
@@ -89,14 +90,14 @@ export default async function DesafioDetailPage({ params }: Props) {
   ) {
     [creatorProgress, challengedProgress] = await Promise.all([
       getChallengeProgress(
-        adminSupabase,
+        dataSupabase,
         challenge.creator_id,
         challenge.goal_type,
         challenge.start_date,
         challenge.end_date
       ),
       getChallengeProgress(
-        adminSupabase,
+        dataSupabase,
         challenge.challenged_id,
         challenge.goal_type,
         challenge.start_date,
@@ -106,6 +107,37 @@ export default async function DesafioDetailPage({ params }: Props) {
   }
 
   const target = Number(challenge.target_value);
+
+  if (challenge.status === "active" && hasSupabaseAdminEnv()) {
+    const creatorReached = creatorProgress >= target;
+    const challengedReached = challengedProgress >= target;
+    const winnerId = creatorReached && challengedReached
+      ? creatorProgress === challengedProgress
+        ? null
+        : creatorProgress > challengedProgress
+          ? challenge.creator_id
+          : challenge.challenged_id
+      : creatorReached
+        ? challenge.creator_id
+        : challengedReached
+          ? challenge.challenged_id
+          : null;
+
+    if (winnerId) {
+      const winnerProgress = winnerId === challenge.creator_id ? creatorProgress : challengedProgress;
+      const result = await finalizeChallengeVictory(dataSupabase, {
+        challenge,
+        winnerId,
+        winnerProgress,
+        targetProgress: target,
+      });
+
+      if (result.finalized) {
+        challenge = { ...challenge, status: "finished", winner_id: winnerId };
+      }
+    }
+  }
+
   const creatorPct = Math.min(100, Math.round((creatorProgress / target) * 100));
   const challengedPct = Math.min(100, Math.round((challengedProgress / target) * 100));
 
@@ -130,6 +162,8 @@ export default async function DesafioDetailPage({ params }: Props) {
 
   const creatorIsWinner = creatorWon || autoCreatorWon;
   const challengedIsWinner = challengedWon || autoChallengWon;
+  const winnerProfile = creatorIsWinner ? creator : challengedIsWinner ? challenged : null;
+  const winnerProgress = creatorIsWinner ? creatorProgress : challengedIsWinner ? challengedProgress : 0;
 
   return (
     <AppShell>
@@ -324,6 +358,43 @@ export default async function DesafioDetailPage({ params }: Props) {
           </section>
 
           {/* ── Details ── */}
+          {isFinished && winnerProfile && (
+            <section className="relative overflow-hidden rounded-2xl border border-[#EAB308]/20 bg-[#EAB308]/[0.05] p-5 shadow-[0_0_36px_rgba(234,179,8,0.08)]">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#EAB308]/40 to-transparent" />
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <AvatarDisplay
+                    avatarId={winnerProfile.avatar_id}
+                    initials={initials(winnerProfile)}
+                    size="md"
+                  />
+                  <div className="absolute -right-1.5 -top-1.5 grid size-7 place-items-center rounded-full bg-[#EAB308] shadow-[0_0_18px_rgba(234,179,8,0.45)]">
+                    <Trophy className="size-3.5 text-[#080808]" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#EAB308]/75">
+                    Vencedor do duelo
+                  </p>
+                  <h2 className="truncate font-display text-xl font-bold text-[#F5F5F5]">
+                    {displayName(winnerProfile)}
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-[#F5F5F5]/45">
+                    Trofeu exclusivo liberado no perfil
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-lg font-black text-[#EAB308]">
+                    {formatProgress(winnerProgress, challenge.goal_type)}
+                  </p>
+                  <p className="text-[10px] font-semibold text-[#F5F5F5]/30">
+                    meta {formatProgress(target, challenge.goal_type)}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className="rounded-2xl border border-white/[0.06] bg-[#111111]">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
 

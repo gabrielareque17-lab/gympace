@@ -113,7 +113,7 @@ async function notifyTrophyAwarded(
     user_id: input.userId,
     type: "exclusive_trophy",
     title: "Trofeu exclusivo recebido",
-    message: `Voce recebeu: ${trophy.name}`,
+    message: `Você recebeu: ${trophy.name}`,
     data: { trophy_id: input.trophyId },
   });
 
@@ -122,7 +122,7 @@ async function notifyTrophyAwarded(
   await sendPushNotification({
     playerIds: [target.onesignal_player_id],
     title: "Trofeu exclusivo recebido",
-    message: `Voce recebeu: ${trophy.name}`,
+    message: `Você recebeu: ${trophy.name}`,
     data: { type: "exclusive_trophy", trophy_id: input.trophyId },
   });
 }

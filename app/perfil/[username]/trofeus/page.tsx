@@ -67,7 +67,7 @@ const EXCLUSIVE_RARITIES: Record<string, { label: string; color: string }> = {
 const ATHLETE_LABELS: Record<string, string> = {
   runner: "Corredor",
   gym_rat: "Atleta de Academia",
-  hybrid_athlete: "Atleta Hibrido",
+  hybrid_athlete: "Atleta Híbrido",
   power_athlete: "Atleta de Forca",
 };
 
@@ -373,7 +373,7 @@ export default async function ProfileTrophiesPage({ params }: Props) {
                   Trofeus de {displayName}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F5F5F5]/42">
-                  Conquistas automaticas, trofeus exclusivos, temporadas e raridades exibidas no perfil publico.
+                  Conquistas automáticas, troféus exclusivos, temporadas e raridades exibidas no perfil público.
                 </p>
               </div>
               <div className="w-fit rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#B6FF00]">

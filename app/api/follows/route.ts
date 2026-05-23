@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createSupabaseAdminClient } from '@/lib/supabase-admin'
+import { createOptionalSupabaseAdminClient } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { sendPushNotification } from '@/lib/send-push'
 
@@ -44,7 +44,11 @@ export async function POST(request: Request) {
   const followerName =
     followerProfile?.display_name || followerProfile?.username || 'Alguém'
 
-  const adminSupabase = createSupabaseAdminClient()
+  const adminSupabase = createOptionalSupabaseAdminClient()
+  if (!adminSupabase) {
+    return NextResponse.json({ ok: true, notificationSkipped: true })
+  }
+
   await adminSupabase.from('notifications').insert({
     user_id: following_id,
     type: 'new_follower',

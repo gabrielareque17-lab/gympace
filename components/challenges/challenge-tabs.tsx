@@ -1,10 +1,11 @@
 "use client";
 
+import type { ElementType } from "react";
 import { useState } from "react";
+import { CheckCircle2, Clock, History, Swords } from "lucide-react";
 
 import { ChallengeCard } from "./challenge-card";
-import type { ChallengeRow, ChallengeProfile } from "@/lib/challenge-progress";
-import { Swords, Clock, CheckCircle2, History } from "lucide-react";
+import type { ChallengeProfile, ChallengeRow } from "@/lib/challenge-progress";
 
 interface ChallengeWithProfiles {
   challenge: ChallengeRow;
@@ -25,7 +26,7 @@ type Tab = "received" | "sent" | "active" | "history";
 const TABS: {
   key: Tab;
   label: string;
-  icon: React.ElementType;
+  icon: ElementType;
   emptyMessage: string;
   emptyHint: string;
 }[] = [
@@ -34,7 +35,7 @@ const TABS: {
     label: "Recebidos",
     icon: Swords,
     emptyMessage: "Nenhum desafio recebido",
-    emptyHint: "Quando alguém te desafiar, aparecer aqui.",
+    emptyHint: "Quando alguém te desafiar, aparecerá aqui.",
   },
   {
     key: "sent",
@@ -59,13 +60,7 @@ const TABS: {
   },
 ];
 
-export function ChallengeTabs({
-  received,
-  sent,
-  active,
-  history,
-  currentUserId,
-}: ChallengeTabsProps) {
+export function ChallengeTabs({ received, sent, active, history, currentUserId }: ChallengeTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>(
     received.length > 0 ? "received" : active.length > 0 ? "active" : "received"
   );
@@ -85,11 +80,10 @@ export function ChallengeTabs({
   };
 
   const current = data[activeTab];
-  const tab = TABS.find((t) => t.key === activeTab)!;
+  const tab = TABS.find((item) => item.key === activeTab)!;
 
   return (
     <div>
-      {/* ── Tab bar ── */}
       <div className="mb-5 flex gap-1 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1">
         {TABS.map(({ key, label, icon: Icon }) => {
           const isActive = activeTab === key;
@@ -110,9 +104,7 @@ export function ChallengeTabs({
               {counts[key] > 0 && (
                 <span
                   className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full text-[8px] font-black tabular-nums text-[#080808]"
-                  style={{
-                    background: isActive ? "#B6FF00" : "rgba(182,255,0,0.55)",
-                  }}
+                  style={{ background: isActive ? "#B6FF00" : "rgba(182,255,0,0.55)" }}
                 >
                   {counts[key] > 9 ? "9+" : counts[key]}
                 </span>
@@ -122,16 +114,13 @@ export function ChallengeTabs({
         })}
       </div>
 
-      {/* ── Content ── */}
       {current.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-14 text-center">
           <div className="grid size-14 place-items-center rounded-2xl border border-white/[0.06] bg-white/[0.03]">
             <tab.icon className="size-6 text-[#F5F5F5]/20" strokeWidth={1.5} />
           </div>
           <div>
-            <p className="font-display text-sm font-bold text-[#F5F5F5]/55">
-              {tab.emptyMessage}
-            </p>
+            <p className="font-display text-sm font-bold text-[#F5F5F5]/55">{tab.emptyMessage}</p>
             <p className="mt-1 text-xs text-[#F5F5F5]/28">{tab.emptyHint}</p>
           </div>
         </div>

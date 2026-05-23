@@ -120,7 +120,7 @@ export default function AdminSocialPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Erro ao criar trofeu.");
+        setError(json.error ?? "Erro ao criar troféu.");
         return;
       }
       setNotice("Trofeu criado.");
@@ -144,7 +144,7 @@ export default function AdminSocialPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Erro ao entregar trofeu.");
+        setError(json.error ?? "Erro ao entregar troféu.");
         return;
       }
       setNotice("Trofeu entregue.");
@@ -190,7 +190,7 @@ export default function AdminSocialPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error ?? "Erro ao enviar notificacao.");
+        setError(json.error ?? "Erro ao enviar notificação.");
         return;
       }
       setNotice("Notificacao enviada.");
@@ -202,7 +202,7 @@ export default function AdminSocialPage() {
       <div className="mb-5 sm:mb-7">
         <h1 className="text-2xl font-bold tracking-tight">Admin Social</h1>
         <p className="mt-1 text-sm text-[#F5F5F5]/40">
-          Gerencie usuarios, trofeus, avatares exclusivos e updates direcionados.
+          Gerencie usuários, troféus, avatares exclusivos e updates direcionados.
         </p>
       </div>
 
@@ -336,7 +336,7 @@ export default function AdminSocialPage() {
           <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Trophy className="size-4 text-[#EAB308]" />
-              <h2 className="font-display text-base font-semibold">Criar trofeu exclusivo</h2>
+              <h2 className="font-display text-base font-semibold">Criar troféu exclusivo</h2>
             </div>
             <div className="mb-4 rounded-2xl border p-4" style={{ borderColor: `${RARITY_COLORS[trophyDraft.rarity]}35`, background: `${RARITY_COLORS[trophyDraft.rarity]}0D` }}>
               <div className="flex items-center gap-3">
@@ -347,13 +347,13 @@ export default function AdminSocialPage() {
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em]" style={{ color: RARITY_COLORS[trophyDraft.rarity] }}>
                     {trophyDraft.rarity} · {trophyDraft.visual || "trophy"}
                   </p>
-                  <h3 className="truncate font-display text-base font-bold">{trophyDraft.name || "Previa do trofeu"}</h3>
+                  <h3 className="truncate font-display text-base font-bold">{trophyDraft.name || "Prévia do troféu"}</h3>
                   <p className="line-clamp-2 text-xs text-[#F5F5F5]/38">{trophyDraft.description || "Descricao e visual aparecem aqui antes de criar."}</p>
                 </div>
               </div>
             </div>
             <form action={createTrophy} className="grid gap-3 sm:grid-cols-2">
-              <input name="name" required placeholder="Nome do trofeu" value={trophyDraft.name} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, name: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
+              <input name="name" required placeholder="Nome do troféu" value={trophyDraft.name} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, name: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />
               <select name="rarity" value={trophyDraft.rarity} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, rarity: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-[#161616] px-3 py-2.5 text-sm outline-none">
                 {RARITIES.map((rarity) => <option key={rarity} value={rarity}>{rarity}</option>)}
               </select>
@@ -361,7 +361,7 @@ export default function AdminSocialPage() {
               <textarea name="description" placeholder="Descricao" rows={2} value={trophyDraft.description} onChange={(e) => setTrophyDraft((cur) => ({ ...cur, description: e.target.value }))} className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30 sm:col-span-2" />
               <button disabled={isPending} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-4 py-2.5 text-sm font-bold text-[#080808] disabled:opacity-50">
                 {isPending ? <Loader2 className="size-4 animate-spin" /> : <Gift className="size-4" />}
-                Criar trofeu
+                Criar troféu
               </button>
             </form>
           </section>
@@ -369,14 +369,14 @@ export default function AdminSocialPage() {
           <section className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <Gift className="size-4 text-[#B6FF00]" />
-              <h2 className="font-display text-base font-semibold">Entregar trofeu</h2>
+              <h2 className="font-display text-base font-semibold">Entregar troféu</h2>
             </div>
             <form action={awardTrophy} className="grid gap-3">
               <p className="text-xs text-[#F5F5F5]/35">
                 Usuario selecionado: {selectedUser ? selectedUser.display_name ?? selectedUser.username : "nenhum"}
               </p>
               <select value={selectedTrophyId} onChange={(e) => setSelectedTrophyId(e.target.value)} required className="rounded-xl border border-white/[0.08] bg-[#161616] px-3 py-2.5 text-sm outline-none">
-                <option value="">Escolha o trofeu</option>
+                <option value="">Escolha o troféu</option>
                 {trophies.map((trophy) => <option key={trophy.id} value={trophy.id}>{trophy.name} · {trophy.rarity}</option>)}
               </select>
               <input name="note" placeholder="Nota interna opcional" className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-[#B6FF00]/30" />

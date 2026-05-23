@@ -16,12 +16,12 @@ export async function POST(_req: Request, { params }: Params) {
 
   const { data: competition } = await supabase
     .from('competitions')
-    .select('id, end_date')
+    .select('id, end_date, status')
     .eq('id', id)
     .maybeSingle()
 
   if (!competition) return NextResponse.json({ error: 'Competition not found' }, { status: 404 })
-  if (new Date(competition.end_date) < new Date()) {
+  if (competition.status === 'finished' || new Date(competition.end_date) < new Date()) {
     return NextResponse.json({ error: 'Competition has ended' }, { status: 400 })
   }
 

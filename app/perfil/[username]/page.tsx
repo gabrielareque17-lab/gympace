@@ -20,7 +20,7 @@ import {
   type TrophyGrant,
 } from "@/components/profile/latest-trophies-section";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createSupabaseAdminClient, hasSupabaseAdminEnv } from "@/lib/supabase-admin";
 import { normalizeMuscleGroups } from "@/lib/muscles";
 import { syncUserXP } from "@/lib/xp";
 import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
@@ -112,7 +112,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   const isOwnProfile = currentUser?.id === profile.user_id
 
-  const adminSupabase = createSupabaseAdminClient();
+  const dataSupabase = hasSupabaseAdminEnv() ? createSupabaseAdminClient() : supabase;
 
   const [
     { data: followRow },
@@ -129,19 +129,19 @@ export default async function PublicProfilePage({ params }: Props) {
           .eq("following_id", profile.user_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    adminSupabase
+    dataSupabase
       .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("following_id", profile.user_id),
-    adminSupabase
+    dataSupabase
       .from("follows")
       .select("*", { count: "exact", head: true })
       .eq("follower_id", profile.user_id),
-    adminSupabase
+    dataSupabase
       .from("streaks")
       .select("streak_type,current_streak,best_streak,last_activity_date")
       .eq("user_id", profile.user_id),
-    adminSupabase
+    dataSupabase
       .from("user_trophies")
       .select("id,awarded_at,awarded_by,note,exclusive_trophies(name,description,rarity,visual)")
       .eq("user_id", profile.user_id)
@@ -154,15 +154,15 @@ export default async function PublicProfilePage({ params }: Props) {
   type GymRow = { muscle_group: string | null; muscle_groups: string[] | null; created_at: string };
 
   const [{ data: rawRuns }, workoutsResult, xpSync] = await Promise.all([
-    adminSupabase
+    dataSupabase
       .from("runs")
       .select("distance, pace, created_at")
       .eq("user_id", profile.user_id),
-    adminSupabase
+    dataSupabase
       .from("workouts")
       .select("muscle_group, muscle_groups, created_at")
       .eq("user_id", profile.user_id),
-    syncUserXP(adminSupabase, profile.user_id),
+    syncUserXP(dataSupabase, profile.user_id),
   ]);
 
   const runs: RunRow[] = (rawRuns ?? []) as RunRow[];
@@ -186,6 +186,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const profileLevel = xpSync.currentLevel;
   const rankStyle = RANK_STYLES[xpSync.rank] ?? RANK_STYLES.rookie;
   const xpLevelProgress = xpSync.levelProgress;
+  const totalXp = xpSync.totalXp;
 
   const avatarDef = profile.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
@@ -406,6 +407,9 @@ export default async function PublicProfilePage({ params }: Props) {
                       </span>
                       <span className="text-xs font-semibold text-[#F5F5F5]/70">{rankStyle.label}</span>
                     </div>
+                    <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
+                      {totalXp.toLocaleString("pt-BR")} XP total
+                    </span>
                   </div>
                   <div className="h-[4px] overflow-hidden rounded-full bg-white/[0.07]">
                     <div
@@ -414,6 +418,7 @@ export default async function PublicProfilePage({ params }: Props) {
                     />
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
+                    <span>Progresso do nível</span>
                     <span className="font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
                       {xpSync.xpIntoLevel.toLocaleString("pt-BR")} / {xpSync.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                     </span>

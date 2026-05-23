@@ -1,9 +1,11 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { updateActiveChallengesForUser } from "@/lib/challenge-progress";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { deleteFeedEvent, insertFeedEvent } from "@/lib/feed";
 import { normalizeMuscleGroups, VALID_MUSCLE_DETAILS, VALID_MUSCLE_GROUPS } from "@/lib/muscles";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { syncStreaksForUser } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { syncUserXP } from "@/lib/xp";
@@ -14,7 +16,7 @@ const VALID_INTENSITIES = ["leve", "moderado", "intenso"] as const;
 const VALID_SPLITS = ["push", "pull", "legs", "upper", "lower", "full-body", "custom"] as const;
 const MAX_WORKOUT_DURATION_MINUTES = 360;
 
-async function revalidateAll(competitionIds: string[] = []) {
+async function revalidateAll(competitionIds: string[] = [], challengeIds: string[] = []) {
   revalidatePath("/");
   revalidatePath("/academia");
   revalidatePath("/treinos");
@@ -26,6 +28,7 @@ async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/social");
   revalidatePath("/perfil");
   for (const id of competitionIds) revalidatePath(`/competicoes/${id}`);
+  for (const id of challengeIds) revalidatePath(`/desafios/${id}`);
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
@@ -164,8 +167,10 @@ export async function PATCH(req: Request, { params }: Params) {
   }, data.created_at ?? undefined);
 
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
+  const adminSupabase = createOptionalSupabaseAdminClient();
+  const challengeUpdates = adminSupabase ? await updateActiveChallengesForUser(adminSupabase, user.id) : [];
   const xpFeedback = await syncUserXP(supabase, user.id);
 
-  await revalidateAll(progressUpdates.map((u) => u.competitionId));
-  return NextResponse.json({ workout: data, progressUpdates, xpFeedback });
+  await revalidateAll(progressUpdates.map((u) => u.competitionId), challengeUpdates.map((u) => u.challengeId));
+  return NextResponse.json({ workout: data, progressUpdates, challengeUpdates, xpFeedback });
 }

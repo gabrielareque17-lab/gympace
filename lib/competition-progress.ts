@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getLocalDateKey } from "@/lib/date-utils";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type CompetitionType = "corrida" | "academia" | "streak" | "hibrido";
 
@@ -22,9 +22,30 @@ type ParticipantRow = {
     id: string;
     title: string;
     type: CompetitionType;
+    target_value: number;
     start_date: string;
     end_date: string;
+    status: "active" | "finished" | "canceled" | null;
+    winner_id: string | null;
+    finished_at: string | null;
   } | null;
+};
+
+export type CompetitionRow = {
+  id: string;
+  title: string;
+  type: CompetitionType;
+  target_value: number;
+  start_date: string;
+  end_date: string;
+  status?: "active" | "finished" | "canceled" | null;
+  winner_id?: string | null;
+  finished_at?: string | null;
+};
+
+export type CompetitionLeaderboardEntry = {
+  user_id: string;
+  progress: number;
 };
 
 type RunActivity = {
@@ -51,7 +72,7 @@ export async function updateActiveCompetitionProgressForUser(
 
   const { data: participantRows, error: participantErr } = await supabase
     .from("competition_participants")
-    .select("competition_id, progress, competitions(id, title, type, start_date, end_date)")
+    .select("competition_id, progress, competitions(id, title, type, target_value, start_date, end_date, status, winner_id, finished_at)")
     .eq("user_id", userId);
 
   if (participantErr) {
@@ -69,6 +90,7 @@ export async function updateActiveCompetitionProgressForUser(
   const activeRows = rows.filter((row) => {
     const competition = row.competitions;
     if (!competition) return false;
+    if ((competition.status ?? "active") !== "active") return false;
     return new Date(competition.start_date) <= now && new Date(competition.end_date) >= now;
   });
 
@@ -82,7 +104,11 @@ export async function updateActiveCompetitionProgressForUser(
   ]);
 
   const updates: CompetitionProgressUpdate[] = [];
-  const writeSupabase = createSupabaseAdminClient();
+  const writeSupabase = createOptionalSupabaseAdminClient();
+  if (!writeSupabase) {
+    console.warn("[competition-progress] SUPABASE_SERVICE_ROLE_KEY is not configured; progress updates were skipped.");
+    return updates;
+  }
 
   for (const row of activeRows) {
     const competition = row.competitions!;
@@ -118,7 +144,115 @@ export async function updateActiveCompetitionProgressForUser(
     });
   }
 
+  for (const row of activeRows) {
+    const competition = row.competitions!;
+    const { data: participants, error: participantsError } = await writeSupabase
+      .from("competition_participants")
+      .select("user_id, progress")
+      .eq("competition_id", competition.id);
+
+    if (participantsError) {
+      console.error("[competition] participants lookup failed:", participantsError.code, participantsError.message);
+      continue;
+    }
+
+    await finalizeCompetitionVictory(
+      writeSupabase,
+      {
+        id: competition.id,
+        title: competition.title,
+        type: competition.type,
+        target_value: Number(competition.target_value),
+        start_date: competition.start_date,
+        end_date: competition.end_date,
+        status: competition.status,
+        winner_id: competition.winner_id,
+        finished_at: competition.finished_at,
+      },
+      ((participants ?? []) as { user_id: string; progress: number | null }[]).map((participant) => ({
+        user_id: participant.user_id,
+        progress: Number(participant.progress ?? 0),
+      }))
+    );
+  }
+
   return updates;
+}
+
+export async function finalizeCompetitionVictory(
+  supabase: SupabaseClient,
+  competition: CompetitionRow,
+  leaderboard: CompetitionLeaderboardEntry[]
+) {
+  if ((competition.status ?? "active") !== "active" || competition.winner_id) {
+    return { finalized: false };
+  }
+
+  const winner = resolveCompetitionWinner(competition, leaderboard);
+  if (!winner) return { finalized: false };
+
+  const { data: updated, error: updateError } = await supabase
+    .from("competitions")
+    .update({ status: "finished", winner_id: winner.user_id, finished_at: new Date().toISOString() })
+    .eq("id", competition.id)
+    .neq("status", "finished")
+    .is("winner_id", null)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) {
+    console.error("[competition] finish failed:", updateError.code, updateError.message);
+    return { finalized: false };
+  }
+  if (!updated) return { finalized: false };
+
+  const trophy = await ensureCompetitionVictoryTrophy(supabase, competition);
+  if (trophy?.id) {
+    const { error: grantError } = await supabase
+      .from("user_trophies")
+      .insert({
+        user_id: winner.user_id,
+        trophy_id: trophy.id,
+        awarded_by: null,
+        note: `Venceu "${competition.title}" com ${formatCompetitionProgress(winner.progress, competition.type)}.`,
+      });
+
+    if (grantError && grantError.code !== "23505") {
+      console.error("[competition] trophy grant failed:", grantError.code, grantError.message);
+    }
+  }
+
+  await supabase.from("notifications").insert({
+    user_id: winner.user_id,
+    type: "competition_won",
+    title: "Competição vencida",
+    message: `Você venceu "${competition.title}" e recebeu um troféu exclusivo.`,
+    data: { competition_id: competition.id, trophy_id: trophy?.id ?? null },
+  });
+
+  await insertCompetitionWonFeedEvent(supabase, winner.user_id, competition, trophy);
+
+  return { finalized: true, winnerId: winner.user_id, trophyId: trophy?.id ?? null };
+}
+
+export function resolveCompetitionWinner(
+  competition: CompetitionRow,
+  leaderboard: CompetitionLeaderboardEntry[]
+) {
+  const sorted = [...leaderboard].sort((a, b) => b.progress - a.progress);
+  const leader = sorted[0];
+  if (!leader) return null;
+
+  const runnerUp = sorted[1];
+  const target = Number(competition.target_value);
+  const reachedTarget = leader.progress >= target;
+  const endedByDate = new Date(competition.end_date) < new Date();
+
+  if (!reachedTarget && !endedByDate) return null;
+  if (runnerUp && runnerUp.progress === leader.progress) return null;
+  if (leader.progress <= 0) return null;
+
+  return leader;
 }
 
 export function calculateCompetitionProgress(
@@ -138,6 +272,76 @@ export function calculateCompetitionProgress(
   if (type === "streak") return streak;
 
   return roundMetric(distance + workoutCount * 2 + streak * 3);
+}
+
+export function formatCompetitionProgress(value: number, type: CompetitionType) {
+  return `${roundMetric(value)} ${TYPE_UNIT[type]}`;
+}
+
+async function ensureCompetitionVictoryTrophy(supabase: SupabaseClient, competition: CompetitionRow) {
+  const slug = `competicao-${competition.id}`;
+  const { data, error } = await supabase
+    .from("exclusive_trophies")
+    .upsert(
+      {
+        slug,
+        name: "Campeão de Competição",
+        description: `Venceu a competição "${competition.title}".`,
+        rarity: "legendary",
+        visual: "trophy",
+        is_unique: true,
+      },
+      { onConflict: "slug" }
+    )
+    .select("id,name")
+    .single();
+
+  if (error) {
+    console.error("[competition] trophy ensure failed:", error.code, error.message);
+    return null;
+  }
+
+  return data as { id: string; name: string };
+}
+
+async function insertCompetitionWonFeedEvent(
+  supabase: SupabaseClient,
+  userId: string,
+  competition: CompetitionRow,
+  trophy: { id: string; name: string } | null
+) {
+  const dedupeKey = `competition_won:${competition.id}`;
+  const payload = {
+    competition_id: competition.id,
+    trophy_id: trophy?.id ?? null,
+    trophy_name: trophy?.name ?? "Campeão de Competição",
+    rarity: "legendary",
+    visual: "trophy",
+    dedupe_key: dedupeKey,
+  };
+
+  const { data: existing, error: existingError } = await supabase
+    .from("activities_feed")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("event_type", "competition_won")
+    .filter("payload->>dedupe_key", "eq", dedupeKey)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error("[competition] feed dedupe lookup failed:", existingError.code, existingError.message);
+  }
+  if (existing?.id) return;
+
+  const { error } = await supabase.from("activities_feed").insert({
+    user_id: userId,
+    event_type: "competition_won",
+    payload,
+  });
+
+  if (error) {
+    console.error("[competition] feed event failed:", error.code, error.message);
+  }
 }
 
 export function calculateLongestActivityStreak(activityDates: string[]) {

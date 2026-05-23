@@ -105,7 +105,7 @@ export function FeedList({ initialEvents, initialHasMore }: Props) {
             </span>
             <div className="h-px flex-1 bg-white/[0.05]" />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {groupEvents.map((event) => (
               <FeedCard key={event.id} event={event} />
             ))}

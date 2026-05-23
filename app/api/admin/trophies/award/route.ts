@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { awardTrophy } from "@/lib/trophies";
 
@@ -33,7 +33,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "user_id e trophy_id são obrigatórios" }, { status: 400 });
   }
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = createOptionalSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for awarding trophies." }, { status: 503 });
+  }
 
   const result = await awardTrophy(supabase, {
     userId: user_id,

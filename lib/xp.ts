@@ -7,7 +7,7 @@ import {
 import { calculateLongestActivityStreak } from "@/lib/competition-progress";
 import { getLocalDateKey } from "@/lib/date-utils";
 import { normalizeMuscleGroups } from "@/lib/muscles";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createSupabaseAdminClient, hasSupabaseAdminEnv } from "@/lib/supabase-admin";
 
 export type XPRank = "rookie" | "bronze" | "silver" | "gold" | "platinum" | "elite";
 
@@ -96,6 +96,8 @@ const ACHIEVEMENT_XP_BY_RARITY = {
   lendario: 450,
 } as const;
 
+let warnedMissingAdminEnv = false;
+
 export async function syncUserXP(
   supabase: SupabaseClient,
   userId: string
@@ -113,21 +115,26 @@ export async function syncUserXP(
   const rank = getRankForLevel(currentLevel);
   const levelState = getLevelProgress(totalXp);
 
-  const adminSupabase = createSupabaseAdminClient();
-  const { error } = await adminSupabase
-    .from("profiles")
-    .upsert(
-      {
-        user_id: userId,
-        total_xp: totalXp,
-        current_level: currentLevel,
-        level: currentLevel,
-        rank,
-      },
-      { onConflict: "user_id" }
-    );
+  if (hasSupabaseAdminEnv()) {
+    const adminSupabase = createSupabaseAdminClient();
+    const { error } = await adminSupabase
+      .from("profiles")
+      .upsert(
+        {
+          user_id: userId,
+          total_xp: totalXp,
+          current_level: currentLevel,
+          level: currentLevel,
+          rank,
+        },
+        { onConflict: "user_id" }
+      );
 
-  if (error) console.error("[xp] profile upsert error:", error.code, error.message, error.details);
+    if (error) console.error("[xp] profile upsert error:", error.code, error.message, error.details);
+  } else if (!warnedMissingAdminEnv) {
+    warnedMissingAdminEnv = true;
+    console.warn("[xp] SUPABASE_SERVICE_ROLE_KEY is not configured; XP was calculated but not persisted to profiles.");
+  }
 
   return {
     previousXp,
@@ -151,9 +158,9 @@ export async function awardXP(
   input: AwardXPInput
 ): Promise<XPFeedback> {
   const feedback = await syncUserXP(supabase, input.userId);
-  const adminSupabase = createSupabaseAdminClient();
 
-  if (feedback.gainedXp > 0 || feedback.leveledUp) {
+  if ((feedback.gainedXp > 0 || feedback.leveledUp) && hasSupabaseAdminEnv()) {
+    const adminSupabase = createSupabaseAdminClient();
     console.info("[xp] awarded", {
       userId: input.userId,
       source: input.source,

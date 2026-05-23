@@ -1,11 +1,13 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { updateActiveChallengesForUser } from "@/lib/challenge-progress";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { createFeedEvent } from "@/lib/feed";
 import { normalizeMuscleGroups, VALID_MUSCLE_DETAILS, VALID_MUSCLE_GROUPS } from "@/lib/muscles";
 import { isRateLimited } from "@/lib/security";
 import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { awardXP } from "@/lib/xp";
 
@@ -109,11 +111,21 @@ export async function POST(req: Request) {
     let xpFeedback: Awaited<ReturnType<typeof awardXP>> | null = null;
     let streakMilestone: number | null = null;
     let hybridBonus = false;
+    let challengeUpdates: Awaited<ReturnType<typeof updateActiveChallengesForUser>> = [];
 
     try {
       progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
     } catch (err) {
       console.error("[workouts] competition progress failed:", err);
+    }
+
+    try {
+      const adminSupabase = createOptionalSupabaseAdminClient();
+      if (adminSupabase) {
+        challengeUpdates = await updateActiveChallengesForUser(adminSupabase, user.id);
+      }
+    } catch (err) {
+      console.error("[workouts] challenge victory check failed:", err);
     }
 
     try {
@@ -204,8 +216,9 @@ export async function POST(req: Request) {
     revalidatePath("/social");
     revalidatePath("/perfil");
     for (const update of progressUpdates) revalidatePath(`/competicoes/${update.competitionId}`);
+    for (const update of challengeUpdates) revalidatePath(`/desafios/${update.challengeId}`);
 
-    return NextResponse.json({ workout: data, progressUpdates, xpFeedback, hybridBonus }, { status: 201 });
+    return NextResponse.json({ workout: data, progressUpdates, challengeUpdates, xpFeedback, hybridBonus }, { status: 201 });
   } catch (err) {
     console.error("[workouts] UNHANDLED ERROR:", err);
     const message = err instanceof Error ? err.message : String(err);

@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createSupabaseAdminClient, hasSupabaseAdminEnv } from "@/lib/supabase-admin";
 import { FollowList, type FollowUser } from "@/components/social/follow-list";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +14,9 @@ type Props = { params: Promise<{ username: string }> };
 export default async function SeguindoPage({ params }: Props) {
   const { username } = await params;
   const supabase = await createSupabaseServerClient();
-  const admin = createSupabaseAdminClient();
+  const dataSupabase = hasSupabaseAdminEnv() ? createSupabaseAdminClient() : supabase;
 
-  const { data: profile } = await admin
+  const { data: profile } = await dataSupabase
     .from("profiles")
     .select("user_id, username, display_name")
     .eq("username", username)
@@ -26,7 +26,7 @@ export default async function SeguindoPage({ params }: Props) {
 
   const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-  const { data: followRows } = await admin
+  const { data: followRows } = await dataSupabase
     .from("follows")
     .select("following_id")
     .eq("follower_id", profile.user_id);
@@ -37,7 +37,7 @@ export default async function SeguindoPage({ params }: Props) {
 
   if (followingIds.length > 0) {
     const [{ data: profiles }, viewerFollows] = await Promise.all([
-      admin
+      dataSupabase
         .from("profiles")
         .select("user_id, username, display_name, bio, avatar_id")
         .in("user_id", followingIds),

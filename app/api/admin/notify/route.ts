@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { sendPushNotification } from "@/lib/send-push";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const MAX_TITLE_LEN = 120;
@@ -40,7 +40,10 @@ export async function POST(request: Request) {
   if (cleanTitle.length > MAX_TITLE_LEN) return NextResponse.json({ error: "Título muito longo" }, { status: 400 });
   if (cleanMessage.length > MAX_MSG_LEN) return NextResponse.json({ error: "Mensagem muito longa" }, { status: 400 });
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = createOptionalSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin notifications." }, { status: 503 });
+  }
   const { data: target } = await supabase
     .from("profiles")
     .select("user_id, onesignal_player_id")

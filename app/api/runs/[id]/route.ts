@@ -1,8 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { updateActiveChallengesForUser } from "@/lib/challenge-progress";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { deleteFeedEvent } from "@/lib/feed";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { syncStreaksForUser } from "@/lib/streaks";
 import { syncUserXP } from "@/lib/xp";
@@ -12,7 +14,7 @@ type Params = { params: Promise<{ id: string }> };
 const VALID_RUN_TYPES = ["leve", "intervalado", "longao", "regenerativo", "prova", "ritmo", "caminhada", "esteira"] as const;
 const MAX_RUN_DISTANCE_KM = 200;
 
-async function revalidateAll(competitionIds: string[] = []) {
+async function revalidateAll(competitionIds: string[] = [], challengeIds: string[] = []) {
   revalidatePath("/");
   revalidatePath("/corridas");
   revalidatePath("/treinos");
@@ -24,6 +26,9 @@ async function revalidateAll(competitionIds: string[] = []) {
   revalidatePath("/desafios-competicoes");
   for (const id of competitionIds) {
     revalidatePath(`/competicoes/${id}`);
+  }
+  for (const id of challengeIds) {
+    revalidatePath(`/desafios/${id}`);
   }
 }
 
@@ -102,9 +107,11 @@ export async function PATCH(req: Request, { params }: Params) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
+  const adminSupabase = createOptionalSupabaseAdminClient();
+  const challengeUpdates = adminSupabase ? await updateActiveChallengesForUser(adminSupabase, user.id) : [];
   const xpFeedback = await syncUserXP(supabase, user.id);
 
-  await revalidateAll(progressUpdates.map((u) => u.competitionId));
+  await revalidateAll(progressUpdates.map((u) => u.competitionId), challengeUpdates.map((u) => u.challengeId));
 
-  return NextResponse.json({ run: data, progressUpdates, xpFeedback });
+  return NextResponse.json({ run: data, progressUpdates, challengeUpdates, xpFeedback });
 }

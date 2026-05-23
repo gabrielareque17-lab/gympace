@@ -6,7 +6,7 @@ import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { WeeklyLeaderboard } from "@/components/social/WeeklyLeaderboard";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
-import { getGlobalLeaderboard, getFriendsLeaderboard } from "@/lib/leaderboard";
+import { getGlobalLeaderboard, getFriendsLeaderboard, type LeaderboardEntry } from "@/lib/leaderboard";
 import { syncUserXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
@@ -58,20 +58,38 @@ export default async function SocialPage() {
     getFriendsLeaderboard(supabase, user.id, "xp"),
   ]);
 
-  // Garantir que a entrada do usuário atual no leaderboard reflita o XP recém-sincronizado.
+  // Garantir que a entrada do usuário atual reflita o XP recém-sincronizado.
   // profiles.total_xp pode estar defasado; xpFeedback.totalXp é a fonte de verdade.
+  // Se o usuário não está no top 200 (pelo XP cacheado), injeta a entrada com dados frescos.
   const myUserId = user.id;
-  function patchCurrentUser<T extends { userId: string; totalXp: number; currentLevel: number; rank: string | null }>(entries: T[]): T[] {
+  function injectOrPatchCurrentUser(entries: LeaderboardEntry[]): LeaderboardEntry[] {
     const idx = entries.findIndex((e) => e.userId === myUserId);
-    if (idx === -1) return entries;
+    if (idx === -1) {
+      const injected: LeaderboardEntry = {
+        userId: myUserId,
+        username: profileMeta?.username ?? null,
+        displayName: profileMeta?.display_name ?? null,
+        avatarId: profileMeta?.avatar_id ?? null,
+        rank: xpFeedback.rank,
+        currentLevel: xpFeedback.currentLevel,
+        totalXp: xpFeedback.totalXp,
+        weeklyKm: 0,
+        weeklyWorkouts: 0,
+        weeklyScore: 0,
+        currentStreak: 0,
+        seasonPoints: 0,
+        seasonBreakdown: { points: 0, runs: 0, workouts: 0, km: 0, activeDays: 0, hybridDays: 0 },
+      };
+      return [...entries, injected].sort((a, b) => b.totalXp - a.totalXp);
+    }
     const patched = [...entries];
     patched[idx] = { ...patched[idx], totalXp: xpFeedback.totalXp, currentLevel: xpFeedback.currentLevel, rank: xpFeedback.rank };
     return patched.sort((a, b) => b.totalXp - a.totalXp);
   }
-  const patchedGlobal = patchCurrentUser(globalEntries);
-  const patchedFriends = patchCurrentUser(friendsEntries);
+  const patchedGlobal = injectOrPatchCurrentUser(globalEntries);
+  const patchedFriends = injectOrPatchCurrentUser(friendsEntries);
 
-  const displayScore = profile?.total_xp ?? 0;
+  const displayScore = xpFeedback.totalXp;
   const scoreLabel = "XP total";
 
   const rankColor = RANK_COLORS[profile?.rank ?? "rookie"] ?? "#94A3B8";
@@ -82,6 +100,32 @@ export default async function SocialPage() {
 
   return (
     <AppShell>
+      <style>{`
+        @keyframes gpSeasonPulse {
+          0%, 100% {
+            box-shadow: 0 0 0 rgba(182,255,0,0), inset 0 0 0 rgba(182,255,0,0);
+            transform: translateY(0);
+          }
+          50% {
+            box-shadow: 0 0 34px rgba(182,255,0,0.10), inset 0 0 22px rgba(182,255,0,0.035);
+            transform: translateY(-1px);
+          }
+        }
+        @keyframes gpSeasonSweep {
+          0% { transform: translateX(-120%); opacity: 0; }
+          18% { opacity: 0.45; }
+          45% { opacity: 0.12; }
+          100% { transform: translateX(120%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: no-preference) {
+          .gp-season-card {
+            animation: gpSeasonPulse 3.8s ease-in-out infinite;
+          }
+          .gp-season-sweep {
+            animation: gpSeasonSweep 4.8s ease-in-out infinite;
+          }
+        }
+      `}</style>
       <div className="min-w-0 flex-1 p-6 sm:p-8 lg:p-10">
         {/* Header */}
         <header className="mb-6">
@@ -100,12 +144,16 @@ export default async function SocialPage() {
           {/* ── Season Banner ──────────────────────────────────────────────── */}
           {activeSeason && (
             <section
-              className="relative overflow-hidden rounded-2xl p-5"
+              className="gp-season-card relative overflow-hidden rounded-2xl p-5"
               style={{
                 border: `1px solid ${activeSeason.color}30`,
                 background: `linear-gradient(135deg, ${activeSeason.color}0C 0%, rgba(17,17,17,0) 60%)`,
               }}
             >
+              <div
+                className="gp-season-sweep pointer-events-none absolute inset-y-0 -left-1/3 w-1/2 rotate-12"
+                style={{ background: `linear-gradient(90deg, transparent, ${activeSeason.color}16, transparent)` }}
+              />
               <div
                 className="absolute inset-x-0 top-0 h-px"
                 style={{ background: `linear-gradient(to right, transparent, ${activeSeason.color}55, transparent)` }}

@@ -74,7 +74,7 @@ export function LatestTrophiesSection({
             </p>
             <h2 className="flex items-center gap-2 font-display text-base font-semibold">
               <Medal className="size-4 text-[#EAB308]" strokeWidth={2} />
-              Ultimos trofeus recebidos
+              Últimos troféus recebidos
             </h2>
           </div>
           <div className="grid size-8 place-items-center rounded-xl border border-[#EAB308]/20 bg-[#EAB308]/[0.06] text-[#EAB308] shadow-[0_0_18px_rgba(234,179,8,0.08)] sm:size-9">
@@ -150,7 +150,7 @@ export function LatestTrophiesSection({
                 Exclusivos
               </p>
               <h3 className="text-sm font-semibold text-[#F5F5F5]/85">
-                Ultimos trofeus exclusivos
+                Últimos troféus exclusivos
               </h3>
             </div>
             <span className="rounded-full border border-[#EAB308]/20 bg-[#EAB308]/[0.07] px-2.5 py-1 text-xs font-semibold tabular-nums text-[#EAB308]/80">
@@ -160,7 +160,7 @@ export function LatestTrophiesSection({
 
           {latestExclusiveTrophies.length === 0 ? (
             <p className="rounded-xl border border-dashed border-[#EAB308]/15 px-4 py-6 text-sm text-[#F5F5F5]/30">
-              Nenhum trofeu exclusivo recebido ainda.
+              Nenhum troféu exclusivo recebido ainda.
             </p>
           ) : (
             <div className="grid gap-1.5">

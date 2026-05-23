@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const RARITIES = ["common", "rare", "epic", "legendary", "mythic"];
@@ -21,7 +21,10 @@ export async function GET() {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = createOptionalSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin trophies." }, { status: 503 });
+  }
   const [{ data: trophies, error }, { data: grants }] = await Promise.all([
     supabase.from("exclusive_trophies").select("*").order("created_at", { ascending: false }),
     supabase
@@ -63,7 +66,10 @@ export async function POST(request: Request) {
   if (!slug) return NextResponse.json({ error: "Slug inválido" }, { status: 400 });
   if (!RARITIES.includes(rarity)) return NextResponse.json({ error: "Raridade inválida" }, { status: 400 });
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = createOptionalSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin trophies." }, { status: 503 });
+  }
   const { data, error } = await supabase
     .from("exclusive_trophies")
     .insert({

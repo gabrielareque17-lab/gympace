@@ -127,11 +127,11 @@ export function SendUpdateForm() {
         />
 
         <TextArea
-          label="Resumo da notificacao"
+          label="Resumo da notificação"
           value={message}
           onChange={setMessage}
           onDirty={handleChange}
-          placeholder="Mensagem curta que aparece no sino dos usuarios."
+          placeholder="Mensagem curta que aparece no sino dos usuários."
           maxLength={MAX_MSG}
           rows={4}
         />
@@ -173,7 +173,7 @@ export function SendUpdateForm() {
           <FeedbackBanner
             variant="success"
             title="Update publicado!"
-            body={`Historico atualizado e notificacao enviada para ${feedback.count.toLocaleString("pt-BR")} usuario${feedback.count !== 1 ? "s" : ""}.`}
+            body={`Histórico atualizado e notificação enviada para ${feedback.count.toLocaleString("pt-BR")} usuário${feedback.count !== 1 ? "s" : ""}.`}
           />
         )}
         {status === "error" && (
@@ -187,7 +187,7 @@ export function SendUpdateForm() {
         </p>
         <UpdatePreview title={title} message={message} features={features} updateType={updateType} />
         <p className="mt-3 text-[11px] leading-relaxed text-[#F5F5F5]/25">
-          O resumo vai para a notificacao. Os detalhes ficam salvos na pagina de atualizacoes.
+          O resumo vai para a notificação. Os detalhes ficam salvos na página de atualizações.
         </p>
       </div>
     </div>
@@ -367,7 +367,7 @@ function UpdatePreview({
               {title.trim() || "Titulo da atualizacao"}
             </h3>
             <p className="mt-1.5 text-[12px] leading-relaxed text-[#F5F5F5]/48">
-              {message.trim() || "Resumo curto da notificacao para todos os usuarios."}
+              {message.trim() || "Resumo curto da notificação para todos os usuários."}
             </p>
             {featureLines.length > 0 && (
               <div className="mt-3 space-y-2">

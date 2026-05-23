@@ -245,6 +245,7 @@ export default async function PerfilPage() {
   const xpLevelProgress = xpSync?.levelProgress ?? 0;
   const xpIntoLevel = xpSync?.xpIntoLevel ?? 0;
   const xpForNextLevel = xpSync?.xpForNextLevel ?? null;
+  const totalXp = xpSync?.totalXp ?? 0;
 
   const avatarDef = profile?.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
   const athleteType = profile?.avatar_type ?? "runner";
@@ -501,7 +502,7 @@ export default async function PerfilPage() {
                     </span>
                   </div>
                   <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
-                    {xpIntoLevel.toLocaleString("pt-BR")} / {xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
+                    {totalXp.toLocaleString("pt-BR")} XP total
                   </span>
                 </div>
                 <div className="h-[4px] overflow-hidden rounded-full bg-white/[0.07]">
@@ -513,6 +514,12 @@ export default async function PerfilPage() {
                       boxShadow: `0 0 10px ${rankStyle.color}55`,
                     }}
                   />
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
+                  <span>Progresso do nível</span>
+                  <span className="font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
+                    {xpIntoLevel.toLocaleString("pt-BR")} / {xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
+                  </span>
                 </div>
               </div>
 

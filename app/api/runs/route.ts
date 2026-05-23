@@ -1,11 +1,13 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { updateActiveChallengesForUser } from "@/lib/challenge-progress";
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { createFeedEvent } from "@/lib/feed";
 import { checkAndUpdatePersonalRecords, PR_LABELS } from "@/lib/personal-records";
 import { isRateLimited } from "@/lib/security";
 import { syncStreaksForUser, checkHybridBonusToday, getNewMilestone } from "@/lib/streaks";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { awardXP } from "@/lib/xp";
 
@@ -111,11 +113,21 @@ export async function POST(req: Request) {
     let newPersonalRecords: string[] = [];
     let streakMilestone: number | null = null;
     let hybridBonus = false;
+    let challengeUpdates: Awaited<ReturnType<typeof updateActiveChallengesForUser>> = [];
 
     try {
       progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
     } catch (err) {
       console.error("[runs] competition progress failed:", err);
+    }
+
+    try {
+      const adminSupabase = createOptionalSupabaseAdminClient();
+      if (adminSupabase) {
+        challengeUpdates = await updateActiveChallengesForUser(adminSupabase, user.id);
+      }
+    } catch (err) {
+      console.error("[runs] challenge victory check failed:", err);
     }
 
     try {
@@ -238,9 +250,12 @@ export async function POST(req: Request) {
     for (const update of progressUpdates) {
       revalidatePath(`/competicoes/${update.competitionId}`);
     }
+    for (const update of challengeUpdates) {
+      revalidatePath(`/desafios/${update.challengeId}`);
+    }
 
     return NextResponse.json(
-      { run: data, progressUpdates, xpFeedback, newPersonalRecords, hybridBonus },
+      { run: data, progressUpdates, challengeUpdates, xpFeedback, newPersonalRecords, hybridBonus },
       { status: 201 }
     );
   } catch (err) {

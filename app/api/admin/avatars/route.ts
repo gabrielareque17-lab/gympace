@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { AVATAR_REGISTRY, getAvatarById } from "@/lib/avatar-registry";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 async function requireAdmin() {
@@ -20,7 +20,10 @@ export async function GET() {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = createOptionalSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin avatars." }, { status: 503 });
+  }
   const { data: unlocks, error } = await supabase
     .from("user_avatar_unlocks")
     .select("id,user_id,avatar_id,source,source_ref,unlocked_at")
@@ -65,7 +68,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Este avatar ja e livre para todos" }, { status: 400 });
   }
 
-  const supabase = createSupabaseAdminClient();
+  const supabase = createOptionalSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required for admin avatars." }, { status: 503 });
+  }
   const { data, error } = await supabase
     .from("user_avatar_unlocks")
     .insert({

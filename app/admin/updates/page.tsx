@@ -10,7 +10,7 @@ export default function UpdatesPage() {
           Publicar atualizacao
         </h1>
         <p className="mt-1 max-w-2xl text-sm leading-relaxed text-[#F5F5F5]/40">
-          Crie um registro visivel em /updates e envie uma notificacao global para os usuarios.
+          Crie um registro visível em /updates e envie uma notificação global para os usuários.
         </p>
       </div>
       <SendUpdateForm />

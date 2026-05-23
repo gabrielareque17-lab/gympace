@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendPushNotification } from "@/lib/send-push";
 import { GOAL_CONFIG, type GoalType } from "@/lib/challenge-progress";
@@ -106,7 +106,13 @@ export async function POST(request: Request) {
   const creatorName =
     creatorProfile?.display_name || creatorProfile?.username || "Alguém";
 
-  const adminSupabase = createSupabaseAdminClient();
+  const adminSupabase = createOptionalSupabaseAdminClient();
+  if (!adminSupabase) {
+    revalidatePath("/desafios-competicoes");
+    revalidatePath("/desafios");
+    return NextResponse.json({ id: challenge.id, notificationSkipped: true }, { status: 201 });
+  }
+
   await adminSupabase.from("notifications").insert({
     user_id: challenged_id,
     type: "challenge_received",

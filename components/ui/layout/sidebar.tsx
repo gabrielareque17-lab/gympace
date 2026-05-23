@@ -41,7 +41,7 @@ function buildNavGroups(isAdmin: boolean): NavGroup[] {
       { label: "Início",       href: "/",             icon: LayoutDashboard },
       { label: "Treinos",      href: "/treinos",      icon: Dumbbell       },
       { label: "Ranking",      href: "/social",        icon: Medal          },
-      { label: "Desafios & Competições", href: "/desafios-competicoes", icon: Trophy, badgeKey: "challenges" as const },
+      { label: "Competitivo", href: "/desafios-competicoes", icon: Trophy, badgeKey: "challenges" as const },
       { label: "Feed",         href: "/feed",          icon: Rss,           badgeKey: "feed" as const },
       { label: "Perfil",       href: "/perfil",        icon: UserRound      },
     ],

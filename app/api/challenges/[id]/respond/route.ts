@@ -1,16 +1,14 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { createFeedEvent } from "@/lib/feed";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendPushNotification } from "@/lib/send-push";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 type Action = "accept" | "decline" | "cancel";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -23,42 +21,43 @@ export async function PATCH(
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
   const { action } = body as { action?: Action };
-  if (!action || !["accept", "decline", "cancel"].includes(action))
+  if (!action || !["accept", "decline", "cancel"].includes(action)) {
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
+  }
 
-  // ── Fetch challenge ──────────────────────────────────────────────────────────
   const { data: challenge } = await supabase
     .from("challenges")
     .select("id, creator_id, challenged_id, status, duration_days, title")
     .eq("id", id)
     .single();
 
-  if (!challenge)
-    return NextResponse.json({ error: "Desafio não encontrado" }, { status: 404 });
+  if (!challenge) return NextResponse.json({ error: "Desafio não encontrado" }, { status: 404 });
 
   const isCreator = challenge.creator_id === user.id;
   const isChallenged = challenge.challenged_id === user.id;
 
-  // ── Permission checks ────────────────────────────────────────────────────────
   if (action === "accept" || action === "decline") {
-    if (!isChallenged)
+    if (!isChallenged) {
       return NextResponse.json({ error: "Apenas o desafiado pode responder" }, { status: 403 });
-    if (challenge.status !== "pending")
+    }
+    if (challenge.status !== "pending") {
       return NextResponse.json({ error: "Desafio não está pendente" }, { status: 409 });
+    }
   }
 
   if (action === "cancel") {
-    if (!isCreator && !isChallenged)
+    if (!isCreator && !isChallenged) {
       return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
-    if (!["pending", "active"].includes(challenge.status))
+    }
+    if (!["pending", "active"].includes(challenge.status)) {
       return NextResponse.json({ error: "Não é possível cancelar" }, { status: 409 });
+    }
   }
 
-  // ── Build update ─────────────────────────────────────────────────────────────
   const now = new Date();
   let updates: Record<string, unknown>;
 
@@ -79,7 +78,6 @@ export async function PATCH(
   const { error } = await supabase.from("challenges").update(updates).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // ── Notify the other party on accept ────────────────────────────────────────
   if (action === "accept") {
     const notifyUserId = challenge.creator_id;
 
@@ -91,28 +89,30 @@ export async function PATCH(
 
     const myName = myProfile?.display_name || myProfile?.username || "Alguém";
 
-    const adminSupabase = createSupabaseAdminClient();
-    await adminSupabase.from("notifications").insert({
-      user_id: notifyUserId,
-      type: "challenge_accepted",
-      title: "Desafio aceito!",
-      message: `${myName} aceitou seu desafio "${challenge.title}". O duelo começa agora!`,
-      data: { challenge_id: id },
-    });
-
-    const { data: creatorProfile } = await adminSupabase
-      .from("profiles")
-      .select("onesignal_player_id")
-      .eq("user_id", notifyUserId)
-      .single();
-
-    if (creatorProfile?.onesignal_player_id) {
-      await sendPushNotification({
-        playerIds: [creatorProfile.onesignal_player_id],
-        title: "Desafio aceito! ⚡",
-        message: `${myName} aceitou. O duelo começou!`,
-        data: { type: "challenge_accepted", challenge_id: id },
+    const adminSupabase = createOptionalSupabaseAdminClient();
+    if (adminSupabase) {
+      await adminSupabase.from("notifications").insert({
+        user_id: notifyUserId,
+        type: "challenge_accepted",
+        title: "Desafio aceito!",
+        message: `${myName} aceitou seu desafio "${challenge.title}". O duelo começa agora!`,
+        data: { challenge_id: id },
       });
+
+      const { data: creatorProfile } = await adminSupabase
+        .from("profiles")
+        .select("onesignal_player_id")
+        .eq("user_id", notifyUserId)
+        .single();
+
+      if (creatorProfile?.onesignal_player_id) {
+        await sendPushNotification({
+          playerIds: [creatorProfile.onesignal_player_id],
+          title: "Desafio aceito!",
+          message: `${myName} aceitou. O duelo começou!`,
+          data: { type: "challenge_accepted", challenge_id: id },
+        });
+      }
     }
 
     await createFeedEvent(supabase, {
@@ -122,6 +122,9 @@ export async function PATCH(
       payload: { challenge_id: id },
     });
   }
+
+  revalidatePath("/desafios-competicoes");
+  revalidatePath(`/desafios/${id}`);
 
   return NextResponse.json({ ok: true });
 }

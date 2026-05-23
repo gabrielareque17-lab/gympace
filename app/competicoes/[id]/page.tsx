@@ -21,6 +21,11 @@ import { InviteButton } from "@/components/competitions/invite-button";
 import { InviteBanner } from "@/components/competitions/invite-banner";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getAvatarById } from "@/lib/avatar-registry";
+import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
+import {
+  finalizeCompetitionVictory,
+  type CompetitionRow,
+} from "@/lib/competition-progress";
 
 export const dynamic = "force-dynamic";
 
@@ -67,10 +72,12 @@ function daysLeft(end: string) {
 export default async function CompetitionDetailPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+  const adminSupabase = createOptionalSupabaseAdminClient();
+  const dataSupabase = adminSupabase ?? supabase;
 
   const { data: competition } = await supabase
     .from("competitions")
-    .select("id, title, description, type, target_value, start_date, end_date, created_at")
+    .select("id, title, description, type, target_value, start_date, end_date, created_at, status, winner_id, finished_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -97,7 +104,7 @@ export default async function CompetitionDetailPage({ params }: Props) {
         .maybeSingle()
     : { data: null };
 
-  const { data: rawParticipants } = await supabase
+  const { data: rawParticipants } = await dataSupabase
     .from("competition_participants")
     .select("user_id, progress, joined_at")
     .eq("competition_id", id)
@@ -107,7 +114,7 @@ export default async function CompetitionDetailPage({ params }: Props) {
   const userIds = participants.map(p => p.user_id);
 
   const { data: profiles } = userIds.length > 0
-    ? await supabase
+    ? await dataSupabase
         .from("profiles")
         .select("user_id, username, display_name, avatar_id, avatar_type")
         .in("user_id", userIds)
@@ -138,7 +145,7 @@ export default async function CompetitionDetailPage({ params }: Props) {
 
   // Auto-compute corrida progress from runs within competition window
   if (competition.type === "corrida" && userIds.length > 0) {
-    const { data: runs } = await supabase
+    const { data: runs } = await dataSupabase
       .from("runs")
       .select("user_id, distance")
       .in("user_id", userIds)
@@ -157,15 +164,42 @@ export default async function CompetitionDetailPage({ params }: Props) {
     }
   }
 
+  let persistedWinnerId = (competition as { winner_id?: string | null }).winner_id ?? null;
+  let persistedStatus = (competition as { status?: "active" | "finished" | "canceled" | null }).status ?? "active";
+  const target = Number(competition.target_value);
+
+  if (adminSupabase && persistedStatus !== "finished") {
+    const result = await finalizeCompetitionVictory(
+      adminSupabase,
+      {
+        id: competition.id,
+        title: competition.title,
+        type: competition.type as CompType,
+        target_value: target,
+        start_date: competition.start_date,
+        end_date: competition.end_date,
+        status: persistedStatus,
+        winner_id: persistedWinnerId,
+        finished_at: (competition as { finished_at?: string | null }).finished_at ?? null,
+      } satisfies CompetitionRow,
+      leaderboard.map((entry) => ({ user_id: entry.user_id, progress: entry.progress }))
+    );
+
+    if (result.finalized) {
+      persistedStatus = "finished";
+      persistedWinnerId = result.winnerId ?? null;
+    }
+  }
+
   const cfg = TYPE_CONFIG[competition.type as CompType] ?? TYPE_CONFIG.corrida;
   const TypeIcon = cfg.icon;
-  const status = getStatus(competition.start_date, competition.end_date);
+  const status = persistedStatus === "finished" ? "ended" : getStatus(competition.start_date, competition.end_date);
   const ended = status === "ended";
   const isJoined = currentUser ? participants.some(p => p.user_id === currentUser.id) : false;
   const myEntry = leaderboard.find(e => e.user_id === currentUser?.id);
   const myRank = myEntry ? leaderboard.indexOf(myEntry) + 1 : null;
   const days = ended ? null : daysLeft(competition.end_date);
-  const target = Number(competition.target_value);
+  const winnerEntry = persistedWinnerId ? leaderboard.find((entry) => entry.user_id === persistedWinnerId) : null;
 
   const podium = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
@@ -334,6 +368,43 @@ export default async function CompetitionDetailPage({ params }: Props) {
           </section>
 
           {/* ── Leaderboard ── */}
+          {ended && winnerEntry && (
+            <section className="relative overflow-hidden rounded-2xl border border-[#EAB308]/20 bg-[#EAB308]/[0.05] p-5 shadow-[0_0_36px_rgba(234,179,8,0.08)]">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#EAB308]/40 to-transparent" />
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <AvatarDisplay
+                    avatarId={winnerEntry.avatar_id}
+                    initials={(winnerEntry.display_name || winnerEntry.username || "A")[0]?.toUpperCase() ?? "A"}
+                    size="md"
+                  />
+                  <div className="absolute -right-1.5 -top-1.5 grid size-7 place-items-center rounded-full bg-[#EAB308] shadow-[0_0_18px_rgba(234,179,8,0.45)]">
+                    <Crown className="size-3.5 text-[#080808]" strokeWidth={2.5} />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#EAB308]/75">
+                    Campeão da competição
+                  </p>
+                  <h2 className="truncate font-display text-xl font-bold text-[#F5F5F5]">
+                    {winnerEntry.display_name || winnerEntry.username || "Atleta"}
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-[#F5F5F5]/45">
+                    Trofeu exclusivo liberado no perfil
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-lg font-black text-[#EAB308]">
+                    {winnerEntry.progress}
+                  </p>
+                  <p className="text-[10px] font-semibold text-[#F5F5F5]/30">
+                    {cfg.unit}
+                  </p>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
             <div className="relative border-b border-white/[0.05] px-5 py-4">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />

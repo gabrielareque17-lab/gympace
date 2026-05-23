@@ -54,7 +54,7 @@ export async function GET() {
   ).length;
   const trophies = unreadNotifs.filter((n) => n.type === "exclusive_trophy").length;
   const competitions = unreadNotifs.filter((n) =>
-    ["competition_invite", "competition_started"].includes(n.type)
+    ["competition_invite", "competition_started", "competition_won"].includes(n.type)
   ).length;
 
   return NextResponse.json({ feed, challenges, trophies, competitions });
