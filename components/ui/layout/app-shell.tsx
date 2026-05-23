@@ -5,6 +5,7 @@ import { Menu, Zap } from "lucide-react";
 
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { NavBadgeProvider } from "@/components/providers/nav-badge-provider";
+import { PresenceTracker } from "@/components/providers/presence-tracker";
 import { ProfileProvider } from "@/components/providers/profile-provider";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { SeasonStartOverlay } from "@/components/seasons/season-start-overlay";
@@ -138,6 +139,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* PWA install prompt — shows only when not installed */}
       <InstallPrompt />
       <SeasonStartOverlay />
+      <PresenceTracker />
     </NavBadgeProvider>
     </ProfileProvider>
   );

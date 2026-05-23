@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("profiles")
-    .select("user_id, username, display_name, avatar_id, rank, current_level, total_xp, is_admin, created_at")
+    .select("user_id, username, display_name, avatar_id, rank, current_level, total_xp, is_admin, created_at, last_seen_at")
     .order("created_at", { ascending: false })
     .limit(30);
 

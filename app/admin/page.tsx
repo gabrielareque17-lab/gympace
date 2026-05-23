@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { ArrowLeft, BarChart2, Bell, Flag, Megaphone, Shield, Trophy, Users, Zap } from "lucide-react";
+import { ArrowLeft, BarChart2, Bell, Flag, Megaphone, Radio, Shield, Trophy, Users, Zap } from "lucide-react";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
 async function fetchStats() {
   const supabase = createSupabaseAdminClient();
-  const [usersRes, notifsRes, competitionsRes] = await Promise.all([
+  const onlineThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+  const [usersRes, notifsRes, competitionsRes, onlineRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase
       .from("notifications")
@@ -16,11 +17,16 @@ async function fetchStats() {
       .from("competitions")
       .select("*", { count: "exact", head: true })
       .eq("status", "active"),
+    supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .gte("last_seen_at", onlineThreshold),
   ]);
   return {
     users: usersRes.count ?? 0,
     notifs: notifsRes.count ?? 0,
     competitions: competitionsRes.count ?? 0,
+    online: onlineRes.count ?? 0,
   };
 }
 
@@ -29,6 +35,7 @@ export default async function AdminDashboardPage() {
     users: 0,
     notifs: 0,
     competitions: 0,
+    online: 0,
   }));
 
   return (
@@ -50,13 +57,20 @@ export default async function AdminDashboardPage() {
       </Link>
 
       {/* Stats grid */}
-      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           label="Usuários"
           value={stats.users}
           icon={Users}
           color="#B6FF00"
           glow="rgba(182,255,0,0.12)"
+        />
+        <StatCard
+          label="Online agora"
+          value={stats.online}
+          icon={Radio}
+          color="#22C55E"
+          glow="rgba(34,197,94,0.12)"
         />
         <StatCard
           label="Updates enviados"

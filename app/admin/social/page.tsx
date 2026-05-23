@@ -16,7 +16,19 @@ type AdminUser = {
   total_xp: number | null;
   rank: string | null;
   is_admin: boolean | null;
+  last_seen_at: string | null;
 };
+
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+
+function getPresence(lastSeenAt: string | null): { dot: string; label: string } {
+  if (!lastSeenAt) return { dot: "rgba(245,245,245,0.15)", label: "Nunca" };
+  const diff = Date.now() - new Date(lastSeenAt).getTime();
+  if (diff < ONLINE_THRESHOLD_MS) return { dot: "#22C55E", label: "Online" };
+  if (diff < 60 * 60 * 1000) return { dot: "#EAB308", label: `${Math.floor(diff / 60000)}min atrás` };
+  if (diff < 24 * 60 * 60 * 1000) return { dot: "rgba(245,245,245,0.30)", label: `${Math.floor(diff / 3600000)}h atrás` };
+  return { dot: "rgba(245,245,245,0.15)", label: `${Math.floor(diff / 86400000)}d atrás` };
+}
 
 type TrophyRow = {
   id: string;
@@ -259,6 +271,7 @@ export default function AdminSocialPage() {
                     @{user.username ?? "sem-username"} · Nv. {user.current_level ?? 1} · {user.total_xp ?? 0} XP
                   </p>
                 </div>
+                <PresenceDot lastSeenAt={user.last_seen_at} />
               </button>
             ))}
           </div>
@@ -401,6 +414,16 @@ export default function AdminSocialPage() {
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PresenceDot({ lastSeenAt }: { lastSeenAt: string | null }) {
+  const { dot, label } = getPresence(lastSeenAt);
+  return (
+    <div className="flex shrink-0 flex-col items-end gap-0.5">
+      <div className="size-2 rounded-full" style={{ background: dot }} />
+      <span className="text-[9px] text-[#F5F5F5]/30">{label}</span>
     </div>
   );
 }
