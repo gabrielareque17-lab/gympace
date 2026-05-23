@@ -56,6 +56,7 @@ export async function GET() {
   const competitions = unreadNotifs.filter((n) =>
     ["competition_invite", "competition_started", "competition_won"].includes(n.type)
   ).length;
+  const updates = unreadNotifs.filter((n) => n.type === "gympace_update").length;
 
-  return NextResponse.json({ feed, challenges, trophies, competitions });
+  return NextResponse.json({ feed, challenges, trophies, competitions, updates });
 }

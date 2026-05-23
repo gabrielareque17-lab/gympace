@@ -11,7 +11,7 @@ type NavBadgeContextValue = {
 };
 
 const NavBadgeContext = createContext<NavBadgeContextValue>({
-  badges: { feed: 0, challenges: 0, trophies: 0, competitions: 0 },
+  badges: { feed: 0, challenges: 0, trophies: 0, competitions: 0, updates: 0 },
   markFeedSeen: async () => {},
   refetch: async () => {},
 });

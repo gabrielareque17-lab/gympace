@@ -30,7 +30,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { cn } from "@/lib/utils";
 
 
-type NavItem = { label: string; href: string; icon: LucideIcon; badgeKey?: "feed" | "challenges" | "trophies" | "competitions" };
+type NavItem = { label: string; href: string; icon: LucideIcon; badgeKey?: "feed" | "challenges" | "trophies" | "competitions" | "updates" };
 type NavGroup = { label: string | null; items: NavItem[] };
 
 function buildNavGroups(isAdmin: boolean): NavGroup[] {
@@ -52,7 +52,7 @@ function buildNavGroups(isAdmin: boolean): NavGroup[] {
       { label: "Metas",        href: "/metas",         icon: Target         },
       { label: "Evolução",     href: "/evolucao",      icon: BarChart3      },
       { label: "Sistema XP",    href: "/xp",            icon: Zap            },
-      { label: "Atualizações", href: "/updates",       icon: Bell           },
+      { label: "Atualizações", href: "/updates",       icon: Bell,          badgeKey: "updates" as const },
       { label: "Explorar",     href: "/explorar",      icon: Compass        },
       { label: "Convites",     href: "/convites",      icon: Swords         },
     ],

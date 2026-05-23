@@ -7,9 +7,10 @@ export type NavBadges = {
   challenges: number;
   trophies: number;
   competitions: number;
+  updates: number;
 };
 
-const EMPTY: NavBadges = { feed: 0, challenges: 0, trophies: 0, competitions: 0 };
+const EMPTY: NavBadges = { feed: 0, challenges: 0, trophies: 0, competitions: 0, updates: 0 };
 
 export function useNavBadges() {
   const [badges, setBadges] = useState<NavBadges>(EMPTY);
@@ -24,6 +25,7 @@ export function useNavBadges() {
           challenges: data.challenges ?? 0,
           trophies: data.trophies ?? 0,
           competitions: data.competitions ?? 0,
+          updates: data.updates ?? 0,
         });
       }
     } catch {

@@ -22,6 +22,7 @@ interface TypeConfig {
   color: string;
   bg: string;
   getHref?: (data: Record<string, unknown> | null) => string | null;
+  hideMessage?: boolean;
 }
 
 const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
@@ -44,6 +45,8 @@ const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
     icon: Zap,
     color: "#B6FF00",
     bg: "rgba(182,255,0,0.08)",
+    getHref: () => "/updates",
+    hideMessage: true,
   },
   general: {
     icon: Bell,
@@ -164,8 +167,8 @@ function NotificationItem({
   const config = TYPE_CONFIG[notification.type] ?? TYPE_CONFIG.general;
   const Icon = config.icon;
   const href = config.getHref?.(notification.data) ?? null;
-  // Only show expand affordance for long messages without a navigation target
-  const isExpandable = !href && notification.message.length > 40;
+  const hideMessage = config.hideMessage ?? false;
+  const isExpandable = !href && !hideMessage && notification.message.length > 40;
 
   function handleClick() {
     if (!notification.read) onMarkRead(notification.id);
@@ -227,22 +230,24 @@ function NotificationItem({
         </div>
 
         {/* Message — expands smoothly via max-height transition */}
-        <div
-          style={{
-            maxHeight: isExpanded ? "300px" : "50px",
-            overflow: "hidden",
-            transition: "max-height 0.32s cubic-bezier(0.16,1,0.3,1)",
-          }}
-        >
-          <p
-            className={cn(
-              "mt-1 text-[12px] leading-relaxed",
-              notification.read ? "text-[#F5F5F5]/32" : "text-[#F5F5F5]/48"
-            )}
+        {!hideMessage && (
+          <div
+            style={{
+              maxHeight: isExpanded ? "300px" : "50px",
+              overflow: "hidden",
+              transition: "max-height 0.32s cubic-bezier(0.16,1,0.3,1)",
+            }}
           >
-            {notification.message}
-          </p>
-        </div>
+            <p
+              className={cn(
+                "mt-1 text-[12px] leading-relaxed",
+                notification.read ? "text-[#F5F5F5]/32" : "text-[#F5F5F5]/48"
+              )}
+            >
+              {notification.message}
+            </p>
+          </div>
+        )}
 
         {/* Expand / collapse indicator */}
         {isExpandable && (
@@ -262,6 +267,7 @@ function NotificationItem({
             {notification.type === "new_follower" && "Ver perfil →"}
             {notification.type === "challenge_invite" && "Ver convite →"}
             {notification.type === "achievement" && "Ver conquistas →"}
+            {notification.type === "gympace_update" && "Ver atualização →"}
           </p>
         )}
       </div>
