@@ -19,7 +19,6 @@ import {
   Play,
   RefreshCw,
   Route,
-  Timer,
   Trash2,
   Trophy,
   Wind,
@@ -188,6 +187,7 @@ export default function RunsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showTracker, setShowTracker] = useState(false);
+  const manualFormRef = useRef<HTMLFormElement>(null);
 
   const isSaving = status === "saving";
 
@@ -276,6 +276,11 @@ export default function RunsPage() {
     void loadRuns();
   }
 
+  function handleTreadmillStart() {
+    setForm((cur) => ({ ...cur, run_type: "esteira" }));
+    manualFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const runType = getRunType(form.run_type);
 
   return (
@@ -309,49 +314,74 @@ export default function RunsPage() {
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
               Registro
             </p>
-            <div className="flex items-start justify-between gap-4">
-              <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h1
                   className="leading-none text-white"
                   style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
                 >Corridas</h1>
-                <p className="mt-1.5 max-w-lg text-sm leading-6 text-[#F5F5F5]/40 sm:mt-2">
-                  Registre manualmente ou use o rastreamento GPS em tempo real.
+                <p className="mt-1.5 hidden max-w-lg text-sm leading-6 text-[#F5F5F5]/40 sm:mt-2 sm:block">
+                  Registre treinos ao ar livre com GPS ou corridas na esteira manualmente.
                 </p>
               </div>
-              {/* Run tracker button */}
-              <button
-                type="button"
-                onClick={() => setShowTracker(true)}
-                className="mobile-tap group relative inline-flex shrink-0 items-center gap-2.5 overflow-hidden rounded-full bg-[#B6FF00] px-5 py-3 text-sm font-extrabold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.32),0_0_56px_rgba(182,255,0,0.1)] transition-transform duration-100 hover:-translate-y-0.5 hover:shadow-[0_0_44px_rgba(182,255,0,0.5),0_0_80px_rgba(182,255,0,0.18)] active:scale-[0.97] active:translate-y-0 active:opacity-80"
-              >
-                {/* shimmer sweep */}
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
-                <Play className="relative size-4 fill-current stroke-none" />
-                <span className="relative hidden sm:inline">Iniciar corrida</span>
-                <span className="relative sm:hidden">Iniciar</span>
-              </button>
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowTracker(true)}
+                  className="mobile-tap group relative inline-flex h-11 shrink-0 items-center gap-2.5 overflow-hidden rounded-full bg-[#B6FF00] px-4 text-sm font-extrabold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.32),0_0_56px_rgba(182,255,0,0.1)] transition-transform duration-100 hover:-translate-y-0.5 hover:shadow-[0_0_44px_rgba(182,255,0,0.5),0_0_80px_rgba(182,255,0,0.18)] active:scale-[0.97] active:translate-y-0 active:opacity-80 sm:px-5"
+                >
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                  <Play className="relative size-4 fill-current stroke-none" />
+                  <span className="relative hidden sm:inline">GPS ao ar livre</span>
+                  <span className="relative sm:hidden">GPS</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTreadmillStart}
+                  className="mobile-tap inline-flex h-11 shrink-0 items-center gap-2.5 rounded-full border border-[#F97316]/30 bg-[#F97316]/10 px-4 text-sm font-extrabold text-[#FDBA74] shadow-[0_0_22px_rgba(249,115,22,0.12)] transition-transform duration-100 hover:-translate-y-0.5 hover:border-[#F97316]/45 hover:bg-[#F97316]/15 active:scale-[0.97] active:translate-y-0 active:opacity-80 sm:px-5"
+                >
+                  <Activity className="size-4" strokeWidth={2.5} />
+                  <span className="hidden sm:inline">Corrida na esteira</span>
+                  <span className="sm:hidden">Esteira</span>
+                </button>
+              </div>
             </div>
           </header>
 
           <section className="grid gap-4 xl:grid-cols-[1fr_0.55fr]">
             {/* ── Manual form ─────────────────────────────────────────── */}
             <form
+              ref={manualFormRef}
               onSubmit={handleSubmit}
-              className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]"
+              className="overflow-hidden rounded-2xl border border-white/[0.09] bg-[#111111]"
+              style={{ boxShadow: "0 0 0 1px rgba(255,255,255,0.03) inset, 0 20px 48px rgba(0,0,0,0.22)" }}
             >
               <div className="relative border-b border-white/[0.05] px-4 py-4 sm:px-6 sm:py-5">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="font-display text-base font-semibold">Registro manual</h2>
-                    <p className="mt-1 text-sm text-[#F5F5F5]/38">Preencha distância e duração para calcular o pace.</p>
+                    <h2
+                    className="leading-none text-white"
+                    style={{ fontFamily: "var(--font-hero)", fontSize: "1.25rem", letterSpacing: "0.04em" }}
+                  >
+                    Registro manual
+                  </h2>
+                    <p className="mt-1.5 text-xs text-[#F5F5F5]/38">
+                      {form.run_type === "esteira"
+                        ? "Distância e duração da esteira."
+                        : "Distância + duração calcula o pace automaticamente."}
+                    </p>
                   </div>
                   <div
-                    className="grid size-9 place-items-center rounded-xl shadow-[0_0_20px_rgba(182,255,0,0.18)]"
-                    style={{ background: runType.color }}
+                    className="grid size-10 shrink-0 place-items-center rounded-xl transition-all duration-300"
+                    style={{
+                      background: `${runType.color}18`,
+                      border: `1px solid ${runType.color}30`,
+                      boxShadow: `0 0 20px ${runType.color}28`,
+                      color: runType.color,
+                    }}
                   >
-                    <Timer className="size-4 text-[#080808]" strokeWidth={2.5} />
+                    <Route className="size-4.5 size-[18px]" strokeWidth={2} />
                   </div>
                 </div>
               </div>
@@ -361,7 +391,7 @@ export default function RunsPage() {
                 <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#F5F5F5]/30">
                   Tipo de corrida
                 </p>
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
                   {RUN_TYPES.map((t) => {
                     const Icon = t.icon;
                     const active = form.run_type === t.value;
@@ -370,15 +400,43 @@ export default function RunsPage() {
                         key={t.value}
                         type="button"
                         onClick={() => setForm((cur) => ({ ...cur, run_type: t.value }))}
-                        className="mobile-tap flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-transform duration-100 active:scale-[0.97]"
+                        className="mobile-tap flex min-w-[72px] shrink-0 flex-col items-center gap-1.5 rounded-xl border px-2.5 py-3 transition-all duration-150 active:scale-[0.96]"
                         style={
                           active
-                            ? { borderColor: `${t.color}55`, background: `${t.color}14`, color: t.color }
-                            : { borderColor: "rgba(245,245,245,0.07)", background: "rgba(245,245,245,0.03)", color: "rgba(245,245,245,0.4)" }
+                            ? {
+                                borderColor: `${t.color}40`,
+                                background: `${t.color}0E`,
+                                color: t.color,
+                                boxShadow: `0 0 16px ${t.color}28, 0 0 0 1px ${t.color}18 inset`,
+                              }
+                            : {
+                                borderColor: "rgba(245,245,245,0.06)",
+                                background: "rgba(245,245,245,0.02)",
+                                color: "rgba(245,245,245,0.32)",
+                              }
                         }
                       >
-                        <Icon className="size-3.5 shrink-0" strokeWidth={2} />
-                        {t.label}
+                        <div
+                          className="grid size-8 place-items-center rounded-lg transition-colors duration-150"
+                          style={{
+                            background: active ? `${t.color}18` : "rgba(245,245,245,0.04)",
+                          }}
+                        >
+                          <Icon
+                            className="size-4 shrink-0"
+                            strokeWidth={2}
+                            style={{ color: active ? t.color : "rgba(245,245,245,0.28)" }}
+                          />
+                        </div>
+                        <span className="text-center text-[10px] font-semibold leading-tight">
+                          {t.label}
+                        </span>
+                        <span
+                          className="text-[9px] font-medium leading-none"
+                          style={{ color: active ? `${t.color}80` : "rgba(245,245,245,0.2)" }}
+                        >
+                          {t.desc}
+                        </span>
                       </button>
                     );
                   })}
@@ -425,7 +483,7 @@ export default function RunsPage() {
                     value={form.pace}
                     onChange={(e) => { setPaceIsAuto(false); setForm((cur) => ({ ...cur, pace: e.target.value })); }}
                     placeholder="5:18"
-                    className="h-12 w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 text-lg font-semibold text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/16 focus:border-[#B6FF00]/35 focus:bg-white/[0.05] focus:shadow-[0_0_0_3px_rgba(182,255,0,0.05)]"
+                    className="h-12 w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 text-lg font-semibold text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/14 focus:border-[#B6FF00]/40 focus:bg-white/[0.05] focus:shadow-[0_0_0_2px_rgba(182,255,0,0.08),0_0_20px_rgba(182,255,0,0.06)]"
                   />
                 </div>
               </div>
@@ -441,7 +499,7 @@ export default function RunsPage() {
                     value={form.notes}
                     onChange={(e) => setForm((cur) => ({ ...cur, notes: e.target.value }))}
                     placeholder="Como foi o treino hoje?"
-                    className="w-full resize-none rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-medium text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/16 focus:border-[#B6FF00]/28 focus:bg-white/[0.05] focus:shadow-[0_0_0_3px_rgba(182,255,0,0.04)]"
+                    className="w-full resize-none rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 text-sm font-medium text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/14 focus:border-[#B6FF00]/35 focus:bg-white/[0.05] focus:shadow-[0_0_0_2px_rgba(182,255,0,0.07),0_0_16px_rgba(182,255,0,0.05)]"
                   />
                 </label>
               </div>
@@ -457,7 +515,7 @@ export default function RunsPage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="mobile-tap inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.16)] transition-transform duration-100 hover:-translate-y-px hover:shadow-[0_0_32px_rgba(182,255,0,0.24)] active:scale-[0.97] active:translate-y-0 disabled:pointer-events-none disabled:opacity-55"
+                  className="mobile-tap inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] px-5 text-sm font-bold text-[#080808] shadow-[0_0_24px_rgba(182,255,0,0.16)] transition-transform duration-100 hover:-translate-y-px hover:shadow-[0_0_32px_rgba(182,255,0,0.28)] active:scale-[0.97] active:translate-y-0 disabled:pointer-events-none disabled:opacity-55 sm:h-10 sm:w-auto"
                 >
                   {isSaving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
                   {isSaving ? "Salvando..." : "Salvar corrida"}
@@ -495,7 +553,12 @@ export default function RunsPage() {
               <div className="relative border-b border-white/[0.05] px-4 py-3 sm:px-5 sm:py-4">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">Preview</p>
-                <h2 className="font-display text-base font-semibold">Sessão atual</h2>
+                <h2
+                  className="leading-none text-white"
+                  style={{ fontFamily: "var(--font-hero)", fontSize: "1.25rem", letterSpacing: "0.04em" }}
+                >
+                  Sessão atual
+                </h2>
               </div>
               <div className="space-y-2 p-4 sm:p-5">
                 <PreviewRow label="Tipo" value={form.run_type ? runType.label : "—"} color={runType.color} />
@@ -524,21 +587,37 @@ export default function RunsPage() {
                     </div>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowTracker(true)}
-                    className="mobile-tap group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-[#B6FF00]/18 bg-[#B6FF00]/[0.06] px-4 py-4 text-left transition-transform duration-100 hover:border-[#B6FF00]/30 hover:bg-[#B6FF00]/[0.1] hover:shadow-[0_0_24px_rgba(182,255,0,0.1)] active:scale-[0.98] active:opacity-80"
-                  >
-                    <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#B6FF00]/8 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
-                    <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-[#B6FF00]/12">
-                      <Play className="size-4 fill-[#B6FF00] stroke-none" />
-                    </div>
-                    <div className="relative min-w-0">
-                      <p className="text-xs font-bold text-[#B6FF00]/90">Iniciar corrida</p>
-                      <p className="mt-0.5 text-[10px] text-[#F5F5F5]/35">GPS em tempo real · rota + pace</p>
-                    </div>
-                    <ChevronRight className="relative ml-auto size-4 shrink-0 text-[#B6FF00]/35 transition-transform duration-200 group-hover:translate-x-0.5" />
-                  </button>
+                  <div className="grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowTracker(true)}
+                      className="mobile-tap group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-[#B6FF00]/18 bg-[#B6FF00]/[0.06] px-4 py-4 text-left transition-transform duration-100 hover:border-[#B6FF00]/30 hover:bg-[#B6FF00]/[0.1] hover:shadow-[0_0_24px_rgba(182,255,0,0.1)] active:scale-[0.98] active:opacity-80"
+                    >
+                      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#B6FF00]/8 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                      <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-[#B6FF00]/12">
+                        <Play className="size-4 fill-[#B6FF00] stroke-none" />
+                      </div>
+                      <div className="relative min-w-0">
+                        <p className="text-xs font-bold text-[#B6FF00]/90">Iniciar com GPS</p>
+                        <p className="mt-0.5 text-[10px] text-[#F5F5F5]/35">Ao ar livre · rota + pace</p>
+                      </div>
+                      <ChevronRight className="relative ml-auto size-4 shrink-0 text-[#B6FF00]/35 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleTreadmillStart}
+                      className="mobile-tap group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-[#F97316]/20 bg-[#F97316]/[0.07] px-4 py-4 text-left transition-transform duration-100 hover:border-[#F97316]/35 hover:bg-[#F97316]/[0.11] hover:shadow-[0_0_24px_rgba(249,115,22,0.1)] active:scale-[0.98] active:opacity-80"
+                    >
+                      <div className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-[#F97316]/12">
+                        <Activity className="size-4 text-[#FDBA74]" strokeWidth={2.4} />
+                      </div>
+                      <div className="relative min-w-0">
+                        <p className="text-xs font-bold text-[#FDBA74]/90">Registrar esteira</p>
+                        <p className="mt-0.5 text-[10px] text-[#F5F5F5]/35">Manual · distância + tempo</p>
+                      </div>
+                      <ChevronRight className="relative ml-auto size-4 shrink-0 text-[#FDBA74]/35 transition-transform duration-200 group-hover:translate-x-0.5" />
+                    </button>
+                  </div>
                 )}
               </div>
             </aside>
@@ -599,7 +678,7 @@ function RunInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-12 w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 text-lg font-semibold text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/16 focus:border-[#B6FF00]/35 focus:bg-white/[0.05] focus:shadow-[0_0_0_3px_rgba(182,255,0,0.05)]"
+        className="h-12 w-full rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 text-lg font-semibold text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/14 focus:border-[#B6FF00]/40 focus:bg-white/[0.05] focus:shadow-[0_0_0_2px_rgba(182,255,0,0.08),0_0_20px_rgba(182,255,0,0.06)]"
       />
     </label>
   );
@@ -666,7 +745,12 @@ function SavedRunsSection({
       <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3 sm:px-5 sm:py-4">
         <div>
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">Histórico</p>
-          <h2 className="font-display text-base font-semibold">Corridas salvas</h2>
+          <h2
+            className="leading-none text-white"
+            style={{ fontFamily: "var(--font-hero)", fontSize: "1.25rem", letterSpacing: "0.04em" }}
+          >
+            Corridas salvas
+          </h2>
         </div>
         <button
           type="button"
@@ -744,7 +828,7 @@ function RunCard({
   const rt = getRunType(run.run_type);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const hasGps = run.avg_speed !== null || run.calories !== null;
+  const hasGps = run.run_type !== "esteira" && (run.avg_speed !== null || run.calories !== null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -790,8 +874,11 @@ function RunCard({
   }
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#151515] p-4 transition-all duration-300 hover:border-white/[0.1] hover:bg-[#181818] hover:shadow-[0_8px_28px_rgba(0,0,0,0.4)]">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+    <article className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#141414] p-4 transition-all duration-300 hover:border-white/[0.12] hover:bg-[#181818] hover:shadow-[0_8px_32px_rgba(0,0,0,0.45)]">
+      <div
+        className="absolute inset-x-0 top-0 h-[1.5px]"
+        style={{ background: `linear-gradient(90deg, transparent, ${rt.color}55, transparent)` }}
+      />
       {/* GPS badge */}
       {hasGps && (
         <div
@@ -855,9 +942,9 @@ function RunCard({
       {/* Distance — primary metric */}
       <div className="mb-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#F5F5F5]/32">Distância</p>
-        <p className="font-display mt-1 text-2xl font-bold tracking-tight">
+        <p className="mt-1 leading-none" style={{ fontFamily: "var(--font-hero)", fontSize: "2rem", letterSpacing: "0.02em" }}>
           {run.distance}
-          <span className="ml-1 text-sm font-bold text-[#B6FF00]">km</span>
+          <span className="ml-1.5 text-base font-bold" style={{ color: rt.color }}>km</span>
         </p>
       </div>
 
@@ -896,16 +983,16 @@ function RunStat({
   accent?: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2">
+    <div className="flex items-center justify-between rounded-lg border border-white/[0.05] bg-white/[0.02] px-3 py-2 transition-colors duration-150 hover:bg-white/[0.04]">
       <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.1em] text-[#F5F5F5]/30">
         <Icon
           className="size-3"
-          style={{ color: accent ? `${accent}99` : "rgba(182,255,0,0.6)" }}
+          style={{ color: accent ? `${accent}99` : "rgba(182,255,0,0.55)" }}
           strokeWidth={2}
         />
         {label}
       </span>
-      <span className="font-mono text-xs font-semibold text-[#F5F5F5]/75">{value}</span>
+      <span className="font-mono text-xs font-semibold text-[#F5F5F5]/80">{value}</span>
     </div>
   );
 }
