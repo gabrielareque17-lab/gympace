@@ -5,16 +5,9 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
+import { SeasonLeagueBadge } from "@/components/seasons/season-league-badge";
 import type { LeaderboardEntry } from "@/lib/leaderboard";
-
-const RANK_COLORS: Record<string, string> = {
-  rookie: "#94A3B8",
-  bronze: "#CD7F32",
-  silver: "#A1A1AA",
-  gold: "#EAB308",
-  platinum: "#22D3EE",
-  elite: "#B6FF00",
-};
+import { getAthleteTitle } from "@/lib/athlete-title";
 
 const SCOPE_TABS = [
   { key: "global", label: "Global" },
@@ -25,7 +18,7 @@ type Props = {
   globalEntries: LeaderboardEntry[];
   friendsEntries: LeaderboardEntry[];
   currentUserId: string;
-  mode?: "xp" | "season";
+  mode?: "xp";
 };
 
 const TROPHY_COLORS = ["#EAB308", "#A1A1AA", "#CD7F32"] as const;
@@ -51,7 +44,8 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
   const [scope, setScope] = useState<"global" | "friends">("global");
   const entries = scope === "global" ? globalEntries : friendsEntries;
   const myPos = entries.findIndex((entry) => entry.userId === currentUserId);
-  const isSeason = mode === "season";
+  void mode;
+  const isSeason = false;
 
   return (
     <div className="flex flex-col gap-3">
@@ -65,39 +59,40 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
         }
       `}</style>
 
-      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-1">
-        {SCOPE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setScope(tab.key)}
-            className="mobile-tap flex-1 rounded-lg py-1.5 text-xs font-semibold transition-transform duration-100 active:scale-[0.97] active:opacity-80"
-            style={
-              scope === tab.key
-                ? { background: "rgba(182,255,0,0.1)", color: "#B6FF00", borderBottom: "1px solid rgba(182,255,0,0.3)" }
-                : { color: "rgba(245,245,245,0.35)" }
-            }
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex gap-1 rounded-xl border border-white/[0.06] bg-white/[0.025] p-1">
+        {SCOPE_TABS.map((tab) => {
+          const active = scope === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setScope(tab.key)}
+              className="mobile-tap flex-1 rounded-lg py-2 text-xs font-semibold transition-all duration-150 active:scale-[0.97] active:opacity-80"
+              style={
+                active
+                  ? { background: "rgba(182,255,0,0.09)", color: "#B6FF00", boxShadow: "0 0 10px rgba(182,255,0,0.12)", borderBottom: "1px solid rgba(182,255,0,0.25)" }
+                  : { color: "rgba(245,245,245,0.32)" }
+              }
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {entries.length === 0 ? (
         <div className="py-8 text-center text-sm text-[#F5F5F5]/30">
-          {isSeason
-            ? "Nenhum ponto registrado nesta temporada ainda."
-            : scope === "friends"
+          {scope === "friends"
             ? "Siga atletas para ver o ranking de amigos."
             : "Nenhum atleta no ranking ainda."}
         </div>
       ) : (
-        <div className="flex flex-col gap-0.5">
+        <div key={scope} className="flex flex-col gap-0.5">
           {entries.slice(0, 20).map((entry, index) => {
             const isMe = entry.userId === currentUserId;
-            const rankColor = RANK_COLORS[entry.rank ?? "rookie"] ?? "#94A3B8";
+            const athleteTitle = getAthleteTitle(entry.rank);
             const name = entry.displayName ?? entry.username ?? "Atleta";
-            const score = (isSeason ? entry.seasonPoints : entry.totalXp).toLocaleString("pt-BR");
+            const score = entry.totalXp.toLocaleString("pt-BR");
 
             const inner = (
               <>
@@ -107,6 +102,7 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
 
                 <AvatarDisplay
                   avatarId={entry.avatarId}
+                  definition={entry.avatarDefinition}
                   initials={name[0]?.toUpperCase() ?? "A"}
                   size="sm"
                 />
@@ -125,17 +121,15 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
                   <div className="mt-0.5 flex items-center gap-1">
                     <span
                       className="text-[10px] font-semibold whitespace-nowrap"
-                      style={{ color: rankColor }}
+                      style={{ color: athleteTitle.color }}
                     >
                       Nv {entry.currentLevel}
                     </span>
                     <span className="text-[9px] text-[#F5F5F5]/15">·</span>
-                    <span
-                      className="text-[10px] font-semibold capitalize"
-                      style={{ color: `${rankColor}99` }}
-                    >
-                      {entry.rank ?? "rookie"}
+                    <span className="text-[10px] font-semibold" style={{ color: athleteTitle.color }}>
+                      {athleteTitle.label}
                     </span>
+                    <SeasonLeagueBadge points={entry.seasonPoints} compact showLabel={false} />
                     {entry.username && (
                       <>
                         <span className="text-[9px] text-[#F5F5F5]/10">·</span>
@@ -155,7 +149,7 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
                     {score}
                   </p>
                   <p className="text-[9px] text-[#F5F5F5]/25">
-                    {isSeason ? "pts" : "XP"}
+                    XP
                   </p>
                   {isSeason && (
                     <p className="mt-0.5 text-[9px] text-[#F5F5F5]/22">
@@ -166,10 +160,11 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
               </>
             );
 
-            const cls = `flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-150${isMe ? " gp-me-card" : " hover:bg-white/[0.03] active:opacity-75"}`;
-            const sty = isMe
-              ? { background: "rgba(182,255,0,0.05)", border: "1px solid rgba(182,255,0,0.10)" }
-              : undefined;
+            const cls = `gp-row-in flex items-center gap-3 rounded-xl px-3 py-3 transition-all duration-150${isMe ? " gp-me-card" : " hover:bg-white/[0.03] active:opacity-75"}`;
+            const sty = {
+              ...(isMe ? { background: "rgba(182,255,0,0.05)", border: "1px solid rgba(182,255,0,0.10)" } : {}),
+              animationDelay: `${Math.min(index, 14) * 32}ms`,
+            };
 
             return entry.username ? (
               <Link
@@ -191,9 +186,9 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
       )}
 
       {myPos > 19 && (
-        <div className="mt-1 flex items-center gap-2 rounded-xl border border-[#B6FF00]/15 bg-[#B6FF00]/[0.05] px-4 py-3">
-          <span className="text-xs text-[#F5F5F5]/40">Sua posição:</span>
-          <span className="font-bold text-[#B6FF00]">#{myPos + 1}</span>
+        <div className="mt-1 flex items-center justify-between gap-2 rounded-xl border border-[#B6FF00]/15 bg-[#B6FF00]/[0.05] px-4 py-3">
+          <span className="text-xs text-[#F5F5F5]/40">Sua posição no ranking</span>
+          <span className="font-mono text-sm font-bold text-[#B6FF00]">#{myPos + 1}</span>
         </div>
       )}
     </div>

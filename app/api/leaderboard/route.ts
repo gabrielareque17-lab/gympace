@@ -6,8 +6,6 @@ import { getActiveSeason } from "@/lib/seasons";
 
 export const dynamic = "force-dynamic";
 
-const VALID_CATEGORIES: LeaderboardCategory[] = ["xp", "season", "km", "workouts", "streak"];
-
 export async function GET(req: Request) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -15,12 +13,9 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const scope = url.searchParams.get("scope") ?? "global"; // "global" | "friends"
-  const rawCat = url.searchParams.get("category") ?? "xp";
-  const category: LeaderboardCategory = VALID_CATEGORIES.includes(rawCat as LeaderboardCategory)
-    ? (rawCat as LeaderboardCategory)
-    : "xp";
+  const category: LeaderboardCategory = "xp";
+  const activeSeason = await getActiveSeason(supabase);
 
-  const activeSeason = category === "season" ? await getActiveSeason(supabase) : null;
   const entries =
     scope === "friends"
       ? await getFriendsLeaderboard(supabase, user.id, category, activeSeason)

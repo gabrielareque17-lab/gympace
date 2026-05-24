@@ -1,4 +1,4 @@
-import { getAvatarById } from '@/lib/avatar-registry'
+import { getAvatarById, type AvatarDefinition } from '@/lib/avatar-registry'
 
 interface AvatarSVGProps {
   avatarId: string
@@ -6,6 +6,7 @@ interface AvatarSVGProps {
   secondaryColor?: string
   size?: number
   className?: string
+  definition?: AvatarDefinition | null
 }
 
 const SKIN_TONES = ['#FFD0A8', '#E8AD7C', '#B97952', '#7A4632', '#F2C8B8']
@@ -27,24 +28,90 @@ export function AvatarSVG({
   secondaryColor,
   size = 64,
   className,
+  definition: definitionOverride,
 }: AvatarSVGProps) {
-  const definition = getAvatarById(avatarId)
+  const definition = definitionOverride ?? getAvatarById(avatarId)
   const category = definition?.category ?? 'running'
   const rarity = definition?.rarity ?? 'core'
-  const accent = accentColor
+  const customVisual = definition?.customVisual
+  const accent = customVisual?.primaryColor ?? accentColor
   const secondary = secondaryColor ?? definition?.secondaryColor ?? accentColor
+  const backgroundColor = customVisual?.backgroundColor ?? '#050505'
+  const outfitColor = customVisual?.outfitColor ?? accent
   const h = hashAvatar(avatarId)
   const uid = avatarId.replace(/[^a-z0-9_-]/gi, '-')
   const skin = SKIN_TONES[getFeature(h, SKIN_TONES.length, 7)]
-  const hairColor = HAIR_COLORS[getFeature(h, HAIR_COLORS.length, 19)]
-  const hairStyle = getFeature(h, 4, 31)
-  const mouthStyle = getFeature(h, 3, 43)
-  const eyeStyle = getFeature(h, 3, 59)
-  const isFeminine = definition?.female === true
+  const hairColor = customVisual?.hairColor ?? HAIR_COLORS[getFeature(h, HAIR_COLORS.length, 19)]
+  const hairStyle = customVisual?.hairStyle ?? String(getFeature(h, 4, 31))
+  const mouthStyle = customVisual?.faceStyle ?? String(getFeature(h, 3, 43))
+  const faceToEye: Record<string, string> = { confiante: '1', feliz: '1', serio: '0', focado: '2' }
+  const eyeStyle = customVisual?.faceStyle
+    ? (faceToEye[customVisual.faceStyle] ?? String(getFeature(h, 3, 59)))
+    : String(getFeature(h, 3, 59))
+  const isFeminine = definition?.female === true || customVisual?.gender === 'feminino'
   const isHybrid = category === 'hybrid'
   const isPremium = category === 'premium'
   const isGym = category === 'gym' || isPremium
   const bodyWide = isGym ? 5 : 0
+  const accessory = customVisual?.accessory ?? 'none'
+
+  const isNamedHair = ['curto','topete','raspado','moicano','careca','medio','afro','rabo','ondulado','longo','cacheado'].includes(hairStyle)
+  const hairEl = (() => {
+    if (hairStyle === 'careca') return null
+    if (hairStyle === 'afro') return (
+      <g>
+        <path d="M11 52C11 21 27 4 48 4C69 4 85 21 85 52C72 41 48 34 24 41Z" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === 'cacheado') return (
+      <g>
+        <path d="M17 44C17 21 30 7 48 7C66 7 79 21 79 44C65 34 31 34 17 44Z" fill={hairColor} />
+        <path d="M17 44C11 57 13 71 23 79C21 67 19 55 17 46Z" fill={hairColor} />
+        <path d="M79 44C85 57 83 71 73 79C75 67 77 55 79 46Z" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === 'longo' || (isFeminine && !isNamedHair)) return (
+      <g>
+        <path d="M22 41C24 22 36 10 48 10C60 10 72 22 74 41C61 32 35 32 22 41Z" fill={hairColor} />
+        <path d="M22 41C18 53 19 67 28 76C30 64 28 52 25 42Z" fill={hairColor} />
+        <path d="M74 41C78 53 77 67 68 76C66 64 68 52 71 42Z" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === 'ondulado') return (
+      <g>
+        <path d="M20 41C20 23 32 10 48 10C64 10 76 23 76 41C62 35 34 35 20 41Z" fill={hairColor} />
+        <path d="M20 41C14 56 13 72 21 82C24 76 22 61 22 44Z" fill={hairColor} />
+        <path d="M76 41C82 56 83 72 75 82C72 76 74 61 74 44Z" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === 'medio') return (
+      <g>
+        <path d="M20 41C20 23 32 10 48 10C64 10 76 23 76 41C62 35 34 35 20 41Z" fill={hairColor} />
+        <path d="M20 41C15 52 16 64 24 72C26 64 24 53 22 43Z" fill={hairColor} />
+        <path d="M76 41C81 52 80 64 72 72C70 64 72 53 74 43Z" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === 'rabo') return (
+      <g>
+        <path d="M22 41C22 24 33 11 48 11C63 11 74 24 74 41C62 36 34 36 22 41Z" fill={hairColor} />
+        <path d="M44 68C42 80 42 90 48 91C54 90 54 80 52 68C50 72 46 72 44 68Z" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === '1' || hairStyle === 'topete') return (
+      <g>
+        <path d="M21 42C21 24 33 10 48 10C63 10 75 24 75 42C61 36 35 36 21 42Z" fill={hairColor} />
+        <path d="M37 10C35 2 43 1 48 1C53 1 61 2 59 10" fill={hairColor} />
+      </g>
+    )
+    if (hairStyle === '2' || hairStyle === 'raspado') return (
+      <path d="M20 43C20 25 32 11 48 11C64 11 76 25 76 43C62 37 34 37 20 43Z" fill={hairColor} />
+    )
+    if (hairStyle === '3' || hairStyle === 'moicano') return (
+      <path d="M42 42C41 25 44 11 48 11C52 11 55 25 54 42C52 37 44 37 42 42Z" fill={hairColor} />
+    )
+    // '0' / 'curto' / default
+    return <path d="M21 42C21 24 33 10 48 10C63 10 75 24 75 42C61 36 35 36 21 42Z" fill={hairColor} />
+  })()
 
   return (
     <svg
@@ -60,10 +127,10 @@ export function AvatarSVG({
         <radialGradient id={`${uid}-bg`} cx="50%" cy="30%" r="76%">
           <stop offset="0%" stopColor={accent} stopOpacity="0.26" />
           <stop offset="45%" stopColor={secondary} stopOpacity={isHybrid ? '0.18' : '0.1'} />
-          <stop offset="100%" stopColor="#050505" stopOpacity="0.98" />
+          <stop offset="100%" stopColor={backgroundColor} stopOpacity="0.98" />
         </radialGradient>
         <linearGradient id={`${uid}-body`} x1="20" y1="58" x2="78" y2="92">
-          <stop stopColor={accent} stopOpacity="0.92" />
+          <stop stopColor={outfitColor} stopOpacity="0.92" />
           <stop offset="1" stopColor={secondary} stopOpacity="0.62" />
         </linearGradient>
         <linearGradient id={`${uid}-face`} x1="28" y1="22" x2="68" y2="69">
@@ -139,23 +206,7 @@ export function AvatarSVG({
         strokeWidth="1.3"
       />
 
-      {isFeminine ? (
-        <>
-          <path
-            d="M25 38C27 21 38 12 49 12C62 12 71 23 72 39C62 29 44 26 25 38Z"
-            fill={hairColor}
-          />
-          <path d="M22 36C19 48 20 65 29 72C31 60 31 47 28 36Z" fill={hairColor} />
-          <path d="M68 36C65 47 65 61 67 72C76 65 77 48 74 36Z" fill={hairColor} />
-        </>
-      ) : (
-        <>
-          {hairStyle === 0 && <path d="M25 36C28 20 41 11 58 17C54 15 44 22 39 29C34 28 29 31 25 36Z" fill={hairColor} />}
-          {hairStyle === 1 && <path d="M25 34C31 17 49 10 66 26C53 22 40 24 25 34Z" fill={hairColor} />}
-          {hairStyle === 2 && <path d="M24 37C25 22 36 13 49 13C61 13 70 23 71 36C58 30 42 29 24 37Z" fill={hairColor} />}
-          {hairStyle === 3 && <path d="M28 32C35 15 55 14 67 30C55 27 42 27 28 32Z" fill={hairColor} />}
-        </>
-      )}
+      {hairEl}
 
       <path
         d="M27 36C36 31 59 31 69 36"
@@ -165,7 +216,7 @@ export function AvatarSVG({
         strokeOpacity="0.9"
       />
 
-      {eyeStyle === 0 && (
+      {eyeStyle === '0' && (
         <>
           <circle cx="38" cy="47" r="3.2" fill="#101010" />
           <circle cx="58" cy="47" r="3.2" fill="#101010" />
@@ -173,13 +224,13 @@ export function AvatarSVG({
           <circle cx="59" cy="46" r="0.9" fill="white" fillOpacity="0.78" />
         </>
       )}
-      {eyeStyle === 1 && (
+      {eyeStyle === '1' && (
         <>
           <path d="M35 47C37 44 41 44 43 47" stroke="#101010" strokeWidth="2.4" strokeLinecap="round" />
           <path d="M53 47C55 44 59 44 61 47" stroke="#101010" strokeWidth="2.4" strokeLinecap="round" />
         </>
       )}
-      {eyeStyle === 2 && (
+      {eyeStyle === '2' && (
         <>
           <rect x="34" y="44" width="9" height="6" rx="3" fill="#101010" />
           <rect x="53" y="44" width="9" height="6" rx="3" fill="#101010" />
@@ -194,9 +245,9 @@ export function AvatarSVG({
         strokeLinecap="round"
       />
 
-      {mouthStyle === 0 && <path d="M39 60C43 64 53 64 57 60" stroke="#101010" strokeWidth="2.2" strokeLinecap="round" />}
-      {mouthStyle === 1 && <path d="M41 61C45 63 51 63 55 61" stroke="#101010" strokeWidth="2" strokeLinecap="round" />}
-      {mouthStyle === 2 && <path d="M41 60C44 66 52 66 55 60" fill="#101010" fillOpacity="0.92" />}
+      {(mouthStyle === '0' || mouthStyle === 'confiante' || mouthStyle === 'sorriso') && <path d="M39 60C43 64 53 64 57 60" stroke="#101010" strokeWidth="2.2" strokeLinecap="round" />}
+      {(mouthStyle === '1' || mouthStyle === 'serio' || mouthStyle === 'focado') && <path d="M41 61C45 63 51 63 55 61" stroke="#101010" strokeWidth="2" strokeLinecap="round" />}
+      {(mouthStyle === '2' || mouthStyle === 'feliz') && <path d="M41 60C44 66 52 66 55 60" fill="#101010" fillOpacity="0.92" />}
 
       <path
         d="M35 39C39 37 43 37 45 39M51 39C55 37 59 37 63 39"
@@ -225,6 +276,22 @@ export function AvatarSVG({
             strokeLinejoin="round"
           />
         </g>
+      )}
+
+      {accessory === 'bone' && (
+        <path d="M25 34C34 22 55 20 69 31L68 36C56 31 40 30 25 38V34Z" fill={secondary} fillOpacity="0.92" />
+      )}
+
+      {accessory === 'headphone' && (
+        <g>
+          <path d="M25 43C25 28 34 18 48 18C62 18 71 28 71 43" stroke={secondary} strokeWidth="3" strokeLinecap="round" />
+          <rect x="18" y="43" width="8" height="14" rx="4" fill={secondary} />
+          <rect x="70" y="43" width="8" height="14" rx="4" fill={secondary} />
+        </g>
+      )}
+
+      {accessory === 'oculos' && (
+        <path d="M31 46H45M51 46H65M45 46H51" stroke={secondary} strokeWidth="2.2" strokeLinecap="round" />
       )}
 
       {rarity !== 'core' && (

@@ -1,16 +1,7 @@
 ﻿'use client'
 
-import { Zap } from 'lucide-react'
 import { useProfile } from '@/hooks/use-profile'
-
-const RANK_STYLES: Record<string, { label: string; color: string }> = {
-  rookie:   { label: 'Rookie',   color: '#94A3B8' },
-  bronze:   { label: 'Bronze',   color: '#CD7F32' },
-  silver:   { label: 'Silver',   color: '#A1A1AA' },
-  gold:     { label: 'Gold',     color: '#EAB308' },
-  platinum: { label: 'Platinum', color: '#22D3EE' },
-  elite:    { label: 'Elite',    color: '#B6FF00' },
-}
+import { getAthleteTitle } from '@/lib/athlete-title'
 
 export function XPCard() {
   const { profile, isLoading } = useProfile()
@@ -26,7 +17,7 @@ export function XPCard() {
   }
 
   const rank = profile?.rank ?? 'rookie'
-  const rankStyle = RANK_STYLES[rank] ?? RANK_STYLES.rookie
+  const rankStyle = getAthleteTitle(rank)
   const level = profile?.currentLevel ?? 1
   const levelProgress = profile?.levelProgress ?? 0
   const xpIntoLevel = profile?.xpIntoLevel ?? 0
@@ -45,12 +36,9 @@ export function XPCard() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F5F5F5]/38">
             Progressão XP
           </p>
-          <div
-            className="grid size-8 place-items-center rounded-lg transition-all duration-200 group-hover:scale-110"
-            style={{ background: rankStyle.color + '15', color: rankStyle.color }}
-          >
-            <Zap className="size-4" strokeWidth={2.2} />
-          </div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: rankStyle.color }}>
+            Permanente
+          </p>
         </div>
 
         <div className="mb-4">
@@ -77,7 +65,7 @@ export function XPCard() {
         <div className="flex items-center gap-3">
           <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/[0.07]">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="gp-bar-fill h-full rounded-full"
               style={{
                 width: `${levelProgress}%`,
                 background: rankStyle.color,

@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 
 import { getAvatarById, isAvatarUnlocked, type AvatarType } from '@/lib/avatar-registry'
+import { customAvatarRowToDefinition, type CustomAvatarRow } from '@/lib/custom-avatars'
 import type { ProfilePatch } from '@/lib/profile'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { syncUserXP } from '@/lib/xp'
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from '@/lib/xp'
 
 const VALID_TYPES: AvatarType[] = ['runner', 'gym_rat', 'hybrid_athlete', 'power_athlete']
 
@@ -31,13 +32,12 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const [profileResult, xpFeedback, avatarUnlocksResult] = await Promise.all([
+  const [profileResult, avatarUnlocksResult] = await Promise.all([
     supabase
       .from('profiles')
       .select('user_id, username, display_name, bio, avatar_id, avatar_type, level, current_level, total_xp, rank, is_admin, timezone, created_at')
       .eq('user_id', user.id)
       .maybeSingle(),
-    syncUserXP(supabase, user.id),
     supabase
       .from('user_avatar_unlocks')
       .select('avatar_id')
@@ -55,23 +55,20 @@ export async function GET() {
     : { data: null }
 
   const resolvedProfile = (profile ?? fallbackProfile) as ProfileRow | null
+  const unlockedAvatarIds = ((avatarUnlocksResult.data ?? []) as { avatar_id: string }[]).map((row) => row.avatar_id)
+  const customAvatarIds = unlockedAvatarIds.filter((id) => id.startsWith('custom-'))
+  const { data: customAvatars } = customAvatarIds.length > 0
+    ? await supabase
+        .from('custom_avatars')
+        .select('id,name,type,category,label,description,primary_color,accent_color,secondary_color,background_color,outfit_color,hair_style,hair_color,face_style,accessory,glow_color,rarity,gender,unlock_kind,unlock_label,female,exclusive,trophy_id,assigned_to,is_active,metadata,created_at,updated_at')
+        .in('id', customAvatarIds)
+        .eq('is_active', true)
+    : { data: [] }
 
-  // Auto-assign username for existing users who don't have one yet
-  if (resolvedProfile && !resolvedProfile.username) {
-    const base =
-      user.email
-        ?.split('@')[0]
-        ?.replace(/[^a-z0-9_]/gi, '')
-        .toLowerCase() ?? 'atleta'
-    await supabase
-      .from('profiles')
-      .update({
-        username: base,
-        display_name: resolvedProfile.display_name ?? user.email?.split('@')[0],
-      })
-      .eq('user_id', user.id)
-    if (resolvedProfile) resolvedProfile.username = base
-  }
+  const totalXp = Number(resolvedProfile?.total_xp ?? 0)
+  const currentLevel = calculateLevelFromXP(totalXp)
+  const rank = getRankForLevel(currentLevel)
+  const levelState = getLevelProgress(totalXp)
 
   return NextResponse.json({
     userId: user.id,
@@ -80,19 +77,20 @@ export async function GET() {
     bio: resolvedProfile?.bio ?? null,
     avatarId: resolvedProfile?.avatar_id ?? null,
     avatarType: (resolvedProfile?.avatar_type as AvatarType) ?? null,
-    level: xpFeedback.currentLevel,
-    currentLevel: xpFeedback.currentLevel,
-    totalXp: xpFeedback.totalXp,
-    levelProgress: xpFeedback.levelProgress,
-    xpIntoLevel: xpFeedback.xpIntoLevel,
-    xpForNextLevel: xpFeedback.xpForNextLevel,
-    xpRemainingForNextLevel: xpFeedback.xpRemainingForNextLevel,
-    currentLevelXp: xpFeedback.currentLevelXp,
-    nextLevelXp: xpFeedback.nextLevelXp,
-    nextLevels: xpFeedback.nextLevels,
-    rank: xpFeedback.rank,
+    level: currentLevel,
+    currentLevel,
+    totalXp,
+    levelProgress: levelState.levelProgress,
+    xpIntoLevel: levelState.xpIntoLevel,
+    xpForNextLevel: levelState.xpForNextLevel,
+    xpRemainingForNextLevel: levelState.xpRemainingForNextLevel,
+    currentLevelXp: levelState.currentLevelXp,
+    nextLevelXp: levelState.nextLevelXp,
+    nextLevels: levelState.nextLevels,
+    rank,
     isAdmin: Boolean(resolvedProfile?.is_admin),
-    unlockedAvatarIds: ((avatarUnlocksResult.data ?? []) as { avatar_id: string }[]).map((row) => row.avatar_id),
+    unlockedAvatarIds,
+    customAvatars: ((customAvatars ?? []) as CustomAvatarRow[]).map(customAvatarRowToDefinition),
     timezone: resolvedProfile?.timezone ?? 'America/Manaus',
     createdAt: resolvedProfile?.created_at ?? null,
   })
@@ -124,14 +122,26 @@ export async function PATCH(request: Request) {
     if (!VALID_TYPES.includes(avatarType as AvatarType)) {
       return NextResponse.json({ error: 'Invalid avatarType' }, { status: 400 })
     }
-    const avatar = getAvatarById(avatarId)
+    const customAvatarResult = avatarId.startsWith('custom-')
+      ? await supabase
+          .from('custom_avatars')
+          .select('id,name,type,category,label,description,primary_color,accent_color,secondary_color,background_color,outfit_color,hair_style,hair_color,face_style,accessory,glow_color,rarity,gender,unlock_kind,unlock_label,female,exclusive,trophy_id,assigned_to,is_active,metadata,created_at,updated_at')
+          .eq('id', avatarId)
+          .eq('is_active', true)
+          .maybeSingle()
+      : null
+    const avatar = customAvatarResult?.data
+      ? customAvatarRowToDefinition(customAvatarResult.data as CustomAvatarRow)
+      : getAvatarById(avatarId)
+    if (avatarId.startsWith('custom-') && !customAvatarResult?.data) {
+      return NextResponse.json({ error: 'Avatar personalizado indisponivel.' }, { status: 403 })
+    }
     if (!avatar) {
       return NextResponse.json({ error: 'Unknown avatarId' }, { status: 400 })
     }
-    const xpFeedback = await syncUserXP(supabase, user.id)
     const { data: profileAccess } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin,total_xp')
       .eq('user_id', user.id)
       .maybeSingle()
     const { data: avatarUnlocks } = await supabase
@@ -139,7 +149,8 @@ export async function PATCH(request: Request) {
       .select('avatar_id')
       .eq('user_id', user.id)
     const unlockedAvatarIds = ((avatarUnlocks ?? []) as { avatar_id: string }[]).map((row) => row.avatar_id)
-    if (!isAvatarUnlocked(avatar, { level: xpFeedback.currentLevel, isAdmin: Boolean(profileAccess?.is_admin), unlockedAvatarIds })) {
+    const currentLevel = calculateLevelFromXP(Number(profileAccess?.total_xp ?? 0))
+    if (!isAvatarUnlocked(avatar, { level: currentLevel, isAdmin: Boolean(profileAccess?.is_admin), unlockedAvatarIds })) {
       return NextResponse.json({ error: 'Avatar bloqueado.' }, { status: 403 })
     }
     update.avatar_id = avatarId

@@ -40,9 +40,12 @@ export function useNotifications() {
   }, []);
 
   useEffect(() => {
-    fetchNotifications();
+    const firstFetch = setTimeout(fetchNotifications, 0);
     const interval = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(firstFetch);
+      clearInterval(interval);
+    };
   }, [fetchNotifications]);
 
   const markRead = useCallback(async (id: string) => {

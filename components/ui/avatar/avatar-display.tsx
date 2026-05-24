@@ -1,10 +1,11 @@
-import { getAvatarById } from '@/lib/avatar-registry'
+import { getAvatarById, type AvatarDefinition } from '@/lib/avatar-registry'
 import { AvatarSVG } from './avatar-svg'
 
 interface AvatarDisplayProps {
   avatarId: string | null
   initials?: string
   size?: 'xs' | 'sm' | 'md' | 'lg'
+  definition?: AvatarDefinition | null
 }
 
 const sizeMap = {
@@ -14,21 +15,43 @@ const sizeMap = {
   lg: { container: 'size-24 rounded-3xl', svgSize: 96 },
 }
 
-export function AvatarDisplay({ avatarId, initials = '?', size = 'md' }: AvatarDisplayProps) {
+function buildGlow(def: AvatarDefinition, size: 'xs' | 'sm' | 'md' | 'lg'): string {
+  const { glowColor, accentColor } = def
+  if (size === 'xs') return `0 0 8px ${glowColor}`
+  if (size === 'sm') return `0 0 12px ${glowColor}`
+  if (size === 'md') return `0 0 22px ${glowColor}, 0 0 6px ${accentColor}28 inset, 0 4px 14px rgba(0,0,0,0.55)`
+  return `0 0 36px ${glowColor}, 0 0 72px ${glowColor}50, 0 0 10px ${accentColor}22 inset, 0 8px 28px rgba(0,0,0,0.65)`
+}
+
+function buildBorder(def: AvatarDefinition, size: 'xs' | 'sm' | 'md' | 'lg'): string {
+  const { accentColor, rarity } = def
+  if (size === 'xs' || size === 'sm') return 'rgba(255,255,255,0.08)'
+  const isLegendary = rarity === 'legendary' || rarity === 'seasonal'
+  const isEpic = rarity === 'epic'
+  if (isLegendary) return `${accentColor}48`
+  if (isEpic) return `${accentColor}32`
+  return `${accentColor}22`
+}
+
+export function AvatarDisplay({ avatarId, initials = '?', size = 'md', definition: definitionOverride }: AvatarDisplayProps) {
   const { container, svgSize } = sizeMap[size]
-  const definition = avatarId ? getAvatarById(avatarId) : null
+  const definition = definitionOverride ?? (avatarId ? getAvatarById(avatarId) : null)
 
   if (definition) {
     return (
       <div
-        className={`${container} shrink-0 grid place-items-center overflow-hidden border border-white/[0.08] bg-[#080808]`}
-        style={{ boxShadow: `0 0 16px ${definition.glowColor}` }}
+        className={`${container} shrink-0 grid place-items-center overflow-hidden bg-[#080808]`}
+        style={{
+          boxShadow: buildGlow(definition, size),
+          border: `1px solid ${buildBorder(definition, size)}`,
+        }}
       >
         <AvatarSVG
           avatarId={definition.id}
           accentColor={definition.accentColor}
           secondaryColor={definition.secondaryColor}
           size={svgSize}
+          definition={definition}
         />
       </div>
     )

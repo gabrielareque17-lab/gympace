@@ -1,4 +1,5 @@
 import type { AvatarType } from './avatar-registry'
+import type { AvatarDefinition } from './avatar-registry'
 import type { XPLevelMilestone } from './xp'
 
 export interface ProfileData {
@@ -21,6 +22,7 @@ export interface ProfileData {
   rank: string
   isAdmin: boolean
   unlockedAvatarIds: string[]
+  customAvatars: AvatarDefinition[]
   timezone: string
   createdAt: string | null
 }

@@ -5,6 +5,7 @@ import { createFeedEvent } from "@/lib/feed";
 import { sendPushNotification } from "@/lib/send-push";
 import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { awardXP } from "@/lib/xp";
 
 type Action = "accept" | "decline" | "cancel";
 
@@ -60,6 +61,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const now = new Date();
   let updates: Record<string, unknown>;
+
+  let xpFeedback: Awaited<ReturnType<typeof awardXP>> | null = null;
 
   if (action === "accept") {
     const endDate = new Date(now);
@@ -121,10 +124,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       dedupeKey: `challenge_accepted:${id}`,
       payload: { challenge_id: id },
     });
+
+    xpFeedback = await awardXP(supabase, { userId: user.id, source: "challenge", sourceId: id });
   }
 
   revalidatePath("/desafios-competicoes");
   revalidatePath(`/desafios/${id}`);
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, xpFeedback });
 }

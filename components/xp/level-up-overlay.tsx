@@ -2,15 +2,7 @@
 
 import { useEffect } from 'react'
 import { Zap } from 'lucide-react'
-
-const RANK_STYLES: Record<string, { label: string; color: string }> = {
-  rookie:   { label: 'Rookie',   color: '#94A3B8' },
-  bronze:   { label: 'Bronze',   color: '#CD7F32' },
-  silver:   { label: 'Silver',   color: '#A1A1AA' },
-  gold:     { label: 'Gold',     color: '#EAB308' },
-  platinum: { label: 'Platinum', color: '#22D3EE' },
-  elite:    { label: 'Elite',    color: '#B6FF00' },
-}
+import { getAthleteTitle } from '@/lib/athlete-title'
 
 interface LevelUpOverlayProps {
   level: number
@@ -21,7 +13,7 @@ interface LevelUpOverlayProps {
 }
 
 export function LevelUpOverlay({ level, rank, totalXp, levelProgress, onClose }: LevelUpOverlayProps) {
-  const rankStyle = RANK_STYLES[rank] ?? RANK_STYLES.rookie
+  const rankStyle = getAthleteTitle(rank)
 
   useEffect(() => {
     const timer = setTimeout(onClose, 5000)

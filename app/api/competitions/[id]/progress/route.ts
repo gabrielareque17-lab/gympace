@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { updateActiveCompetitionProgressForUser } from '@/lib/competition-progress'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { syncUserXP } from '@/lib/xp'
+import { awardXP } from '@/lib/xp'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -24,7 +24,7 @@ export async function PATCH(_req: Request, { params }: Params) {
   }
 
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id)
-  const xpFeedback = await syncUserXP(supabase, user.id)
+  const xpFeedback = await awardXP(supabase, { userId: user.id, source: 'competition', sourceId: id })
 
   return NextResponse.json({ ok: true, progressUpdates, xpFeedback })
 }

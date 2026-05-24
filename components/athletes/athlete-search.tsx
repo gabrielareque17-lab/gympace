@@ -37,7 +37,7 @@ function EmptyState({ query }: { query: string }) {
           </p>
           <p className="max-w-xs text-sm text-[#F5F5F5]/28">
             Nenhum resultado para{' '}
-            <span className="font-semibold text-[#F5F5F5]/45">"{query}"</span>. Tente outro
+            <span className="font-semibold text-[#F5F5F5]/45">&ldquo;{query}&rdquo;</span>. Tente outro
             nome ou username.
           </p>
         </>
@@ -66,13 +66,11 @@ export function AthleteSearch({ initialAthletes }: AthleteSearchProps) {
 
   useEffect(() => {
     if (!query.trim()) {
-      setAthletes(initialAthletes)
-      setIsLoading(false)
       return
     }
 
-    setIsLoading(true)
     const timer = setTimeout(async () => {
+      setIsLoading(true)
       try {
         const res = await fetch(`/api/athletes/search?q=${encodeURIComponent(query.trim())}`)
         if (res.ok) {
@@ -86,6 +84,8 @@ export function AthleteSearch({ initialAthletes }: AthleteSearchProps) {
 
     return () => clearTimeout(timer)
   }, [query, initialAthletes])
+
+  const displayedAthletes = query.trim() ? athletes : initialAthletes
 
   return (
     <div className="space-y-5">
@@ -102,7 +102,10 @@ export function AthleteSearch({ initialAthletes }: AthleteSearchProps) {
           type="text"
           placeholder="Buscar por nome ou @username..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            if (!e.target.value.trim()) setIsLoading(false)
+          }}
           className="h-12 w-full rounded-2xl border border-white/[0.08] bg-[#111111] pl-11 pr-4 text-sm text-[#F5F5F5] placeholder-[#F5F5F5]/25 outline-none transition-all duration-200 focus:border-[#B6FF00]/30 focus:ring-1 focus:ring-[#B6FF00]/15 focus:shadow-[0_0_24px_rgba(182,255,0,0.05)]"
         />
       </div>
@@ -111,8 +114,8 @@ export function AthleteSearch({ initialAthletes }: AthleteSearchProps) {
       {!isLoading && (
         <p className="text-[11px] text-[#F5F5F5]/28">
           {query.trim()
-            ? `${athletes.length} ${athletes.length === 1 ? 'atleta encontrado' : 'atletas encontrados'}`
-            : `${athletes.length} ${athletes.length === 1 ? 'atleta na comunidade' : 'atletas na comunidade'}`}
+            ? `${displayedAthletes.length} ${displayedAthletes.length === 1 ? 'atleta encontrado' : 'atletas encontrados'}`
+            : `${displayedAthletes.length} ${displayedAthletes.length === 1 ? 'atleta na comunidade' : 'atletas na comunidade'}`}
         </p>
       )}
 
@@ -120,9 +123,9 @@ export function AthleteSearch({ initialAthletes }: AthleteSearchProps) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-          : athletes.length === 0
+          : displayedAthletes.length === 0
           ? <EmptyState query={query} />
-          : athletes.map((a) => <AthleteCard key={a.user_id} athlete={a} />)}
+          : displayedAthletes.map((a) => <AthleteCard key={a.user_id} athlete={a} />)}
       </div>
     </div>
   )

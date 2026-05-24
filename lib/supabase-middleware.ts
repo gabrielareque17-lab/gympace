@@ -16,7 +16,20 @@ function getSupabaseEnv() {
   return { supabaseUrl, supabaseKey };
 }
 
-const protectedRoutes = ["/", "/corridas"];
+const protectedRoutes = [
+  "/",
+  "/perfil",
+  "/treinos",
+  "/academia",
+  "/feed",
+  "/social",
+  "/ranking",
+  "/desafios",
+  "/competicoes",
+  "/notificacoes",
+  "/admin",
+  "/corridas",
+];
 const authRoutes = ["/login", "/register"];
 
 function isProtectedRoute(pathname: string) {
@@ -57,7 +70,7 @@ export async function updateSession(request: NextRequest) {
   if (!user && isProtectedRoute(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirectTo", request.nextUrl.pathname);
+    url.searchParams.set("redirectTo", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 

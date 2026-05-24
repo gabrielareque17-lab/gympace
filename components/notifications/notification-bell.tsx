@@ -19,7 +19,10 @@ export function NotificationBell({ context = "header" }: NotificationBellProps) 
   const panelRef = useRef<HTMLDivElement>(null);
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Close when clicking outside bell and outside panel
   useEffect(() => {

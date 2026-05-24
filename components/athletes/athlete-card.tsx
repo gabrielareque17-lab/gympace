@@ -4,18 +4,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { AvatarDisplay } from '@/components/ui/avatar/avatar-display'
+import { getAthleteTitle } from '@/lib/athlete-title'
 import { getAvatarById } from '@/lib/avatar-registry'
-
-const LEVEL_NAMES = ['Iniciante', 'Amador', 'Intermediário', 'Avançado', 'Elite']
-const LEVEL_COLORS = ['#71717A', '#60A5FA', '#A78BFA', '#FB923C', '#B6FF00']
-
-const RANK_CONFIG: Record<string, { label: string; color: string }> = {
-  bronze:   { label: 'Bronze',   color: '#CD7F32' },
-  silver:   { label: 'Prata',    color: '#A1A1AA' },
-  gold:     { label: 'Ouro',     color: '#EAB308' },
-  platinum: { label: 'Platina',  color: '#67E8F9' },
-  diamond:  { label: 'Diamante', color: '#A78BFA' },
-}
 
 export interface AthleteCardData {
   user_id: string
@@ -39,11 +29,7 @@ export function AthleteCard({ athlete }: { athlete: AthleteCardData }) {
   const accentColor = avatarDef?.accentColor ?? '#B6FF00'
   const glowColor = avatarDef?.glowColor ?? 'rgba(182,255,0,0.15)'
 
-  const levelIdx = Math.max(0, Math.min((athlete.level ?? 1) - 1, LEVEL_NAMES.length - 1))
-  const levelName = LEVEL_NAMES[levelIdx]
-  const levelColor = LEVEL_COLORS[levelIdx]
-
-  const rank = RANK_CONFIG[athlete.rank ?? 'bronze'] ?? RANK_CONFIG.bronze
+  const title = getAthleteTitle(athlete.rank)
 
   return (
     <Link
@@ -74,15 +60,9 @@ export function AthleteCard({ athlete }: { athlete: AthleteCardData }) {
           <div className="mt-2 flex flex-wrap gap-1.5">
             <span
               className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em]"
-              style={{ background: levelColor + '20', color: levelColor }}
+              style={{ background: title.color + '20', color: title.color }}
             >
-              Nív. {athlete.level ?? 1} · {levelName}
-            </span>
-            <span
-              className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em]"
-              style={{ background: rank.color + '18', color: rank.color }}
-            >
-              {rank.label}
+              Nív. {athlete.level ?? 1} · {title.label}
             </span>
           </div>
         </div>

@@ -13,7 +13,6 @@ import {
   Pencil,
   Play,
   Search,
-  Sparkles,
   Square,
   Trash2,
   Trophy,
@@ -393,7 +392,10 @@ export default function AcademiaPage() {
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#22D3EE]/70">
               Musculação
             </p>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Registrar treino</h1>
+            <h1
+              className="leading-none text-white"
+              style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+            >Registrar treino</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-[#F5F5F5]/40">
               Selecione grupos musculares, músculos específicos e divisões profissionais como Push, Pull e Legs.
             </p>

@@ -1,7 +1,19 @@
 export type AvatarType = 'runner' | 'gym_rat' | 'hybrid_athlete' | 'power_athlete'
 export type AvatarCategory = 'running' | 'gym' | 'hybrid' | 'premium'
-export type AvatarRarity = 'core' | 'rare' | 'epic' | 'legendary' | 'seasonal'
+export type AvatarRarity = 'core' | 'common' | 'rare' | 'epic' | 'legendary' | 'seasonal'
 export type AvatarUnlockKind = 'free' | 'level' | 'season' | 'trophy' | 'achievement' | 'admin'
+export type CustomAvatarGender = 'masculino' | 'feminino' | 'neutro'
+
+export interface CustomAvatarVisual {
+  gender?: CustomAvatarGender
+  primaryColor?: string
+  backgroundColor?: string
+  outfitColor?: string
+  hairStyle?: string
+  hairColor?: string
+  faceStyle?: string
+  accessory?: string
+}
 
 export interface AvatarUnlockRule {
   kind: AvatarUnlockKind
@@ -24,6 +36,7 @@ export interface AvatarDefinition {
   rarity: AvatarRarity
   unlock: AvatarUnlockRule
   female?: boolean
+  customVisual?: CustomAvatarVisual
 }
 
 const running = {
@@ -374,8 +387,54 @@ export function resolveAvatarId(id: string | null | undefined): string {
   return LEGACY_AVATAR_MAP[id] ?? id
 }
 
-export const getAvatarById = (id: string | null | undefined): AvatarDefinition | undefined =>
-  AVATAR_REGISTRY.find((a) => a.id === resolveAvatarId(id))
+function parseCustomAvatarId(id: string): AvatarDefinition | undefined {
+  if (!id.startsWith('custom-')) return undefined
+  const parts = id.split('-')
+  if (parts.length < 8) return undefined
+  const gender = parts[parts.length - 2]
+  const secondaryColor = `#${parts[parts.length - 3]}`
+  const accentColor = `#${parts[parts.length - 4]}`
+  const rarity = parts[parts.length - 5] as AvatarRarity
+  const typeToken = parts[parts.length - 6]
+  const typeMap: Record<string, AvatarType> = {
+    run: 'runner',
+    gym: 'gym_rat',
+    hyb: 'hybrid_athlete',
+    pwr: 'power_athlete',
+  }
+  const type = typeMap[typeToken] ?? 'power_athlete'
+  const categoryMap: Record<AvatarType, AvatarCategory> = {
+    runner: 'running',
+    gym_rat: 'gym',
+    hybrid_athlete: 'hybrid',
+    power_athlete: 'premium',
+  }
+  const slug = parts.slice(1, -6).join('-')
+  const label = slug
+    .split('-')
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(' ') || 'Avatar Exclusivo'
+
+  return {
+    id,
+    type,
+    category: categoryMap[type],
+    label,
+    description: 'Avatar exclusivo',
+    accentColor,
+    secondaryColor,
+    glowColor: 'rgba(250,204,21,0.34)',
+    rarity,
+    unlock: { kind: 'admin', label: 'Exclusivo' },
+    female: gender === 'f',
+  }
+}
+
+export const getAvatarById = (id: string | null | undefined): AvatarDefinition | undefined => {
+  const resolved = resolveAvatarId(id)
+  return AVATAR_REGISTRY.find((a) => a.id === resolved) ?? parseCustomAvatarId(resolved)
+}
 
 export const getDefaultAvatar = (): AvatarDefinition => AVATAR_REGISTRY[0]
 

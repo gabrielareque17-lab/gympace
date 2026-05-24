@@ -127,7 +127,10 @@ export default async function DesafiosCompeticoesPage() {
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Competitivo
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Competitivo</h1>
+          <h1
+            className="leading-none text-white"
+            style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+          >Competitivo</h1>
           <p className="mt-2 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
             Duelos 1x1 e competições em grupo, cada um com seus dados e regras preservados.
           </p>
@@ -219,7 +222,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
-      <h2 className="flex items-center gap-2 font-display text-lg font-bold">
+      <h2 className="flex items-center gap-2 leading-none text-white" style={{ fontFamily: "var(--font-hero)", fontSize: "1.35rem", letterSpacing: "0.04em" }}>
         <Icon className="size-5 text-[#B6FF00]" strokeWidth={2} />
         {title}
       </h2>

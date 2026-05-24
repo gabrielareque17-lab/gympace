@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { awardTrophy } from "@/lib/trophies";
+import { awardXP } from "@/lib/xp";
 
 async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
@@ -55,6 +56,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Usuário já possui este troféu" }, { status: 409 });
   }
 
+  const xpFeedback = await awardXP(supabase, { userId: user_id, source: "trophy", sourceId: trophy_id });
+
   await supabase.from("admin_events").insert({
     admin_id: admin.id,
     event_type: "award_trophy",
@@ -70,5 +73,5 @@ export async function POST(request: Request) {
 
   if (target?.username) revalidatePath(`/perfil/${target.username}`);
 
-  return NextResponse.json({ grant: result.grant }, { status: 201 });
+  return NextResponse.json({ grant: result.grant, xpFeedback }, { status: 201 });
 }

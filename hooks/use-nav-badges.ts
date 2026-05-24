@@ -34,9 +34,12 @@ export function useNavBadges() {
   }, []);
 
   useEffect(() => {
-    fetchBadges();
+    const firstFetch = setTimeout(fetchBadges, 0);
     const interval = setInterval(fetchBadges, 60_000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(firstFetch);
+      clearInterval(interval);
+    };
   }, [fetchBadges]);
 
   const markFeedSeen = useCallback(async () => {

@@ -9,7 +9,6 @@ import {
   type WorkoutRow,
   type ProfileRow,
 } from "@/lib/analytics";
-import { syncUserXP } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +29,7 @@ async function getAnalyticsData() {
       return buildEmptyAnalytics();
     }
 
-    const [runsResult, workoutsResult, xpSync] = await Promise.all([
+    const [runsResult, workoutsResult, profileResult] = await Promise.all([
       supabase
         .from("runs")
         .select("distance,pace,created_at")
@@ -41,7 +40,11 @@ async function getAnalyticsData() {
         .select("muscle_group,muscle_groups,duration_minutes,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true }),
-      syncUserXP(supabase, user.id),
+      supabase
+        .from("profiles")
+        .select("total_xp,current_level,rank")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
 
     const runs = (runsResult.data ?? []) as RunRow[];
@@ -56,11 +59,7 @@ async function getAnalyticsData() {
       workouts = (workoutsResult.data ?? []) as WorkoutRow[];
     }
 
-    const profile = {
-      total_xp: xpSync.totalXp,
-      current_level: xpSync.currentLevel,
-      rank: xpSync.rank,
-    } satisfies ProfileRow;
+    const profile = (profileResult.data ?? null) as ProfileRow | null;
     const data = computeAnalytics(runs, workouts, profile);
 
     return data;
@@ -72,7 +71,7 @@ async function getAnalyticsData() {
 function PageLayout({ data }: { data: ReturnType<typeof buildEmptyAnalytics> }) {
   return (
     <AppShell>
-      <div className="min-w-0 flex-1 p-6 sm:p-8 lg:p-10">
+      <div className="min-w-0 flex-1 px-3.5 pb-4 pt-4 sm:p-6 lg:p-8">
         <PageHeader
           eyebrow="Analytics"
           title="Evolução"

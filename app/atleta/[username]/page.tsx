@@ -4,6 +4,7 @@ import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { FollowButton } from "@/components/social/follow-button";
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { getAvatarById } from "@/lib/avatar-registry";
+import { getAthleteTitle } from "@/lib/athlete-title";
 import {
   ACHIEVEMENT_REGISTRY,
   CATEGORIES,
@@ -21,20 +22,12 @@ type Props = { params: Promise<{ username: string }> };
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVELS = [
-  { name: "Iniciante",     threshold: 0,   next: 25,       color: "#71717A" },
+  { name: "Iniciante",     threshold: 0,   next: 25,       color: "#94A3B8" },
   { name: "Amador",        threshold: 25,  next: 100,      color: "#60A5FA" },
-  { name: "Intermediário", threshold: 100, next: 300,      color: "#A78BFA" },
+  { name: "Intermediário", threshold: 100, next: 300,      color: "#22C55E" },
   { name: "Avançado",      threshold: 300, next: 600,      color: "#FB923C" },
   { name: "Elite",         threshold: 600, next: Infinity, color: "#B6FF00" },
 ];
-
-const RANK_CONFIG: Record<string, { label: string; color: string }> = {
-  bronze:   { label: "Bronze",   color: "#CD7F32" },
-  silver:   { label: "Prata",    color: "#A1A1AA" },
-  gold:     { label: "Ouro",     color: "#EAB308" },
-  platinum: { label: "Platina",  color: "#67E8F9" },
-  diamond:  { label: "Diamante", color: "#A78BFA" },
-};
 
 const ATHLETE_LABELS: Record<string, string> = {
   runner:          "Corredor",
@@ -219,7 +212,7 @@ export default async function AthleteProfilePage({ params }: Props) {
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
   const displayName = profile.display_name || profile.username || "Atleta";
   const initials = displayName[0]?.toUpperCase() ?? "?";
-  const rank = RANK_CONFIG[profile.rank ?? "bronze"] ?? RANK_CONFIG.bronze;
+  const athleteTitle = getAthleteTitle(profile.rank);
 
   const achievementStats: AchievementStats = {
     totalRuns,
@@ -331,12 +324,12 @@ export default async function AthleteProfilePage({ params }: Props) {
                   <span
                     className="rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
                     style={{
-                      borderColor: rank.color + "40",
-                      color: rank.color,
-                      background: rank.color + "10",
+                      borderColor: athleteTitle.color + "40",
+                      color: athleteTitle.color,
+                      background: athleteTitle.color + "10",
                     }}
                   >
-                    {rank.label}
+                    {athleteTitle.label}
                   </span>
                 </div>
 

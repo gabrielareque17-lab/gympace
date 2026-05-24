@@ -11,12 +11,12 @@ import {
   Dumbbell,
   Flame,
   Footprints,
+  type LucideIcon,
   MapPin,
   MessageCircle,
   Route,
   Shield,
   Smartphone,
-  Star,
   Target,
   Trophy,
   TrendingUp,
@@ -24,32 +24,39 @@ import {
   Zap,
 } from "lucide-react";
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
+// ─── Keyframes & utility classes ─────────────────────────────────────────────
+
+const CSS = `
+@keyframes gp-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes gp-float {
+  0%, 100% { transform: translateY(0)   rotate(-2.5deg); }
+  50%       { transform: translateY(-14px) rotate(-2.5deg); }
+}
+.gp-float { animation: gp-float 7s ease-in-out infinite; }
+`;
+
+// ─── Hooks ───────────────────────────────────────────────────────────────────
 
 function useInView<T extends HTMLElement = HTMLElement>(threshold = 0.12) {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setInView(true);
-          obs.disconnect();
-        }
-      },
+      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } },
       { threshold }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [threshold]);
-
   return [ref, inView] as const;
 }
 
-// ─── Animated Counter ─────────────────────────────────────────────────────────
+// ─── Animated Counter ────────────────────────────────────────────────────────
 
 function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -60,12 +67,7 @@ function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: stri
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setStarted(true);
-          obs.disconnect();
-        }
-      },
+      ([e]) => { if (e.isIntersecting) { setStarted(true); obs.disconnect(); } },
       { threshold: 0.1 }
     );
     obs.observe(el);
@@ -85,15 +87,51 @@ function AnimatedNumber({ target, suffix = "" }: { target: number; suffix?: stri
     requestAnimationFrame(tick);
   }, [started, target]);
 
+  return <span ref={ref}>{current.toLocaleString("pt-BR")}{suffix}</span>;
+}
+
+// ─── Marquee ticker ──────────────────────────────────────────────────────────
+
+function MarqueeTicker() {
+  const items = [
+    "CORRIDA", "GPS", "ACADEMIA", "XP", "RANKING", "ANALYTICS",
+    "COMPETIÇÕES", "STREAKS", "EVOLUÇÃO", "FEED", "TROFÉUS", "PWA",
+  ];
+  const text = items.join("  ·  ") + "  ·  ";
+
   return (
-    <span ref={ref}>
-      {current.toLocaleString("pt-BR")}
-      {suffix}
-    </span>
+    <div className="overflow-hidden border-y border-white/[0.05] bg-[#050505] py-2.5">
+      <div
+        className="flex whitespace-nowrap"
+        style={{ animation: "gp-marquee 40s linear infinite" }}
+      >
+        {[0, 1].map((k) => (
+          <span
+            key={k}
+            className="shrink-0 px-4 text-[9px] font-bold uppercase tracking-[0.35em] text-white/[0.18]"
+          >
+            {text}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
+// ─── Section eyebrow label ───────────────────────────────────────────────────
+
+function SectionEyebrow({ label }: { label: string }) {
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <div className="h-px w-10 bg-white/[0.14]" />
+      <span className="text-[9px] font-bold uppercase tracking-[0.45em] text-white/28">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ─── NavBar ──────────────────────────────────────────────────────────────────
 
 function NavBar() {
   const [scrolled, setScrolled] = useState(false);
@@ -108,17 +146,22 @@ function NavBar() {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "border-b border-white/[0.05] bg-[#080808]/85 shadow-[0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-xl"
+          ? "border-b border-white/[0.06] bg-[#080808]/92 backdrop-blur-xl"
           : ""
       }`}
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
-      <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-2">
-          <div className="grid size-[30px] place-items-center rounded-[8px] bg-[#B6FF00] shadow-[0_0_16px_rgba(182,255,0,0.4)]">
-            <Zap className="size-[15px] text-[#080808]" strokeWidth={3} />
+      <div className="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-5 sm:px-6">
+        <div className="flex items-center gap-2.5">
+          <div className="grid size-[28px] place-items-center rounded-[7px] bg-[#B6FF00] shadow-[0_0_14px_rgba(182,255,0,0.4)]">
+            <Zap className="size-[14px] text-[#080808]" strokeWidth={3} />
           </div>
-          <span className="font-display text-[16px] font-bold tracking-[-0.02em] sm:text-[17px]">GymPace</span>
+          <span
+            className="text-[20px] tracking-[0.08em] text-white"
+            style={{ fontFamily: "var(--font-hero)" }}
+          >
+            GYMPACE
+          </span>
         </div>
 
         <nav className="hidden items-center gap-7 md:flex">
@@ -132,23 +175,23 @@ function NavBar() {
             <a
               key={label}
               href={href}
-              className="text-[13px] text-[#F5F5F5]/45 transition-colors duration-150 hover:text-[#F5F5F5]/90"
+              className="text-[12px] font-medium text-[#F5F5F5]/40 transition-colors duration-150 hover:text-[#F5F5F5]/85"
             >
               {label}
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="hidden text-[13px] text-[#F5F5F5]/45 transition-colors hover:text-[#F5F5F5]/90 md:block"
+            className="hidden text-[12px] font-medium text-[#F5F5F5]/38 transition-colors hover:text-[#F5F5F5]/80 md:block"
           >
             Entrar
           </Link>
           <Link
             href="/register"
-            className="inline-flex min-h-[40px] items-center rounded-[10px] bg-[#B6FF00] px-3.5 py-1.5 text-[13px] font-bold text-[#080808] transition-all duration-200 hover:bg-[#CAFF30] hover:shadow-[0_0_20px_rgba(182,255,0,0.4)] sm:px-4 sm:py-2"
+            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-[8px] bg-[#B6FF00] px-4 text-[12px] font-bold text-[#080808] transition-all duration-200 hover:bg-[#CAFF30] hover:shadow-[0_0_18px_rgba(182,255,0,0.4)]"
           >
             Começar grátis
           </Link>
@@ -158,56 +201,53 @@ function NavBar() {
   );
 }
 
-// ─── App Preview Mockup ───────────────────────────────────────────────────────
+// ─── App Preview Mockup ──────────────────────────────────────────────────────
 
 function AppPreview() {
   return (
-    <div className="relative mx-auto max-w-5xl">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-[#080808] to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-[#080808] to-transparent" />
+    <div className="relative gp-float">
+      <div className="absolute inset-0 scale-90 rounded-3xl bg-[#B6FF00]/[0.07] blur-3xl" />
 
-      <div className="absolute inset-0 scale-95 rounded-3xl bg-[#B6FF00]/[0.06] blur-3xl" />
-
-      <div className="relative overflow-hidden rounded-[20px] border border-white/[0.07] bg-[#0C0C0C] shadow-[0_40px_80px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)]">
+      <div className="relative overflow-hidden rounded-[18px] border border-white/[0.08] bg-[#0C0C0C] shadow-[0_32px_80px_rgba(0,0,0,0.75),0_0_0_1px_rgba(255,255,255,0.04)]">
         {/* Browser chrome */}
-        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-[#0A0A0A] px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-white/[0.05] bg-[#0A0A0A] px-4 py-2.5">
           <div className="flex gap-1.5">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="size-[11px] rounded-full bg-white/10" />
+              <div key={i} className="size-[9px] rounded-full bg-white/10" />
             ))}
           </div>
-          <div className="mx-auto flex h-6 w-44 items-center justify-center rounded-md bg-white/[0.04] text-[10px] text-white/20">
+          <div className="mx-auto flex h-5 w-36 items-center justify-center rounded bg-white/[0.04] text-[9px] text-white/20">
             gympace.app
           </div>
         </div>
 
         {/* Dashboard content */}
-        <div className="bg-[#090909] p-5">
-          <div className="mb-5">
-            <div className="mb-1.5 h-1.5 w-10 rounded-full bg-[#B6FF00]/50" />
-            <div className="h-4 w-28 rounded bg-white/10" />
+        <div className="bg-[#090909] p-4">
+          <div className="mb-4">
+            <div className="mb-1 h-1 w-8 rounded-full bg-[#B6FF00]/50" />
+            <div className="h-3.5 w-24 rounded bg-white/10" />
           </div>
 
-          {/* 4 metric cards */}
-          <div className="mb-4 grid grid-cols-4 gap-2.5">
+          {/* Metric cards */}
+          <div className="mb-3 grid grid-cols-4 gap-2">
             {[
-              { label: "KM Semanal", value: "47.3", unit: "km", p: 94 },
-              { label: "Pace Médio", value: "5:12", unit: "/km", p: 72 },
-              { label: "Treinos", value: "6", unit: "sessões", p: 100 },
-              { label: "Meta", value: "94", unit: "%", p: 94 },
+              { l: "KM", v: "47.3", u: "km", p: 94 },
+              { l: "Pace", v: "5:12", u: "/km", p: 72 },
+              { l: "Treinos", v: "6", u: "sess.", p: 100 },
+              { l: "Meta", v: "94", u: "%", p: 94 },
             ].map((m) => (
               <div
-                key={m.label}
-                className="rounded-xl border border-white/[0.06] bg-[#111111] p-3"
+                key={m.l}
+                className="rounded-xl border border-white/[0.06] bg-[#111] p-2.5"
               >
-                <div className="mb-2.5 text-[8px] font-semibold uppercase tracking-widest text-white/25">
-                  {m.label}
+                <div className="mb-1.5 text-[7px] font-semibold uppercase tracking-widest text-white/22">
+                  {m.l}
                 </div>
-                <div className="mb-2 flex items-baseline gap-1">
-                  <span className="font-display text-[18px] font-bold leading-none">
-                    {m.value}
+                <div className="mb-1.5 flex items-baseline gap-0.5">
+                  <span className="font-display text-[15px] font-bold leading-none">
+                    {m.v}
                   </span>
-                  <span className="text-[8px] font-bold text-[#B6FF00]">{m.unit}</span>
+                  <span className="text-[7px] font-bold text-[#B6FF00]">{m.u}</span>
                 </div>
                 <div className="h-[2px] w-full overflow-hidden rounded-full bg-white/[0.06]">
                   <div
@@ -219,10 +259,10 @@ function AppPreview() {
             ))}
           </div>
 
-          {/* Charts row */}
-          <div className="grid grid-cols-[1fr_160px] gap-2.5">
-            <div className="h-32 rounded-xl border border-white/[0.06] bg-[#111111] p-4">
-              <div className="mb-3 flex justify-between text-[8px] text-white/28">
+          {/* Chart row */}
+          <div className="grid grid-cols-[1fr_120px] gap-2">
+            <div className="h-28 rounded-xl border border-white/[0.06] bg-[#111] p-3">
+              <div className="mb-2 flex justify-between text-[7px] text-white/25">
                 <span className="font-semibold uppercase tracking-wider">Volume Semanal</span>
                 <span className="text-[#B6FF00]">↑ 12%</span>
               </div>
@@ -236,42 +276,47 @@ function AppPreview() {
                       background:
                         i === 7
                           ? "#B6FF00"
-                          : `rgba(182,255,0,${i === 6 ? 0.3 : 0.08 + i * 0.025})`,
-                      boxShadow: i === 7 ? "0 0 8px rgba(182,255,0,0.35)" : "none",
+                          : `rgba(182,255,0,${0.07 + i * 0.022})`,
+                      boxShadow:
+                        i === 7 ? "0 0 6px rgba(182,255,0,0.4)" : "none",
                     }}
                   />
                 ))}
               </div>
             </div>
 
-            <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-[#111111] p-4">
-              <div className="relative size-14">
-                <svg viewBox="0 0 56 56" className="size-full -rotate-90">
+            <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-xl border border-white/[0.06] bg-[#111] p-3">
+              <div className="relative size-11">
+                <svg viewBox="0 0 48 48" className="size-full -rotate-90">
                   <circle
-                    cx="28"
-                    cy="28"
-                    r="22"
+                    cx="24"
+                    cy="24"
+                    r="18"
                     fill="none"
                     stroke="rgba(255,255,255,0.05)"
-                    strokeWidth="4.5"
+                    strokeWidth="3.5"
                   />
                   <circle
-                    cx="28"
-                    cy="28"
-                    r="22"
+                    cx="24"
+                    cy="24"
+                    r="18"
                     fill="none"
                     stroke="#B6FF00"
-                    strokeWidth="4.5"
-                    strokeDasharray={`${2 * Math.PI * 22 * 0.7} ${2 * Math.PI * 22}`}
+                    strokeWidth="3.5"
+                    strokeDasharray={`${2 * Math.PI * 18 * 0.7} ${2 * Math.PI * 18}`}
                     strokeLinecap="round"
-                    style={{ filter: "drop-shadow(0 0 5px rgba(182,255,0,0.5))" }}
+                    style={{ filter: "drop-shadow(0 0 4px rgba(182,255,0,0.5))" }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="font-display text-sm font-bold text-[#B6FF00]">14</span>
+                  <span className="font-display text-xs font-bold text-[#B6FF00]">
+                    14
+                  </span>
                 </div>
               </div>
-              <div className="text-[8px] font-bold tracking-widest text-[#B6FF00]">SILVER</div>
+              <div className="text-[7px] font-bold tracking-widest text-[#B6FF00]">
+                SILVER
+              </div>
             </div>
           </div>
         </div>
@@ -284,82 +329,117 @@ function AppPreview() {
 
 function HeroSection() {
   return (
-    <section className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-[#080808] pt-16">
+    <section className="relative min-h-dvh overflow-hidden bg-[#080808] pt-[60px]">
       {/* Grid */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        className="pointer-events-none absolute inset-0 opacity-[0.022]"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
-          backgroundSize: "72px 72px",
+          backgroundSize: "64px 64px",
+        }}
+      />
+
+      {/* Grain overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[1] opacity-[0.04]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }}
       />
 
       {/* Glows */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute left-1/2 top-0 h-[900px] w-[1100px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF00]/[0.05] blur-[130px]" />
-        <div className="absolute right-0 top-1/3 h-[400px] w-[400px] translate-x-1/2 rounded-full bg-[#4ADE80]/[0.04] blur-[80px]" />
-        <div className="absolute bottom-1/4 left-0 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.03] blur-[60px]" />
+        <div className="absolute left-1/2 -top-1/4 h-[800px] w-[1000px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.055] blur-[130px]" />
+        <div className="absolute right-[-10%] top-1/3 h-[500px] w-[500px] rounded-full bg-[#B6FF00]/[0.025] blur-[90px]" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-12 text-center sm:px-6 sm:py-20">
-        {/* Badge */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/22 bg-[#B6FF00]/[0.07] px-4 py-1.5 sm:mb-7">
-          <Flame className="size-3 text-[#B6FF00]" />
-          <span className="text-[11px] font-semibold tracking-wide text-[#B6FF00]">
-            Para atletas híbridos — corrida + academia
-          </span>
-        </div>
+      {/* Ghost stat — decorative background number */}
+      <div
+        className="pointer-events-none absolute right-[2%] top-[18%] z-0 hidden select-none leading-none lg:block"
+        style={{
+          fontFamily: "var(--font-hero)",
+          fontSize: "clamp(10rem, 20vw, 18rem)",
+          color: "transparent",
+          WebkitTextStroke: "1px rgba(182,255,0,0.055)",
+          letterSpacing: "-0.01em",
+        }}
+      >
+        47.3
+      </div>
 
-        {/* Headline */}
-        <h1 className="mb-5 font-display font-bold leading-[1.02] tracking-[-0.03em] [font-size:clamp(3rem,12vw,5rem)]">
-          Treine.{" "}
-          <span className="sm:hidden">
+      {/* Main content */}
+      <div className="relative z-10 mx-auto min-h-[calc(100dvh-60px)] max-w-7xl px-5 py-16 sm:px-6 lg:grid lg:grid-cols-2 lg:items-center lg:gap-14 lg:py-0">
+        {/* Left: Text */}
+        <div>
+          {/* Badge */}
+          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/[0.07] px-3.5 py-1.5">
+            <Flame className="size-3 text-[#B6FF00]" />
+            <span className="text-[11px] font-semibold tracking-wide text-[#B6FF00]">
+              Para atletas híbridos — corrida + academia
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="mb-6 leading-none text-white"
+            style={{
+              fontFamily: "var(--font-hero)",
+              fontSize: "clamp(4.5rem, 10.5vw, 9rem)",
+              letterSpacing: "0.015em",
+            }}
+          >
+            Treine.
             <br />
-          </span>
-          Evolua.
-          <br />
-          <span style={{ color: "#B6FF00" }}>Supere.</span>
-        </h1>
+            Evolua.
+            <br />
+            <span style={{ color: "#B6FF00" }}>Supere.</span>
+          </h1>
 
-        <p className="mx-auto mb-8 max-w-[90vw] text-[15px] leading-[1.75] text-[#F5F5F5]/42 sm:mb-10 sm:max-w-[560px]">
-          O centro de comando para quem corre, treina, compete e evolui. Registre rotas por GPS,
-          musculação, XP, metas, feed, rankings e notificações em uma experiência mobile-first.
-        </p>
+          <p className="mb-9 max-w-[500px] text-[15px] leading-[1.8] text-[#F5F5F5]/42">
+            O centro de comando para quem corre, treina, compete e evolui.
+            Registre rotas por GPS, musculação, XP, metas, feed, rankings e
+            notificações em uma experiência mobile-first.
+          </p>
 
-        {/* CTAs */}
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-          <Link
-            href="/register"
-            className="group flex items-center justify-center gap-2.5 rounded-[12px] bg-[#B6FF00] px-7 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.28)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.45)] sm:w-auto"
-            style={{ minHeight: "52px" }}
-          >
-            Começar agora — é grátis
-            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-          <a
-            href="#features"
-            className="flex items-center justify-center gap-2 rounded-[12px] border border-white/[0.09] bg-white/[0.04] px-6 text-[14px] font-medium text-[#F5F5F5]/60 backdrop-blur-sm transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-[#F5F5F5]/90 sm:w-auto"
-            style={{ minHeight: "52px" }}
-          >
-            Ver funcionalidades
-          </a>
-        </div>
+          {/* CTAs */}
+          <div className="mb-8 flex flex-col items-stretch gap-3 sm:flex-row">
+            <Link
+              href="/register"
+              className="group flex items-center justify-center gap-2.5 rounded-[12px] bg-[#B6FF00] px-7 py-3.5 text-[15px] font-bold text-[#080808] shadow-[0_0_36px_rgba(182,255,0,0.28)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.45)]"
+            >
+              Começar agora — é grátis
+              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="#features"
+              className="flex items-center justify-center gap-2 rounded-[12px] border border-white/[0.09] bg-white/[0.04] px-6 py-3.5 text-[14px] font-medium text-[#F5F5F5]/55 transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-[#F5F5F5]/85"
+            >
+              Ver funcionalidades
+            </a>
+          </div>
 
-        {/* Trust */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-[#F5F5F5]/26">
-          {["Instale como PWA", "Feito para corrida + academia", "XP transparente"].map(
-            (t) => (
+          {/* Trust */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-[#F5F5F5]/26">
+            {["Instale como PWA", "Corrida + academia", "XP transparente"].map((t) => (
               <div key={t} className="flex items-center gap-1.5">
                 <div className="size-1 rounded-full bg-[#B6FF00]/50" />
                 {t}
               </div>
-            )
-          )}
+            ))}
+          </div>
         </div>
 
-        {/* Dashboard preview */}
-        <div className="relative mt-16 w-full">
+        {/* Right: App preview — desktop only */}
+        <div className="hidden lg:block">
+          <AppPreview />
+        </div>
+      </div>
+
+      {/* Mobile: app preview below text, fades into marquee */}
+      <div className="relative z-10 lg:hidden">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-[#080808] to-transparent" />
+        <div className="mx-auto max-w-sm px-5 pb-8">
           <AppPreview />
         </div>
       </div>
@@ -371,22 +451,36 @@ function HeroSection() {
 
 function StatsBar() {
   const stats = [
-    { label: "Modalidades integradas", value: 2, suffix: "" },
-    { label: "Fontes de XP", value: 5, suffix: "" },
-    { label: "Dias no heatmap", value: 84, suffix: "" },
-    { label: "Ranks competitivos", value: 6, suffix: "" },
+    { label: "Modalidades integradas", value: 2 },
+    { label: "Fontes de XP", value: 5 },
+    { label: "Dias no heatmap", value: 84 },
+    { label: "Ranks competitivos", value: 6 },
   ];
 
   return (
-    <section className="border-y border-white/[0.04] bg-[#0A0A0A] py-12">
+    <section className="border-b border-white/[0.04] bg-[#0A0A0A] py-14">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-y-10 md:grid-cols-4">
           {stats.map((s, i) => (
-            <div key={i} className="text-center">
-              <div className="mb-1 font-display text-3xl font-bold text-[#B6FF00]">
-                <AnimatedNumber target={s.value} suffix={s.suffix} />
+            <div
+              key={i}
+              className={`text-center ${
+                i < 3 ? "md:border-r md:border-white/[0.06]" : ""
+              }`}
+            >
+              <div
+                className="mb-1.5 tabular-nums text-[#B6FF00]"
+                style={{
+                  fontFamily: "var(--font-hero)",
+                  fontSize: "clamp(3rem, 5.5vw, 4.5rem)",
+                  lineHeight: 1,
+                }}
+              >
+                <AnimatedNumber target={s.value} />
               </div>
-              <div className="text-[12px] text-[#F5F5F5]/35">{s.label}</div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#F5F5F5]/28">
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
@@ -397,7 +491,15 @@ function StatsBar() {
 
 // ─── Features Section ─────────────────────────────────────────────────────────
 
-const FEATURES = [
+type FeatureDef = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  tag: string;
+  color: string;
+};
+
+const FEATURES: FeatureDef[] = [
   {
     icon: Route,
     title: "Corridas com GPS",
@@ -496,72 +598,182 @@ const FEATURES = [
   },
 ];
 
+function FeaturesPillarCard({
+  feature,
+  delay,
+  inView,
+}: {
+  feature: FeatureDef;
+  delay: number;
+  inView: boolean;
+}) {
+  const Icon = feature.icon;
+  return (
+    <div
+      className={`group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.12] hover:shadow-[0_12px_48px_rgba(0,0,0,0.5)] ${
+        inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+      }`}
+      style={{
+        transitionDelay: `${delay}ms`,
+        borderLeftColor: `${feature.color}30`,
+        borderLeftWidth: "3px",
+      }}
+    >
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      <div
+        className="pointer-events-none absolute -right-8 -top-8 size-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+        style={{ background: `${feature.color}18` }}
+      />
+
+      <div className="mb-5 flex items-start justify-between">
+        <div
+          className="grid size-12 place-items-center rounded-xl border"
+          style={{
+            borderColor: `${feature.color}22`,
+            background: `${feature.color}0e`,
+            color: feature.color,
+          }}
+        >
+          <Icon className="size-6" strokeWidth={1.7} />
+        </div>
+        <span
+          className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+          style={{
+            background: `${feature.color}12`,
+            color: `${feature.color}90`,
+          }}
+        >
+          {feature.tag}
+        </span>
+      </div>
+
+      <h3 className="mb-2.5 font-display text-[18px] font-semibold">
+        {feature.title}
+      </h3>
+      <p className="text-[13px] leading-[1.7] text-[#F5F5F5]/42">
+        {feature.description}
+      </p>
+    </div>
+  );
+}
+
+function FeaturesCompactCard({
+  feature,
+  delay,
+  inView,
+}: {
+  feature: FeatureDef;
+  delay: number;
+  inView: boolean;
+}) {
+  const Icon = feature.icon;
+  return (
+    <div
+      className={`group flex items-start gap-3.5 rounded-xl border border-white/[0.06] bg-[#0F0F0F] p-4 transition-all duration-700 hover:border-white/[0.10] hover:bg-[#131313] ${
+        inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+      }`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <div
+        className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg"
+        style={{ background: `${feature.color}0e`, color: feature.color }}
+      >
+        <Icon className="size-4" strokeWidth={1.8} />
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[13px] font-semibold text-[#F5F5F5]/90">
+            {feature.title}
+          </h3>
+          <span
+            className="hidden shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.06em] sm:inline"
+            style={{
+              background: `${feature.color}10`,
+              color: `${feature.color}70`,
+            }}
+          >
+            {feature.tag}
+          </span>
+        </div>
+        <p className="mt-0.5 text-[12px] leading-[1.6] text-[#F5F5F5]/35">
+          {feature.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function FeaturesSection() {
   const [ref, inView] = useInView<HTMLElement>();
+  const pillars = FEATURES.slice(0, 3);
+  const rest = FEATURES.slice(3);
 
   return (
     <section id="features" ref={ref} className="bg-[#080808] py-24">
       <div className="mx-auto max-w-7xl px-6">
+        {/* Header */}
         <div
-          className={`mb-16 text-center transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+          className={`mb-14 max-w-xl transition-all duration-700 ${
+            inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+          }`}
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-[11px] text-[#F5F5F5]/50">
-            Funcionalidades
-          </div>
-          <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-            Todas as funções
+          <SectionEyebrow label="Funcionalidades" />
+          <h2
+            className="leading-none text-white"
+            style={{
+              fontFamily: "var(--font-hero)",
+              fontSize: "clamp(2.8rem, 6vw, 5.5rem)",
+              letterSpacing: "0.02em",
+            }}
+          >
+            Tudo que você
             <br />
-            <span style={{ color: "#B6FF00" }}>do GymPace</span>
+            <span style={{ color: "#B6FF00" }}>precisa treinar.</span>
           </h2>
-          <p className="mx-auto max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
-            Do registro ao feed, do XP ao ranking: o app conecta corrida, academia e comunidade
-            em uma experiência pensada para uso diário no celular.
+          <p className="mt-4 max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
+            Do registro ao feed, do XP ao ranking: uma experiência pensada para
+            uso diário no celular.
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => {
-            const Icon = f.icon;
-            return (
-              <div
-                key={f.title}
-                className={`group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] hover:shadow-[0_8px_40px_rgba(0,0,0,0.5)] ${
-                  inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
-                }`}
-                style={{ transitionDelay: `${i * 75}ms` }}
-              >
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
-                <div
-                  className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
-                  style={{ background: f.color + "20" }}
-                />
+        {/* Pillar features — 3 large cards */}
+        <div className="mb-4 grid gap-4 sm:grid-cols-3">
+          {pillars.map((f, i) => (
+            <FeaturesPillarCard
+              key={f.title}
+              feature={f}
+              delay={i * 80}
+              inView={inView}
+            />
+          ))}
+        </div>
 
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="grid size-10 place-items-center rounded-xl border border-white/[0.06] bg-white/[0.04]">
-                    <Icon className="size-5" style={{ color: f.color }} strokeWidth={1.8} />
-                  </div>
-                  <span className="rounded-full border border-white/[0.07] px-2.5 py-0.5 text-[10px] font-medium text-[#F5F5F5]/35">
-                    {f.tag}
-                  </span>
-                </div>
-
-                <h3 className="mb-2 font-display text-[17px] font-semibold">{f.title}</h3>
-                <p className="text-[13px] leading-[1.65] text-[#F5F5F5]/42">{f.description}</p>
-              </div>
-            );
-          })}
+        {/* Compact features — 9 smaller cards */}
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          {rest.map((f, i) => (
+            <FeaturesCompactCard
+              key={f.title}
+              feature={f}
+              delay={240 + i * 45}
+              inView={inView}
+            />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-// ─── Analytics Section ────────────────────────────────────────────────────────
+// ─── Analytics Mockup ─────────────────────────────────────────────────────────
 
 const HEATMAP_PATTERN = Array.from({ length: 12 }, (_, week) =>
   Array.from({ length: 7 }, (_, day) => {
     const seed = week * 13 + day * 7;
-    return (seed % 4 === 0 ? 3 : seed % 3 === 0 ? 2 : seed % 7 === 0 ? 1 : 0) as 0 | 1 | 2 | 3;
+    return (seed % 4 === 0 ? 3 : seed % 3 === 0 ? 2 : seed % 7 === 0 ? 1 : 0) as
+      | 0
+      | 1
+      | 2
+      | 3;
   })
 );
 
@@ -621,10 +833,14 @@ function AnalyticsMockup() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="font-display text-lg font-bold text-[#B6FF00]">74</span>
+                <span className="font-display text-lg font-bold text-[#B6FF00]">
+                  74
+                </span>
               </div>
             </div>
-            <div className="text-[8px] font-bold tracking-widest text-[#B6FF00]">OVERALL</div>
+            <div className="text-[8px] font-bold tracking-widest text-[#B6FF00]">
+              OVERALL
+            </div>
           </div>
         </div>
 
@@ -649,7 +865,8 @@ function AnalyticsMockup() {
                             : level === 1
                               ? "rgba(96,165,250,0.48)"
                               : "rgba(255,255,255,0.05)",
-                      boxShadow: level === 3 ? "0 0 4px rgba(182,255,0,0.4)" : "none",
+                      boxShadow:
+                        level === 3 ? "0 0 4px rgba(182,255,0,0.4)" : "none",
                     }}
                   />
                 ))}
@@ -691,13 +908,21 @@ function AnalyticsSection() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid items-center gap-16 lg:grid-cols-2">
           <div
-            className={`transition-all duration-700 ${inView ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
+            className={`transition-all duration-700 ${
+              inView
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-8 opacity-0"
+            }`}
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#B6FF00]/20 bg-[#B6FF00]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#B6FF00]">
-              <BarChart3 className="size-3" />
-              Analytics Premium
-            </div>
-            <h2 className="mb-5 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+            <SectionEyebrow label="Analytics Premium" />
+            <h2
+              className="mb-5 leading-none text-white"
+              style={{
+                fontFamily: "var(--font-hero)",
+                fontSize: "clamp(2.8rem, 6vw, 5.5rem)",
+                letterSpacing: "0.02em",
+              }}
+            >
               Dados que
               <br />
               <span style={{ color: "#B6FF00" }}>transformam</span>
@@ -705,9 +930,9 @@ function AnalyticsSection() {
               performance
             </h2>
             <p className="mb-8 text-[14px] leading-[1.75] text-[#F5F5F5]/40">
-              Heatmap de consistência estilo GitHub, tendências de pace mês a mês, volume semanal
-              comparativo e um score de performance geral baseado em consistência, volume, streak e
-              nível.
+              Heatmap de consistência estilo GitHub, tendências de pace mês a
+              mês, volume semanal comparativo e um score de performance geral
+              baseado em consistência, volume, streak e nível.
             </p>
 
             <div className="space-y-3">
@@ -728,7 +953,11 @@ function AnalyticsSection() {
           </div>
 
           <div
-            className={`transition-all delay-150 duration-700 ${inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+            className={`transition-all delay-150 duration-700 ${
+              inView
+                ? "translate-x-0 opacity-100"
+                : "translate-x-8 opacity-0"
+            }`}
           >
             <AnalyticsMockup />
           </div>
@@ -738,7 +967,7 @@ function AnalyticsSection() {
   );
 }
 
-// ─── Competitions Section ─────────────────────────────────────────────────────
+// ─── Mobile / PWA Section ─────────────────────────────────────────────────────
 
 function MobilePWAMockup() {
   const nav = [
@@ -777,7 +1006,7 @@ function MobilePWAMockup() {
                 {[
                   ["5.2", "km"],
                   ["60", "min"],
-                  ["Nv. 8", "Silver"],
+                  ["Nv. 8", "Intermediario"],
                   ["82%", "meta"],
                 ].map(([value, label]) => (
                   <div key={label} className="rounded-xl bg-black/20 p-3">
@@ -809,17 +1038,30 @@ function MobilePWAMockup() {
                 <Smartphone className="size-4 text-white/35" />
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Corrida</span>
-                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Academia</span>
-                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Desafio</span>
-                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">Competição</span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">
+                  Corrida
+                </span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">
+                  Academia
+                </span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">
+                  Desafio
+                </span>
+                <span className="rounded-lg bg-white/[0.04] px-2 py-2 text-white/48">
+                  Competição
+                </span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-4 border-t border-white/[0.05] px-2 pb-3 pt-2">
             {nav.map(({ icon: Icon, label, active }) => (
-              <div key={label} className={`flex flex-col items-center gap-1 text-[9px] ${active ? "text-[#B6FF00]" : "text-white/25"}`}>
+              <div
+                key={label}
+                className={`flex flex-col items-center gap-1 text-[9px] ${
+                  active ? "text-[#B6FF00]" : "text-white/25"
+                }`}
+              >
                 <Icon className="size-4" />
                 {label}
               </div>
@@ -839,26 +1081,37 @@ function MobileSection() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
           <div
-            className={`transition-all duration-700 ${inView ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
+            className={`transition-all duration-700 ${
+              inView
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-8 opacity-0"
+            }`}
           >
             <MobilePWAMockup />
           </div>
 
           <div
-            className={`transition-all delay-150 duration-700 ${inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+            className={`transition-all delay-150 duration-700 ${
+              inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"
+            }`}
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#22D3EE]/20 bg-[#22D3EE]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#22D3EE]">
-              <Smartphone className="size-3" />
-              Mobile & PWA
-            </div>
-            <h2 className="mb-5 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+            <SectionEyebrow label="Mobile & PWA" />
+            <h2
+              className="mb-5 leading-none text-white"
+              style={{
+                fontFamily: "var(--font-hero)",
+                fontSize: "clamp(2.8rem, 6vw, 5.5rem)",
+                letterSpacing: "0.02em",
+              }}
+            >
               Feito para usar
               <br />
               <span style={{ color: "#22D3EE" }}>durante o treino</span>
             </h2>
             <p className="mb-8 text-[14px] leading-[1.75] text-[#F5F5F5]/40">
-              A experiência principal é mobile: navegação inferior, atalhos de registro, telas densas
-              e instalação como PWA para abrir o GymPace como app no celular.
+              A experiência principal é mobile: navegação inferior, atalhos de
+              registro, telas densas e instalação como PWA para abrir o GymPace
+              como app no celular.
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -870,7 +1123,10 @@ function MobileSection() {
                 "Push e central de notificações",
                 "Páginas otimizadas para PWA",
               ].map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3">
+                <div
+                  key={item}
+                  className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3"
+                >
                   <div className="grid size-5 shrink-0 place-items-center rounded-full bg-[#22D3EE]/15">
                     <div className="size-1.5 rounded-full bg-[#22D3EE]" />
                   </div>
@@ -885,12 +1141,42 @@ function MobileSection() {
   );
 }
 
+// ─── Competitions Section ─────────────────────────────────────────────────────
+
 function CompetitionsMockup() {
   const competitors = [
-    { initials: "LM", name: "Lucas M.", sub: "Atleta Silver", value: "47.3 km", rank: 1, color: "#FACC15" },
-    { initials: "AS", name: "Ana S.", sub: "Atleta Gold", value: "43.8 km", rank: 2, color: "#A1A1AA" },
-    { initials: "PR", name: "Pedro R.", sub: "Atleta Bronze", value: "38.2 km", rank: 3, color: "#CD7F32" },
-    { initials: "JC", name: "Julia C.", sub: "Atleta Rookie", value: "31.5 km", rank: 4, color: "#71717A" },
+    {
+      initials: "LM",
+      name: "Lucas M.",
+      sub: "Atleta Intermediario",
+      value: "47.3 km",
+      rank: 1,
+      color: "#FACC15",
+    },
+    {
+      initials: "AS",
+      name: "Ana S.",
+      sub: "Atleta Avancado",
+      value: "43.8 km",
+      rank: 2,
+      color: "#A1A1AA",
+    },
+    {
+      initials: "PR",
+      name: "Pedro R.",
+      sub: "Atleta Amador",
+      value: "38.2 km",
+      rank: 3,
+      color: "#CD7F32",
+    },
+    {
+      initials: "JC",
+      name: "Julia C.",
+      sub: "Atleta Iniciante",
+      value: "31.5 km",
+      rank: 4,
+      color: "#71717A",
+    },
   ];
 
   return (
@@ -961,27 +1247,38 @@ function CompetitionsSection() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid items-center gap-16 lg:grid-cols-2">
           <div
-            className={`order-2 lg:order-1 transition-all duration-700 ${inView ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"}`}
+            className={`order-2 transition-all duration-700 lg:order-1 ${
+              inView
+                ? "translate-x-0 opacity-100"
+                : "-translate-x-8 opacity-0"
+            }`}
           >
             <CompetitionsMockup />
           </div>
 
           <div
-            className={`order-1 lg:order-2 transition-all delay-150 duration-700 ${inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"}`}
+            className={`order-1 transition-all delay-150 duration-700 lg:order-2 ${
+              inView ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"
+            }`}
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#FACC15]/20 bg-[#FACC15]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#FACC15]">
-              <Trophy className="size-3" />
-              Competições
-            </div>
-            <h2 className="mb-5 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+            <SectionEyebrow label="Competições" />
+            <h2
+              className="mb-5 leading-none text-white"
+              style={{
+                fontFamily: "var(--font-hero)",
+                fontSize: "clamp(2.8rem, 6vw, 5.5rem)",
+                letterSpacing: "0.02em",
+              }}
+            >
               Compete.
               <br />
               <span style={{ color: "#FACC15" }}>Conquiste</span>
               <br />a liderança.
             </h2>
             <p className="mb-8 text-[14px] leading-[1.75] text-[#F5F5F5]/40">
-              Crie competições por KM total, sessões ou streaks. Convide atletas, acompanhe o
-              ranking em tempo real e descubra quem é o mais consistente da semana.
+              Crie competições por KM total, sessões ou streaks. Convide
+              atletas, acompanhe o ranking em tempo real e descubra quem é o
+              mais consistente da semana.
             </p>
 
             <div className="space-y-3">
@@ -1009,11 +1306,11 @@ function CompetitionsSection() {
 // ─── XP & Evolution Section ───────────────────────────────────────────────────
 
 const RANKS = [
-  { name: "Rookie", color: "#71717A", xp: "0 XP" },
-  { name: "Bronze", color: "#CD7F32", xp: "324 XP" },
-  { name: "Silver", color: "#A1A1AA", xp: "1.712 XP" },
-  { name: "Gold", color: "#EAB308", xp: "6.551 XP" },
-  { name: "Platinum", color: "#22D3EE", xp: "20.225 XP" },
+  { name: "Iniciante", color: "#94A3B8", xp: "0 XP" },
+  { name: "Amador", color: "#60A5FA", xp: "324 XP" },
+  { name: "Intermediario", color: "#22C55E", xp: "1.712 XP" },
+  { name: "Avancado", color: "#FB923C", xp: "6.551 XP" },
+  { name: "Pro", color: "#A78BFA", xp: "20.225 XP" },
   { name: "Elite", color: "#B6FF00", xp: "68.443 XP" },
 ];
 
@@ -1024,20 +1321,27 @@ function XPSection() {
     <section id="evolution" ref={ref} className="bg-[#0A0A0A] py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div
-          className={`mb-14 text-center transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+          className={`mb-14 text-center transition-all duration-700 ${
+            inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+          }`}
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#A78BFA]/20 bg-[#A78BFA]/[0.07] px-3 py-1.5 text-[11px] font-semibold text-[#A78BFA]">
-            <Star className="size-3" />
-            XP & Evolução
-          </div>
-          <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+          <SectionEyebrow label="XP & Evolução" />
+          <h2
+            className="leading-none text-white"
+            style={{
+              fontFamily: "var(--font-hero)",
+              fontSize: "clamp(2.8rem, 6vw, 5.5rem)",
+              letterSpacing: "0.02em",
+            }}
+          >
             Cada treino te leva
             <br />
             <span style={{ color: "#A78BFA" }}>mais longe</span>
           </h2>
-          <p className="mx-auto max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
-            Sistema de progressão transparente. Ganhe XP por corrida, academia, streak,
-            conquistas e competições, com cálculo visível de quanto falta para cada nível.
+          <p className="mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-[#F5F5F5]/38">
+            Sistema de progressão transparente. Ganhe XP por corrida, academia,
+            streak, conquistas e competições, com cálculo visível de quanto
+            falta para cada nível.
           </p>
           <Link
             href="/xp"
@@ -1050,31 +1354,28 @@ function XPSection() {
 
         {/* Rank progression */}
         <div
-          className={`mb-12 flex justify-center overflow-x-auto pb-2 transition-all delay-200 duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+          className={`mb-12 flex justify-center overflow-x-auto pb-2 transition-all delay-200 duration-700 ${
+            inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+          }`}
         >
           <div className="flex items-end gap-0">
             {RANKS.map((rank, i) => (
               <div key={rank.name} className="flex items-center">
                 <div className="flex flex-col items-center gap-2 px-2">
                   <div
-                    className="relative flex size-12 items-center justify-center rounded-full border-2 sm:size-14"
+                    className="relative flex h-12 min-w-24 items-center justify-center rounded-xl border px-3 sm:h-14"
                     style={{
                       borderColor: rank.color,
-                      background: i === RANKS.length - 1 ? `${rank.color}18` : "transparent",
+                      background:
+                        i === RANKS.length - 1 ? `${rank.color}18` : "transparent",
                       boxShadow:
                         i === RANKS.length - 1 ? `0 0 28px ${rank.color}50` : "none",
                     }}
                   >
-                    <Zap className="size-5 sm:size-6" style={{ color: rank.color }} strokeWidth={2} />
-                    {i === RANKS.length - 1 && (
-                      <div className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#B6FF00]">
-                        <Star className="size-2.5 fill-[#080808] text-[#080808]" />
-                      </div>
-                    )}
+                    <span className="text-[10px] font-bold uppercase tracking-[0.12em]" style={{ color: rank.color }}>
+                      {rank.name}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold" style={{ color: rank.color }}>
-                    {rank.name}
-                  </span>
                   <span className="text-[9px] text-white/22">{rank.xp}</span>
                 </div>
                 {i < RANKS.length - 1 && (
@@ -1115,13 +1416,21 @@ function XPSection() {
             return (
               <div
                 key={i}
-                className={`rounded-2xl border border-white/[0.07] bg-[#111111] p-5 transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+                className={`rounded-2xl border border-white/[0.07] bg-[#111111] p-5 transition-all duration-700 ${
+                  inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
                 style={{ transitionDelay: `${300 + i * 100}ms` }}
               >
                 <div className="mb-3 grid size-10 place-items-center rounded-xl bg-white/[0.04]">
-                  <Icon className="size-5" style={{ color: b.color }} strokeWidth={1.8} />
+                  <Icon
+                    className="size-5"
+                    style={{ color: b.color }}
+                    strokeWidth={1.8}
+                  />
                 </div>
-                <div className="mb-1 font-display text-[16px] font-semibold">{b.title}</div>
+                <div className="mb-1 font-display text-[16px] font-semibold">
+                  {b.title}
+                </div>
                 <div className="text-[12px] text-[#F5F5F5]/35">{b.sub}</div>
               </div>
             );
@@ -1132,7 +1441,7 @@ function XPSection() {
   );
 }
 
-// ─── Social / Testimonials ────────────────────────────────────────────────────
+// ─── Social Section ───────────────────────────────────────────────────────────
 
 function SocialSection() {
   const [ref, inView] = useInView<HTMLElement>();
@@ -1162,20 +1471,27 @@ function SocialSection() {
     <section ref={ref} className="bg-[#080808] py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div
-          className={`mb-14 text-center transition-all duration-700 ${inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}
+          className={`mb-14 text-center transition-all duration-700 ${
+            inView ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+          }`}
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#22D3EE]/20 bg-[#22D3EE]/[0.06] px-3 py-1.5 text-[11px] font-semibold text-[#22D3EE]">
-            <Users className="size-3" />
-            Comunidade
-          </div>
-          <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
+          <SectionEyebrow label="Comunidade" />
+          <h2
+            className="leading-none text-white"
+            style={{
+              fontFamily: "var(--font-hero)",
+              fontSize: "clamp(2.8rem, 6vw, 5.5rem)",
+              letterSpacing: "0.02em",
+            }}
+          >
             Comunidade,
             <br />
             <span style={{ color: "#22D3EE" }}>feed e reputação.</span>
           </h2>
-          <p className="mx-auto max-w-xl text-[14px] leading-relaxed text-[#F5F5F5]/38">
-            O GymPace transforma cada atividade em contexto social: atletas podem seguir, reagir,
-            comentar, comparar ranking e acompanhar conquistas.
+          <p className="mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-[#F5F5F5]/38">
+            O GymPace transforma cada atividade em contexto social: atletas
+            podem seguir, reagir, comentar, comparar ranking e acompanhar
+            conquistas.
           </p>
         </div>
 
@@ -1185,7 +1501,9 @@ function SocialSection() {
             return (
               <div
                 key={item.title}
-                className={`relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] ${inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+                className={`relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111] p-6 transition-all duration-700 hover:border-white/[0.11] hover:bg-[#141414] ${
+                  inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+                }`}
                 style={{ transitionDelay: `${i * 100}ms` }}
               >
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
@@ -1196,8 +1514,12 @@ function SocialSection() {
                 >
                   <Icon className="size-5" strokeWidth={1.8} />
                 </div>
-                <h3 className="mb-2 font-display text-lg font-semibold">{item.title}</h3>
-                <p className="text-[13px] leading-[1.7] text-[#F5F5F5]/45">{item.text}</p>
+                <h3 className="mb-2 font-display text-lg font-semibold">
+                  {item.title}
+                </h3>
+                <p className="text-[13px] leading-[1.7] text-[#F5F5F5]/45">
+                  {item.text}
+                </p>
               </div>
             );
           })}
@@ -1213,55 +1535,60 @@ function CTASection() {
   const [ref, inView] = useInView<HTMLElement>();
 
   return (
-    <section ref={ref} className="bg-[#0A0A0A] py-24">
-      <div className="mx-auto max-w-4xl px-6">
+    <section ref={ref} className="bg-[#0A0A0A] py-28">
+      <div className="mx-auto max-w-7xl px-6">
+        {/* Horizontal rule with centered icon */}
         <div
-          className={`relative overflow-hidden rounded-3xl border border-[#B6FF00]/14 bg-[#111111] px-8 py-16 text-center transition-all duration-700 ${inView ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
+          className={`mb-14 flex items-center gap-6 transition-all duration-700 ${
+            inView ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#B6FF00]/25 to-[#B6FF00]/25" />
+          <div className="grid size-10 place-items-center rounded-xl bg-[#B6FF00] shadow-[0_0_28px_rgba(182,255,0,0.4)]">
+            <Zap className="size-5 text-[#080808]" strokeWidth={3} />
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[#B6FF00]/25 to-[#B6FF00]/25" />
+        </div>
+
+        <div
+          className={`text-center transition-all delay-100 duration-700 ${
+            inView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+          }`}
         >
           {/* Glows */}
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute left-1/2 top-0 h-[320px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF00]/[0.06] blur-[90px]" />
-            <div className="absolute bottom-0 left-1/4 h-[200px] w-[200px] translate-y-1/2 rounded-full bg-[#B6FF00]/[0.04] blur-[60px]" />
+          <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+            <div className="absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#B6FF00]/[0.04] blur-[100px]" />
           </div>
 
-          {/* Grid */}
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          <h2
+            className="mb-5 leading-none text-white"
             style={{
-              backgroundImage:
-                "linear-gradient(rgba(182,255,0,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(182,255,0,0.8) 1px, transparent 1px)",
-              backgroundSize: "44px 44px",
+              fontFamily: "var(--font-hero)",
+              fontSize: "clamp(3.5rem, 9vw, 8.5rem)",
+              letterSpacing: "0.02em",
             }}
-          />
+          >
+            Pronto para
+            <br />
+            <span style={{ color: "#B6FF00" }}>começar?</span>
+          </h2>
 
-          <div className="relative z-10">
-            <div className="mx-auto mb-6 grid size-14 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_40px_rgba(182,255,0,0.4)]">
-              <Zap className="size-7 text-[#080808]" strokeWidth={3} />
-            </div>
+          <p className="mx-auto mb-10 max-w-md text-[14px] leading-[1.75] text-[#F5F5F5]/40">
+            Junte-se a atletas que já transformaram seu treino com analytics
+            premium, competições e progressão gamificada.
+          </p>
 
-            <h2 className="mb-4 font-display text-4xl font-bold tracking-tight sm:text-5xl">
-              Pronto para
-              <br />
-              <span style={{ color: "#B6FF00" }}>começar?</span>
-            </h2>
+          <Link
+            href="/register"
+            className="group inline-flex items-center gap-2.5 rounded-xl bg-[#B6FF00] px-10 py-4 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.3)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_64px_rgba(182,255,0,0.5)]"
+          >
+            Começar agora — é grátis
+            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
 
-            <p className="mx-auto mb-10 max-w-md text-[14px] leading-[1.75] text-[#F5F5F5]/40">
-              Junte-se a atletas que já transformaram seu treino com analytics premium, competições
-              e progressão gamificada.
-            </p>
-
-            <Link
-              href="/register"
-              className="group inline-flex items-center gap-2.5 rounded-xl bg-[#B6FF00] px-8 py-4 text-[15px] font-bold text-[#080808] shadow-[0_0_40px_rgba(182,255,0,0.3)] transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_56px_rgba(182,255,0,0.5)]"
-            >
-              Começar agora — é grátis
-              <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
-
-            <p className="mt-5 text-[11px] text-[#F5F5F5]/24">
-              Sem cartão de crédito · Grátis para sempre · Configuração em 2 minutos
-            </p>
-          </div>
+          <p className="mt-6 text-[11px] text-[#F5F5F5]/22">
+            Sem cartão de crédito · Grátis para sempre · Configuração em 2 minutos
+          </p>
         </div>
       </div>
     </section>
@@ -1282,14 +1609,25 @@ function Footer() {
             <div className="grid size-7 place-items-center rounded-[7px] bg-[#B6FF00]">
               <Zap className="size-3.5 text-[#080808]" strokeWidth={3} />
             </div>
-            <span className="font-display text-[15px] font-bold">GymPace</span>
+            <span
+              className="text-[18px] tracking-[0.08em] text-white"
+              style={{ fontFamily: "var(--font-hero)" }}
+            >
+              GYMPACE
+            </span>
           </div>
 
           <div className="flex items-center gap-6 text-[12px] text-[#F5F5F5]/30">
-            <Link href="/privacy" className="transition-colors hover:text-[#F5F5F5]/60">
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-[#F5F5F5]/60"
+            >
               Privacidade
             </Link>
-            <Link href="/terms" className="transition-colors hover:text-[#F5F5F5]/60">
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-[#F5F5F5]/60"
+            >
               Termos
             </Link>
           </div>
@@ -1322,8 +1660,10 @@ export function LandingPage() {
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-[#080808] text-[#F5F5F5] antialiased">
+      <style>{CSS}</style>
       <NavBar />
       <HeroSection />
+      <MarqueeTicker />
       <StatsBar />
       <FeaturesSection />
       <AnalyticsSection />

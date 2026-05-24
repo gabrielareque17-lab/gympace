@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { updateActiveCompetitionProgressForUser } from "@/lib/competition-progress";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { syncUserXP } from "@/lib/xp";
+import { awardXP } from "@/lib/xp";
 
 type Params = { params: Promise<{ id: string; inviteId: string }> };
 
@@ -97,7 +97,7 @@ export async function PATCH(req: Request, { params }: Params) {
     await updateActiveCompetitionProgressForUser(supabase, user.id);
   }
 
-  const xpFeedback = action === "accept" ? await syncUserXP(supabase, user.id) : null;
+  const xpFeedback = action === "accept" ? await awardXP(supabase, { userId: user.id, source: "competition", sourceId: id }) : null;
 
   revalidatePath("/competicoes");
   revalidatePath("/convites");

@@ -25,6 +25,7 @@ import { ReactionButton } from "@/components/feed/ReactionButton";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { formatDateTime, formatTimeAgo } from "@/lib/date-utils";
 import type { FeedEvent, FeedProfile } from "@/lib/feed";
+import { getAthleteTitle } from "@/lib/athlete-title";
 import { getMuscleGroupLabel } from "@/lib/muscles";
 import { cn } from "@/lib/utils";
 
@@ -32,24 +33,6 @@ const CommentsDrawer = dynamic(
   () => import("@/components/feed/CommentsDrawer").then((mod) => ({ default: mod.CommentsDrawer })),
   { ssr: false }
 );
-
-const RANK_COLORS: Record<string, string> = {
-  rookie: "#94A3B8",
-  bronze: "#CD7F32",
-  silver: "#A1A1AA",
-  gold: "#EAB308",
-  platinum: "#22D3EE",
-  elite: "#B6FF00",
-};
-
-const RANK_LABELS: Record<string, string> = {
-  rookie: "Rookie",
-  bronze: "Bronze",
-  silver: "Silver",
-  gold: "Gold",
-  platinum: "Platinum",
-  elite: "Elite",
-};
 
 const RUN_TYPE_LABELS: Record<string, string> = {
   leve: "Leve",
@@ -201,7 +184,7 @@ const EVENT_CONFIG: Record<string, EventConfig> = {
     badgeBg: "bg-[#B6FF00]/18",
     cardBorder: "border-[#B6FF00]/18 hover:border-[#B6FF00]/32",
     cardBg: "bg-[#B6FF00]/[0.03] hover:bg-[#B6FF00]/[0.05]",
-    label: "Rank",
+    label: "Titulo",
   },
   season_started: {
     Icon: Calendar,
@@ -221,22 +204,12 @@ function Tag({ children, color }: { children: ReactNode; color: TagColor }) {
   );
 }
 
-function StatItem({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-[3px]">
-      <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/28">{label}</span>
-      <span className="truncate text-[13px] font-bold leading-none" style={color ? { color } : { color: "#F5F5F5" }}>
-        {value}
-      </span>
-    </div>
-  );
-}
 
 function StatsRow({ children, color }: { children: ReactNode; color: string }) {
   return (
     <div
-      className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-xl sm:auto-cols-fr sm:grid-flow-col sm:grid-cols-none"
-      style={{ border: `1px solid ${color}16`, background: `${color}05` }}
+      className="mt-3 flex overflow-hidden rounded-xl"
+      style={{ border: `1px solid ${color}18`, background: `${color}06` }}
     >
       {children}
     </div>
@@ -245,8 +218,9 @@ function StatsRow({ children, color }: { children: ReactNode; color: string }) {
 
 function StatsCell({ label, value, color, last }: { label: string; value: string; color?: string; last?: boolean }) {
   return (
-    <div className={cn("flex min-w-0 flex-col gap-[3px] border-white/[0.05] px-2.5 py-2", !last && "sm:border-r")}>
-      <StatItem label={label} value={value} color={color} />
+    <div className={cn("flex min-w-0 flex-1 flex-col gap-[3px] px-2.5 py-2", !last && "border-r border-white/[0.06]")}>
+      <span className="truncate text-[9px] font-bold uppercase tracking-[0.1em] text-[#F5F5F5]/28">{label}</span>
+      <span className="truncate text-[13px] font-bold leading-none" style={color ? { color } : { color: "#F5F5F5" }}>{value}</span>
     </div>
   );
 }
@@ -268,21 +242,6 @@ function UserAvatar({ profile, name }: { profile?: FeedProfile; name: string }) 
   );
 }
 
-function EventBadge({ Icon, color, badgeBg, compact = false }: EventConfig & { compact?: boolean }) {
-  return (
-    <div
-      className={cn(
-        "grid shrink-0 place-items-center rounded-full border ring-2 ring-[#111111]",
-        compact ? "size-5" : "size-8",
-        badgeBg
-      )}
-      style={{ borderColor: `${color}24`, color }}
-    >
-      <Icon className={compact ? "size-3" : "size-4"} strokeWidth={compact ? 2.4 : 2.1} />
-    </div>
-  );
-}
-
 function ActionRow({
   event,
   dateDetail,
@@ -296,7 +255,7 @@ function ActionRow({
 }) {
   return (
     <div className={cn("flex items-center justify-between gap-2", compact ? "mt-2" : "mt-3")}>
-      <p className="truncate text-[10px] text-[#F5F5F5]/22">{dateDetail}</p>
+      <p className="truncate text-[10px] text-[#F5F5F5]/35">{dateDetail}</p>
       <div className="flex shrink-0 items-center gap-1">
         <button
           type="button"
@@ -407,7 +366,7 @@ function StandardEventContent({
   switch (type) {
     case "level_up": {
       const p = payload as { new_level?: number; new_rank?: string };
-      const rankColor = p.new_rank ? RANK_COLORS[p.new_rank] ?? color : color;
+      const athleteTitle = getAthleteTitle(p.new_rank);
       const levelXp = formatLevelXp(profile);
       return (
         <>
@@ -418,9 +377,9 @@ function StandardEventContent({
             {p.new_rank && (
               <span
                 className="rounded-full border px-2 py-0.5 text-[10px] font-bold"
-                style={{ color: rankColor, borderColor: `${rankColor}44`, background: `${rankColor}14` }}
+                style={{ color: athleteTitle.color, borderColor: `${athleteTitle.color}44`, background: `${athleteTitle.color}14` }}
               >
-                {RANK_LABELS[p.new_rank] ?? p.new_rank}
+                {athleteTitle.label}
               </span>
             )}
             {levelXp && <Tag color="amber">{levelXp}</Tag>}
@@ -525,13 +484,14 @@ function getAchievementCopy(type: string, payload: Record<string, unknown>, colo
   }
 
   const p = payload as { rank?: string };
-  const rank = p.rank ? RANK_LABELS[p.rank] ?? p.rank : "novo rank";
+  const athleteTitle = p.rank ? getAthleteTitle(p.rank) : null;
+  const rank = athleteTitle?.label ?? "novo titulo";
   return {
     eyebrow: "Evolução",
-    title: `Rank ${rank} alcançado`,
-    detail: "Novo patamar competitivo desbloqueado.",
-    tags: [<Tag key="rank" color="lime">Rank</Tag>],
-    color: p.rank ? RANK_COLORS[p.rank] ?? color : color,
+    title: `Titulo ${rank} alcancado`,
+    detail: "Novo patamar permanente desbloqueado.",
+    tags: [<Tag key="rank" color="lime">Titulo</Tag>],
+    color: athleteTitle?.color ?? color,
   };
 }
 
@@ -624,7 +584,8 @@ function FeedCardComponent({ event }: { event: FeedEvent }) {
     <>
       {isAchievement ? (
         <article
-          className={cn("group relative overflow-hidden rounded-2xl border p-4 transition-colors duration-150 sm:p-5", cardBorder, cardBg)}
+          className={cn("group relative overflow-hidden rounded-2xl border p-4 transition-all duration-150 hover:-translate-y-px sm:p-5", cardBorder, cardBg)}
+          style={{ boxShadow: "0 2px 18px rgba(0,0,0,0.25)" }}
         >
           <div className="pointer-events-none absolute inset-x-8 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}66, transparent)` }} />
           <div className="pointer-events-none absolute -right-14 -top-16 size-36 rounded-full blur-[72px]" style={{ background: `${color}16` }} />
@@ -673,20 +634,24 @@ function FeedCardComponent({ event }: { event: FeedEvent }) {
         </article>
       ) : (
         <article
-          className={cn("group relative flex gap-3 rounded-2xl border p-4 transition-colors duration-150 sm:p-5", cardBorder, cardBg)}
+          className={cn("group relative overflow-hidden rounded-2xl border p-4 transition-all duration-150 hover:-translate-y-px sm:p-5", cardBorder, cardBg)}
+          style={{ boxShadow: "0 2px 18px rgba(0,0,0,0.25)" }}
         >
-          <div className="shrink-0 mt-0.5">
-            <UserAvatar profile={profile} name={name} />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            {renderIdentity()}
-            <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.025] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/26">
-              <Icon className="size-3" style={{ color }} strokeWidth={2} />
-              {label}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${color}36, transparent)` }} />
+          <div className="relative flex gap-3">
+            <div className="shrink-0 mt-0.5">
+              <UserAvatar profile={profile} name={name} />
             </div>
-            {renderMainContent()}
-            <ActionRow event={event} dateDetail={dateDetail} onCommentsOpen={() => setCommentsOpen(true)} />
+
+            <div className="min-w-0 flex-1">
+              {renderIdentity()}
+              <div className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.035] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/40">
+                <Icon className="size-3" style={{ color }} strokeWidth={2} />
+                {label}
+              </div>
+              {renderMainContent()}
+              <ActionRow event={event} dateDetail={dateDetail} onCommentsOpen={() => setCommentsOpen(true)} />
+            </div>
           </div>
         </article>
       )}

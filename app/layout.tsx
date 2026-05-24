@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
+import { Bebas_Neue, Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+
+const bebasNeue = Bebas_Neue({
+  variable: "--font-hero",
+  subsets: ["latin"],
+  weight: "400",
+  display: "swap",
+});
 
 const inter = Inter({
   variable: "--font-sans",
@@ -73,7 +80,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bebasNeue.variable} ${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         {children}

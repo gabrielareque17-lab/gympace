@@ -8,7 +8,7 @@ import { normalizeMuscleGroups, VALID_MUSCLE_DETAILS, VALID_MUSCLE_GROUPS } from
 import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
 import { syncStreaksForUser } from "@/lib/streaks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { syncUserXP } from "@/lib/xp";
+import { awardXP } from "@/lib/xp";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -52,7 +52,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   await deleteFeedEvent(supabase, user.id, "workout", id);
 
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
-  const xpFeedback = await syncUserXP(supabase, user.id);
+  const xpFeedback = await awardXP(supabase, { userId: user.id, source: "workout", sourceId: id });
   await syncStreaksForUser(supabase, user.id);
 
   await revalidateAll(progressUpdates.map((u) => u.competitionId));
@@ -169,7 +169,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const progressUpdates = await updateActiveCompetitionProgressForUser(supabase, user.id);
   const adminSupabase = createOptionalSupabaseAdminClient();
   const challengeUpdates = adminSupabase ? await updateActiveChallengesForUser(adminSupabase, user.id) : [];
-  const xpFeedback = await syncUserXP(supabase, user.id);
+  const xpFeedback = await awardXP(supabase, { userId: user.id, source: "workout", sourceId: id });
 
   await revalidateAll(progressUpdates.map((u) => u.competitionId), challengeUpdates.map((u) => u.challengeId));
   return NextResponse.json({ workout: data, progressUpdates, challengeUpdates, xpFeedback });

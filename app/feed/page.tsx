@@ -49,18 +49,18 @@ export default async function FeedPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto w-full max-w-2xl px-3.5 pb-4 pt-4 sm:px-4 sm:py-8 md:px-6">
+      <main className="mx-auto w-full max-w-2xl px-4 pb-4 pt-4 sm:px-6 sm:py-8">
         <header className="mb-4 sm:mb-8">
-          <div className="mb-2.5 flex items-center gap-2.5">
-            <div className="grid size-7 place-items-center rounded-xl border border-[#B6FF00]/20 bg-[#B6FF00]/10">
-              <Rss className="size-4 text-[#B6FF00]" strokeWidth={2} />
-            </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
-              Social
-            </p>
-          </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Feed</h1>
-          <p className="mt-1 text-sm text-[#F5F5F5]/40 sm:mt-2">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
+            Social
+          </p>
+          <h1
+            className="leading-none text-white"
+            style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+          >
+            Feed
+          </h1>
+          <p className="mt-1 hidden text-sm text-[#F5F5F5]/40 sm:mt-2 sm:block">
             Atividade da sua rede GymPace
           </p>
         </header>

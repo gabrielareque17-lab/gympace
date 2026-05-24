@@ -29,6 +29,24 @@ const CATEGORY_DEFS: Array<{ id: AvatarCategory; label: string; hint: string; ac
   { id: 'premium', label: 'Premium', hint: 'Temporada, troféus e conquistas especiais', accentColor: '#FACC15' },
 ]
 
+const RARITY_LABELS_PT: Record<string, string> = {
+  core: 'Base',
+  common: 'Comum',
+  rare: 'Raro',
+  epic: 'Épico',
+  legendary: 'Lendário',
+  seasonal: 'Temporada',
+}
+
+const RARITY_COLORS_MAP: Record<string, string> = {
+  core: '#94A3B8',
+  common: '#94A3B8',
+  rare: '#38BDF8',
+  epic: '#A78BFA',
+  legendary: '#FACC15',
+  seasonal: '#FACC15',
+}
+
 export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
   const { profile, updateProfile } = useProfileContext()
   const router = useRouter()
@@ -43,18 +61,27 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
   const [showSaved, setShowSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const selected = getAvatarById(selectedId) ?? getDefaultAvatar()
   const userLevel = profile?.currentLevel ?? profile?.level ?? 1
   const isAdmin = profile?.isAdmin ?? false
   const unlockedAvatarIds = profile?.unlockedAvatarIds ?? []
+  const selectableAvatars = useMemo(
+    () => [...SELECTABLE_AVATARS, ...(profile?.customAvatars ?? [])],
+    [profile?.customAvatars]
+  )
+  const selected = selectableAvatars.find((avatar) => avatar.id === selectedId) ?? getAvatarById(selectedId) ?? getDefaultAvatar()
 
   const activeAvatars = useMemo(
-    () => SELECTABLE_AVATARS.filter((avatar) => avatar.category === activeCategory),
-    [activeCategory]
+    () => selectableAvatars.filter((avatar) => avatar.category === activeCategory),
+    [activeCategory, selectableAvatars]
   )
 
+  const rarityColor = RARITY_COLORS_MAP[selected.rarity] ?? '#94A3B8'
+  const rarityLabel = RARITY_LABELS_PT[selected.rarity] ?? selected.rarity
+  const isEquipped = selectedId === savedId
+  const activeCatDef = CATEGORY_DEFS.find((c) => c.id === activeCategory)
+
   function handleSelect(id: string, type: AvatarType) {
-    const avatar = getAvatarById(id)
+    const avatar = selectableAvatars.find((item) => item.id === id) ?? getAvatarById(id)
     if (!avatar || !isAvatarUnlocked(avatar, { level: userLevel, isAdmin, unlockedAvatarIds })) return
     setSelectedId(id)
     setSelectedType(type)
@@ -63,7 +90,7 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
 
   async function handleSave() {
     if (!selectedId || !selectedType) return
-    const avatar = getAvatarById(selectedId)
+    const avatar = selectableAvatars.find((item) => item.id === selectedId) ?? getAvatarById(selectedId)
     if (!avatar || !isAvatarUnlocked(avatar, { level: userLevel, isAdmin, unlockedAvatarIds })) {
       setError('Avatar bloqueado.')
       return
@@ -91,34 +118,68 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
 
   return (
     <div className="space-y-4">
+      {/* ── Preview card — collectible item feel ── */}
       <div
-        className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#080808] p-4"
-        style={{ boxShadow: `0 0 28px ${selected.glowColor}` }}
+        className="relative overflow-hidden rounded-2xl border bg-[#080808] p-4"
+        style={{
+          borderColor: `${selected.accentColor}30`,
+          boxShadow: `0 0 32px ${selected.glowColor}, 0 0 64px ${selected.glowColor}40`,
+        }}
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.14] to-transparent" />
+        {/* Animated top line */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-px"
+          style={{ background: `linear-gradient(90deg, transparent, ${selected.accentColor}70, transparent)` }}
+        />
+
         <div className="flex items-center gap-4">
-          <div className="grid size-24 shrink-0 place-items-center rounded-3xl border border-white/[0.08] bg-black/40">
+          {/* Avatar frame */}
+          <div
+            className="relative grid size-24 shrink-0 place-items-center rounded-3xl border"
+            style={{
+              borderColor: `${selected.accentColor}32`,
+              background: `radial-gradient(circle at 50% 35%, ${selected.accentColor}22 0%, transparent 72%), rgba(0,0,0,0.50)`,
+              boxShadow: `0 0 18px ${selected.glowColor} inset`,
+            }}
+          >
             <AvatarSVG
               avatarId={selected.id}
               accentColor={selected.accentColor}
               secondaryColor={selected.secondaryColor}
               size={96}
+              definition={selected}
             />
+            {isEquipped && (
+              <span
+                className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em]"
+                style={{
+                  borderColor: `${selected.accentColor}30`,
+                  color: `${selected.accentColor}90`,
+                  background: `${selected.accentColor}10`,
+                }}
+              >
+                Em uso
+              </span>
+            )}
           </div>
+
+          {/* Info panel */}
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              {/* Rarity badge */}
               <span
                 className="rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em]"
                 style={{
-                  borderColor: `${selected.accentColor}44`,
-                  color: selected.accentColor,
-                  background: `${selected.accentColor}12`,
+                  borderColor: `${rarityColor}40`,
+                  color: rarityColor,
+                  background: `${rarityColor}12`,
                 }}
               >
-                {selected.category}
+                {rarityLabel}
               </span>
-              <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/42">
-                {selected.rarity}
+              {/* Category badge */}
+              <span className="rounded-full border border-white/[0.07] bg-white/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/40">
+                {activeCatDef?.label ?? selected.category}
               </span>
             </div>
             <h3 className="font-display text-xl font-bold tracking-tight text-[#F5F5F5]">{selected.label}</h3>
@@ -133,6 +194,7 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
         </div>
       </div>
 
+      {/* ── Category tabs ── */}
       <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-white/[0.06] bg-white/[0.025] p-1.5">
         {CATEGORY_DEFS.map((cat) => {
           const active = activeCategory === cat.id
@@ -142,28 +204,47 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
               type="button"
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                'min-w-0 rounded-xl px-2 py-2 text-center transition-all duration-150 active:scale-[0.98]',
+                'min-w-0 rounded-xl px-2 py-2 text-center transition-all duration-150 active:scale-[0.97]',
                 active ? 'bg-white/[0.07]' : 'text-white/38 hover:bg-white/[0.04]'
               )}
-              style={active ? { boxShadow: `0 0 16px ${cat.accentColor}22` } : undefined}
+              style={
+                active
+                  ? {
+                      boxShadow: `0 0 16px ${cat.accentColor}22`,
+                      borderColor: `${cat.accentColor}20`,
+                    }
+                  : undefined
+              }
             >
               <span
-                className="mx-auto mb-1 block size-1.5 rounded-full"
-                style={{ background: cat.accentColor, boxShadow: active ? `0 0 8px ${cat.accentColor}` : undefined }}
+                className="mx-auto mb-1 block size-2 rounded-full transition-all duration-150"
+                style={{
+                  background: active ? cat.accentColor : 'rgba(255,255,255,0.18)',
+                  boxShadow: active ? `0 0 8px ${cat.accentColor}` : undefined,
+                }}
               />
-              <span className="block truncate text-[10px] font-bold uppercase tracking-[0.08em]">{cat.label}</span>
+              <span
+                className="block truncate text-[10px] font-bold uppercase tracking-[0.08em] transition-colors duration-150"
+                style={active ? { color: cat.accentColor } : undefined}
+              >
+                {cat.label}
+              </span>
             </button>
           )
         })}
       </div>
 
+      {/* ── Section header ── */}
       <div className="flex items-center justify-between gap-3 px-1">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#B6FF00]/60">
-            {CATEGORY_DEFS.find((cat) => cat.id === activeCategory)?.label}
+          <p
+            className="text-[10px] font-bold uppercase tracking-[0.18em]"
+            style={{ color: activeCatDef ? `${activeCatDef.accentColor}80` : 'rgba(182,255,0,0.6)' }}
+          >
+            {activeCatDef?.label}
           </p>
           <p className="mt-0.5 text-xs text-[#F5F5F5]/35">
-            {CATEGORY_DEFS.find((cat) => cat.id === activeCategory)?.hint}
+            {activeCatDef?.hint}
           </p>
         </div>
         <span className="rounded-full border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-xs font-semibold tabular-nums text-white/42">
@@ -171,6 +252,7 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
         </span>
       </div>
 
+      {/* ── Avatar grid ── */}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
         {activeAvatars.map((def) => (
           <AvatarCard
@@ -186,6 +268,7 @@ export function AvatarSelector({ initialAvatarId }: AvatarSelectorProps) {
 
       {error && <p className="text-xs font-medium text-red-400/80">{error}</p>}
 
+      {/* ── Save button ── */}
       <button
         type="button"
         onClick={handleSave}

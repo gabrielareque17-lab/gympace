@@ -283,13 +283,13 @@ function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
 
             {/* 2×2 action grid */}
             <div className="grid grid-cols-2 gap-2.5 px-4 pb-3">
-              {ACTIONS.map(({ label, desc, href, icon: Icon, color, bg, border }) => (
+              {ACTIONS.map(({ label, desc, href, icon: Icon, color, bg, border }, idx) => (
                 <button
                   key={label}
                   type="button"
                   onClick={() => handleAction(href)}
-                  className="mobile-tap flex flex-col items-start gap-3 rounded-2xl p-4 text-left transition-transform duration-100 active:scale-[0.97] active:opacity-80"
-                  style={{ background: bg, border: `1px solid ${border}` }}
+                  className="gp-sheet-item mobile-tap flex flex-col items-start gap-3 rounded-2xl p-4 text-left transition-transform duration-100 active:scale-[0.97] active:opacity-80"
+                  style={{ background: bg, border: `1px solid ${border}`, animationDelay: `${60 + idx * 52}ms` }}
                 >
                   <div
                     className="grid size-10 place-items-center rounded-xl"

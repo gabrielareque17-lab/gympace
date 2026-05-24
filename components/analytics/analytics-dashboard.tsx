@@ -24,17 +24,9 @@ import type {
   WeeklyWorkoutPoint,
   WorkoutGroup,
 } from "@/lib/analytics";
+import { getAthleteTitle } from "@/lib/athlete-title";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const RANK_STYLES: Record<string, { label: string; color: string }> = {
-  rookie: { label: "Rookie", color: "#94A3B8" },
-  bronze: { label: "Bronze", color: "#CD7F32" },
-  silver: { label: "Silver", color: "#A1A1AA" },
-  gold: { label: "Gold", color: "#EAB308" },
-  platinum: { label: "Platinum", color: "#22D3EE" },
-  elite: { label: "Elite", color: "#B6FF00" },
-};
 
 const HEATMAP_COLORS = [
   "bg-white/[0.04] border-white/[0.05]",
@@ -661,7 +653,7 @@ function ConsistencySection({
 
 export function AnalyticsDashboard({ data }: { data: AnalyticsData }) {
   const { summary, profile, performanceScore, weeklyVolume, paceTrends, heatmap, workoutGroups, weeklyWorkoutMinutes } = data;
-  const rankStyle = RANK_STYLES[profile.rank] ?? RANK_STYLES.rookie;
+  const rankStyle = getAthleteTitle(profile.rank);
 
   return (
     <div className="space-y-4">

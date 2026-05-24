@@ -31,7 +31,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [fetchKey, setFetchKey] = useState(0)
 
   useEffect(() => {
-    setIsLoading(true)
     fetch('/api/profile')
       .then((res) => (res.ok ? res.json() : null))
       .then((data: ProfileData | null) => setProfile(data))
@@ -66,7 +65,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     return {}
   }, [])
 
-  const refetch = useCallback(() => setFetchKey((k) => k + 1), [])
+  const refetch = useCallback(() => {
+    setIsLoading(true)
+    setFetchKey((k) => k + 1)
+  }, [])
 
   return (
     <ProfileContext.Provider value={{ profile, isLoading, updateProfile, refetch }}>

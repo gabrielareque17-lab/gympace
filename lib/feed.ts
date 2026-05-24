@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createOptionalSupabaseAdminClient } from "@/lib/supabase-admin";
-import { getLevelProgress, syncUserXP, type XPFeedback } from "@/lib/xp";
+import { getLevelProgress } from "@/lib/xp";
 
 export type FeedEventType =
   | "run"
@@ -150,18 +150,6 @@ function getPayloadDedupeKey(payload: Record<string, unknown>): string | undefin
   return undefined;
 }
 
-function applyXpState(profile: FeedProfile, xp: XPFeedback): FeedProfile {
-  return {
-    ...profile,
-    rank: xp.rank,
-    current_level: xp.currentLevel,
-    total_xp: xp.totalXp,
-    xp_into_level: xp.xpIntoLevel,
-    xp_for_next_level: xp.xpForNextLevel,
-    level_progress: xp.levelProgress,
-  };
-}
-
 function hydrateXpState(profile: FeedProfile): FeedProfile {
   const totalXp = Number(profile.total_xp ?? 0);
   const progress = getLevelProgress(totalXp);
@@ -227,25 +215,6 @@ export async function getFeedEvents(
   const profileMap = Object.fromEntries(
     ((profilesRes.data ?? []) as FeedProfile[]).map((p) => [p.user_id, hydrateXpState(p)])
   );
-
-  const syncResults = await Promise.allSettled(
-    uniqueUserIds.map(async (profileUserId) => ({
-      userId: profileUserId,
-      xp: await syncUserXP(supabase, profileUserId),
-    }))
-  );
-
-  for (const result of syncResults) {
-    if (result.status !== "fulfilled") {
-      console.error("[feed] xp sync error:", result.reason);
-      continue;
-    }
-
-    const existingProfile = profileMap[result.value.userId];
-    if (existingProfile) {
-      profileMap[result.value.userId] = applyXpState(existingProfile, result.value.xp);
-    }
-  }
 
   // Count reactions per event
   const reactionCountMap: Record<string, number> = {};

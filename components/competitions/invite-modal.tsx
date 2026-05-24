@@ -40,9 +40,9 @@ export function InviteModal({ competitionId, onClose }: InviteModalProps) {
   }, [competitionId])
 
   useEffect(() => {
-    if (!query.trim()) { setAthletes([]); return }
-    setSearching(true)
+    if (!query.trim()) return
     const t = setTimeout(async () => {
+      setSearching(true)
       try {
         const res = await fetch(`/api/athletes/search?q=${encodeURIComponent(query.trim())}&limit=12`)
         if (res.ok) setAthletes((await res.json()).athletes ?? [])
@@ -129,7 +129,13 @@ export function InviteModal({ competitionId, onClose }: InviteModalProps) {
               type="text"
               placeholder="Buscar por nome ou @username…"
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={e => {
+                setQuery(e.target.value)
+                if (!e.target.value.trim()) {
+                  setAthletes([])
+                  setSearching(false)
+                }
+              }}
               className="h-10 w-full rounded-xl border border-white/[0.08] bg-white/[0.03] pl-10 pr-4 text-sm text-[#F5F5F5] placeholder-[#F5F5F5]/22 outline-none transition-all focus:border-[#B6FF00]/28 focus:shadow-[0_0_20px_rgba(182,255,0,0.04)] focus:ring-1 focus:ring-[#B6FF00]/12"
             />
           </div>

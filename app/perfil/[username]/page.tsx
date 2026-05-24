@@ -4,8 +4,10 @@ import { Flame, Medal, Swords, Trophy } from "lucide-react";
 
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
 import { FollowButton } from "@/components/social/follow-button";
+import { SeasonLeagueBadge } from "@/components/seasons/season-league-badge";
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { getAvatarById } from "@/lib/avatar-registry";
+import { customAvatarRowToDefinition, type CustomAvatarRow } from "@/lib/custom-avatars";
 import {
   ACHIEVEMENT_REGISTRY,
   CATEGORIES,
@@ -22,24 +24,18 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient, hasSupabaseAdminEnv } from "@/lib/supabase-admin";
 import { normalizeMuscleGroups } from "@/lib/muscles";
-import { syncUserXP } from "@/lib/xp";
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from "@/lib/xp";
 import { addAchievementUnlockDates } from "@/lib/achievement-timeline";
 import { getLocalDateKey } from "@/lib/date-utils";
+import { getActiveSeason } from "@/lib/seasons";
+import { calculateSeasonScores } from "@/lib/season-points";
+import { getAthleteTitle } from "@/lib/athlete-title";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ username: string }> };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const RANK_STYLES: Record<string, { label: string; color: string }> = {
-  rookie:   { label: "Rookie",   color: "#94A3B8" },
-  bronze:   { label: "Bronze",   color: "#CD7F32" },
-  silver:   { label: "Silver",   color: "#A1A1AA" },
-  gold:     { label: "Gold",     color: "#EAB308" },
-  platinum: { label: "Platinum", color: "#22D3EE" },
-  elite:    { label: "Elite",    color: "#B6FF00" },
-};
 
 function parsePaceToSeconds(value: string | null): number | null {
   if (!value) return null;
@@ -120,6 +116,7 @@ export default async function PublicProfilePage({ params }: Props) {
     { count: followingCount },
     { data: publicStreaks },
     trophiesResult,
+    activeSeason,
   ] = await Promise.all([
     currentUser && !isOwnProfile
       ? supabase
@@ -146,23 +143,23 @@ export default async function PublicProfilePage({ params }: Props) {
       .select("id,awarded_at,awarded_by,note,exclusive_trophies(name,description,rarity,visual)")
       .eq("user_id", profile.user_id)
       .order("awarded_at", { ascending: false }),
+    getActiveSeason(supabase),
   ])
 
   const isFollowing = !!followRow
 
-  type RunRow = { distance: number; pace: string | null; created_at: string };
-  type GymRow = { muscle_group: string | null; muscle_groups: string[] | null; created_at: string };
+  type RunRow = { user_id: string; distance: number; pace: string | null; created_at: string };
+  type GymRow = { user_id: string; muscle_group: string | null; muscle_groups: string[] | null; duration_minutes: number | null; created_at: string };
 
-  const [{ data: rawRuns }, workoutsResult, xpSync] = await Promise.all([
+  const [{ data: rawRuns }, workoutsResult] = await Promise.all([
     dataSupabase
       .from("runs")
-      .select("distance, pace, created_at")
+      .select("user_id, distance, pace, created_at")
       .eq("user_id", profile.user_id),
     dataSupabase
       .from("workouts")
-      .select("muscle_group, muscle_groups, created_at")
+      .select("user_id, muscle_group, muscle_groups, duration_minutes, created_at")
       .eq("user_id", profile.user_id),
-    syncUserXP(dataSupabase, profile.user_id),
   ]);
 
   const runs: RunRow[] = (rawRuns ?? []) as RunRow[];
@@ -183,12 +180,29 @@ export default async function PublicProfilePage({ params }: Props) {
   const bestPaceSeconds = allPaceSeconds.length > 0 ? Math.min(...allPaceSeconds) : null;
   const currentStreak = computeStreak(runs.map((r) => r.created_at));
 
-  const profileLevel = xpSync.currentLevel;
-  const rankStyle = RANK_STYLES[xpSync.rank] ?? RANK_STYLES.rookie;
-  const xpLevelProgress = xpSync.levelProgress;
-  const totalXp = xpSync.totalXp;
+  const totalXp = Number(profile.total_xp ?? 0);
+  const profileLevel = calculateLevelFromXP(totalXp);
+  const profileRank = getRankForLevel(profileLevel);
+  const rankStyle = getAthleteTitle(profileRank);
+  const xpState = getLevelProgress(totalXp);
+  const xpLevelProgress = xpState.levelProgress;
+  const seasonBreakdown =
+    calculateSeasonScores(activeSeason, runs, workouts)[profile.user_id] ??
+    { points: 0, runs: 0, workouts: 0, km: 0, activeDays: 0, hybridDays: 0 };
 
-  const avatarDef = profile.avatar_id ? getAvatarById(profile.avatar_id) : undefined;
+  const { data: selectedCustomAvatar } = profile.avatar_id?.startsWith("custom-")
+    ? await dataSupabase
+        .from("custom_avatars")
+        .select("id,name,type,category,label,description,primary_color,accent_color,secondary_color,background_color,outfit_color,hair_style,hair_color,face_style,accessory,glow_color,rarity,gender,unlock_kind,unlock_label,female,exclusive,trophy_id,assigned_to,is_active,metadata,created_at,updated_at")
+        .eq("id", profile.avatar_id)
+        .eq("is_active", true)
+        .maybeSingle()
+    : { data: null };
+  const avatarDef = selectedCustomAvatar
+    ? customAvatarRowToDefinition(selectedCustomAvatar as CustomAvatarRow)
+    : profile.avatar_id
+      ? getAvatarById(profile.avatar_id)
+      : undefined;
   const athleteLabel = ATHLETE_LABELS[profile.avatar_type ?? ""] ?? "Atleta";
   const displayName = profile.display_name || profile.username || "Atleta";
   const initials = displayName[0]?.toUpperCase() ?? "?";
@@ -268,9 +282,16 @@ export default async function PublicProfilePage({ params }: Props) {
               />
             )}
 
-            <div className="relative flex flex-col gap-4 p-3.5 sm:flex-row sm:items-start sm:gap-8 sm:p-8">
+            <div className="relative flex flex-col gap-4 p-3.5 sm:flex-row sm:items-start sm:gap-8 sm:p-8 sm:pr-44">
+              <div className="absolute right-3.5 top-3.5 z-10 text-right sm:right-8 sm:top-8">
+                <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/30">
+                  Temporada Atual
+                </p>
+                <SeasonLeagueBadge points={seasonBreakdown.points} compact />
+              </div>
+
               <div className="shrink-0">
-                <AvatarDisplay avatarId={profile.avatar_id} initials={initials} size="lg" />
+                <AvatarDisplay avatarId={profile.avatar_id} definition={avatarDef} initials={initials} size="lg" />
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col gap-2.5">
@@ -420,15 +441,16 @@ export default async function PublicProfilePage({ params }: Props) {
                   <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
                     <span>Progresso do nível</span>
                     <span className="font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
-                      {xpSync.xpIntoLevel.toLocaleString("pt-BR")} / {xpSync.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
+                      {xpState.xpIntoLevel.toLocaleString("pt-BR")} / {xpState.xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                     </span>
                     <span className="font-mono tabular-nums">{xpLevelProgress}%</span>
                   </div>
                 </div>
+
               </div>
 
               {/* Quick stats */}
-              <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:flex sm:flex-col sm:items-end sm:gap-4">
+              <div className="grid shrink-0 grid-cols-3 gap-1.5 sm:mt-20 sm:flex sm:flex-col sm:items-end sm:gap-4">
                 <div className="rounded-xl border border-white/[0.055] bg-white/[0.025] px-2.5 py-2 text-right sm:border-0 sm:bg-transparent sm:p-0">
                   <p className="font-display text-lg font-bold tabular-nums sm:text-xl">
                     {totalKm.toFixed(1)}

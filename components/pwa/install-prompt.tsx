@@ -37,7 +37,7 @@ export function InstallPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const mountTimer = setTimeout(() => setMounted(true), 0);
 
     // Already running as installed PWA
     const isStandalone =
@@ -66,6 +66,7 @@ export function InstallPrompt() {
         setVisible(true);
       }, 3000);
       return () => {
+        clearTimeout(mountTimer);
         clearTimeout(timer);
         window.removeEventListener("beforeinstallprompt", onPrompt);
       };
@@ -76,6 +77,7 @@ export function InstallPrompt() {
     window.addEventListener("appinstalled", onInstalled);
 
     return () => {
+      clearTimeout(mountTimer);
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
     };
@@ -211,7 +213,7 @@ function IOSInstructions() {
             text: (
               <>
                 Role para baixo e toque em{" "}
-                <span className="font-semibold text-[#B6FF00]">"Adicionar à Tela de Início"</span>
+                <span className="font-semibold text-[#B6FF00]">&ldquo;Adicionar à Tela de Início&rdquo;</span>
               </>
             ),
           },
@@ -220,7 +222,7 @@ function IOSInstructions() {
             icon: <span className="text-[11px]">✅</span>,
             text: (
               <>
-                Toque em <span className="font-semibold text-[#F5F5F5]/75">"Adicionar"</span> no canto superior direito
+                Toque em <span className="font-semibold text-[#F5F5F5]/75">&ldquo;Adicionar&rdquo;</span> no canto superior direito
               </>
             ),
           },

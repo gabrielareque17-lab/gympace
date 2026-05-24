@@ -114,7 +114,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <Zap className="size-3.5 text-[#080808]" strokeWidth={2.8} />
               </div>
-              <span className="font-display text-[15px] font-bold tracking-tight">GymPace</span>
+              <span
+                className="leading-none text-white"
+                style={{ fontFamily: "var(--font-hero)", fontSize: "1.2rem", letterSpacing: "0.1em" }}
+              >
+                GymPace
+              </span>
             </div>
 
             {/* Notification bell */}

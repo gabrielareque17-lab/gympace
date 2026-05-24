@@ -19,12 +19,15 @@ export default async function ExplorarPage() {
 
   return (
     <AppShell>
-      <div className="min-w-0 flex-1 p-6 sm:p-8 lg:p-10">
+      <div className="min-w-0 flex-1 px-3.5 pb-4 pt-4 sm:p-6 lg:p-8">
         <header className="mb-8">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/60">
             Comunidade
           </p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Explorar</h1>
+          <h1
+            className="leading-none text-white"
+            style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+          >Explorar</h1>
           <p className="mt-2 max-w-lg text-sm leading-6 text-[#F5F5F5]/40">
             Descubra atletas, acompanhe perfis e inspire-se com a comunidade GymPace.
           </p>

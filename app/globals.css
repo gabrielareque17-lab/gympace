@@ -47,6 +47,16 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ── GymPace font — enables font-hero Tailwind utility ── */
+  --font-hero: var(--font-hero);
+
+  /* ── GymPace brand colors — enables bg-gp-accent, text-gp-accent, etc. ── */
+  --color-gp-accent:  var(--gp-accent);
+  --color-gp-blue:    var(--gp-blue);
+  --color-gp-red:     var(--gp-red);
+  --color-gp-surface: var(--gp-bg-surface);
+  --color-gp-base:    var(--gp-bg-base);
 }
 
 :root {
@@ -74,6 +84,101 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
+
+  /* ═══════════════════════════════════════════════════
+     GymPace Design Tokens — single source of truth
+     ═══════════════════════════════════════════════════ */
+
+  /* Backgrounds — darkest to lightest */
+  --gp-bg-base:     #080808;
+  --gp-bg-overlay:  #090909;
+  --gp-bg-deep:     #0B0B0B;
+  --gp-bg-sheet:    #0D0D0D;
+  --gp-bg-surface:  #111111;
+  --gp-bg-surface2: #141414;
+
+  /* Primary accent — neon green */
+  --gp-accent:     #B6FF00;
+  --gp-accent-dim: rgba(182,255,0,0.60);
+
+  /* Accent tints */
+  --gp-accent-04: rgba(182,255,0,0.04);
+  --gp-accent-06: rgba(182,255,0,0.06);
+  --gp-accent-10: rgba(182,255,0,0.10);
+  --gp-accent-15: rgba(182,255,0,0.15);
+  --gp-accent-20: rgba(182,255,0,0.20);
+
+  /* Secondary accent — workout blue */
+  --gp-blue:    #60A5FA;
+  --gp-blue-10: rgba(96,165,250,0.10);
+  --gp-blue-15: rgba(96,165,250,0.15);
+  --gp-blue-20: rgba(96,165,250,0.20);
+
+  /* Danger */
+  --gp-red:     #EF4444;
+  --gp-red-10:  rgba(239,68,68,0.10);
+  --gp-red-20:  rgba(239,68,68,0.20);
+
+  /* Text — #F5F5F5 at each opacity stop */
+  --gp-text-90: rgba(245,245,245,0.90);
+  --gp-text-60: rgba(245,245,245,0.60);
+  --gp-text-42: rgba(245,245,245,0.42);
+  --gp-text-38: rgba(245,245,245,0.38);
+  --gp-text-32: rgba(245,245,245,0.32);
+  --gp-text-28: rgba(245,245,245,0.28);
+  --gp-text-22: rgba(245,245,245,0.22);
+  --gp-text-18: rgba(245,245,245,0.18);
+  --gp-text-12: rgba(245,245,245,0.12);
+
+  /* Borders — white at each opacity stop */
+  --gp-border-09: rgba(255,255,255,0.09);
+  --gp-border-07: rgba(255,255,255,0.07);
+  --gp-border-06: rgba(255,255,255,0.06);
+  --gp-border-05: rgba(255,255,255,0.05);
+  --gp-border-04: rgba(255,255,255,0.04);
+
+  /* Shadows */
+  --gp-shadow-card:    0 8px 32px rgba(0,0,0,0.40);
+  --gp-shadow-deep:    0 32px 80px rgba(0,0,0,0.60), 0 0 0 1px rgba(255,255,255,0.025);
+  --gp-shadow-sheet:   0 -8px 48px rgba(0,0,0,0.72), 0 0 0 1px rgba(255,255,255,0.04);
+  --gp-shadow-glow:    0 0 28px rgba(182,255,0,0.55), 0 4px 16px rgba(0,0,0,0.55);
+  --gp-shadow-glow-sm: 0 0 16px rgba(182,255,0,0.35);
+  --gp-shadow-glow-xs: 0 0 8px  rgba(182,255,0,0.25);
+
+  /* Rank colors */
+  --gp-rank-rookie:   #94A3B8;
+  --gp-rank-bronze:   #60A5FA;
+  --gp-rank-silver:   #22C55E;
+  --gp-rank-gold:     #FB923C;
+  --gp-rank-platinum: #A78BFA;
+  --gp-rank-elite:    #B6FF00;
+
+  /* Border radii */
+  --gp-r-sm:  8px;
+  --gp-r-md:  12px;
+  --gp-r-lg:  16px;
+  --gp-r-xl:  20px;
+  --gp-r-2xl: 24px;
+  --gp-r-3xl: 28px;
+
+  /* Easing curves */
+  --gp-ease:        cubic-bezier(0.22, 1, 0.36, 1);
+  --gp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --gp-ease-in:     cubic-bezier(0.4,  0,    1,    1);
+  --gp-ease-out:    cubic-bezier(0,    0,    0.2,  1);
+
+  /* Duration presets */
+  --gp-t-fast:   100ms;
+  --gp-t-normal: 200ms;
+  --gp-t-slow:   300ms;
+  --gp-t-motion: 450ms;
+
+  /* Z-index layers */
+  --gp-z-nav:     50;
+  --gp-z-overlay: 9997;
+  --gp-z-sheet:   9998;
+  --gp-z-modal:   9999;
+
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -230,5 +335,638 @@
      account for both to appear just below the header edge. */
   .notif-panel-top {
     top: calc(3.5rem + 2 * env(safe-area-inset-top, 0px) + 6px);
+  }
+
+  /* ===== GymPace Micro-interaction System ===== */
+
+  /* Feed card staggered entrance */
+  @keyframes gp-card-enter {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .gp-card-enter {
+    animation: gp-card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Heart pop — reaction button like */
+  @keyframes gp-heart-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.42); }
+    60%  { transform: scale(0.88); }
+    100% { transform: scale(1); }
+  }
+  .gp-heart-pop {
+    animation: gp-heart-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* Floating +1 particle on reaction */
+  @keyframes gp-float-up {
+    0%   { opacity: 0.95; transform: translateY(0) scale(1); }
+    80%  { opacity: 0.35; }
+    100% { opacity: 0;    transform: translateY(-20px) scale(0.6); }
+  }
+  .gp-float-up {
+    animation: gp-float-up 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Leaderboard row slide-in from right */
+  @keyframes gp-row-in {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .gp-row-in {
+    animation: gp-row-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* XP progress bar fill — scaleX left to right */
+  @keyframes gp-bar-fill {
+    from { transform: scaleX(0); opacity: 0.55; }
+    to   { transform: scaleX(1); opacity: 1; }
+  }
+  .gp-bar-fill {
+    transform-origin: left center;
+    animation: gp-bar-fill 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+  }
+
+  /* Action sheet item entrance (scale + slide) */
+  @keyframes gp-sheet-item {
+    from { opacity: 0; transform: translateY(14px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0)  scale(1); }
+  }
+  .gp-sheet-item {
+    animation: gp-sheet-item 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Pulse ring — online / presence indicator */
+  @keyframes gp-pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 0   rgba(182,255,0,0.45); }
+    50%       { box-shadow: 0 0 0 4px rgba(182,255,0,0); }
+  }
+
+  /* Badge pop — newly awarded badges */
+  @keyframes gp-badge-pop {
+    0%   { opacity: 0; transform: scale(0.5); }
+    65%  { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .gp-badge-pop {
+    animation: gp-badge-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* Slide down — dropdowns, notification panels */
+  @keyframes gp-slide-down {
+    from { opacity: 0; transform: translateY(-8px) scaleY(0.96); }
+    to   { opacity: 1; transform: translateY(0)    scaleY(1); }
+  }
+  .gp-slide-down {
+    animation: gp-slide-down 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: top center;
+  }
+
+  /* Count entrance — numeric stats */
+  @keyframes gp-count-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .gp-count-in {
+    animation: gp-count-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Grid item entrance */
+  @keyframes gp-grid-in {
+    from { opacity: 0; transform: scale(0.96) translateY(6px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+  .gp-grid-in {
+    animation: gp-grid-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Glow pulse — sustained ambient accent */
+  @keyframes gp-glow-pulse {
+    0%, 100% { opacity: 0.55; }
+    50%       { opacity: 1; }
+  }
+  .gp-glow-pulse {
+    animation: gp-glow-pulse 2.4s ease-in-out infinite;
+  }
+
+  /* Rarity card shimmer — animated top border on legendary/epic avatar cards */
+  @keyframes gp-rarity-line {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+  .gp-rarity-shimmer {
+    background-size: 200% 100%;
+    animation: gp-rarity-line 2.8s linear infinite;
+  }
+
+  /* Ensure fixed bottom nav never hides page content on scroll */
+  html {
+    scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .gp-card-enter,
+    .gp-heart-pop,
+    .gp-float-up,
+    .gp-row-in,
+    .gp-bar-fill,
+    .gp-sheet-item,
+    .gp-badge-pop,
+    .gp-slide-down,
+    .gp-count-in,
+    .gp-grid-in,
+    .gp-glow-pulse,
+    .gp-rarity-shimmer {
+      animation: none !important;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GymPace Design System — Component Utility Classes
+   Use these in any JSX alongside Tailwind utilities.
+   ═══════════════════════════════════════════════════════════════ */
+
+@layer components {
+
+  /* ── Typography ─────────────────────────────────── */
+
+  /* Eyebrow label — accent colored, uppercase */
+  .gp-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--gp-accent-dim);
+    line-height: 1;
+  }
+
+  /* Eyebrow variant — muted white */
+  .gp-eyebrow-muted {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--gp-text-38);
+    line-height: 1;
+  }
+
+  /* Section heading — Bebas Neue, used for card/section titles */
+  .gp-heading-section {
+    font-family: var(--font-hero);
+    font-size: 1.25rem;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+
+  /* Field label — shown above inputs */
+  .gp-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--gp-text-42);
+    margin-bottom: 0.5rem;
+    line-height: 1;
+  }
+
+  /* Mono tabular stat */
+  .gp-mono-stat {
+    font-family: var(--font-geist-mono);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Surfaces ───────────────────────────────────── */
+
+  /* Base card surface */
+  .gp-card {
+    background: var(--gp-bg-surface);
+    border: 1px solid var(--gp-border-07);
+    border-radius: var(--gp-r-lg);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Hover state for interactive cards */
+  .gp-card-hover {
+    transition:
+      border-color var(--gp-t-slow) var(--gp-ease),
+      background   var(--gp-t-slow) var(--gp-ease),
+      box-shadow   var(--gp-t-slow) var(--gp-ease);
+  }
+  .gp-card-hover:hover {
+    border-color: var(--gp-border-09);
+    background: var(--gp-bg-surface2);
+    box-shadow: var(--gp-shadow-card);
+  }
+
+  /* Top shimmer line (shimmer gradient on card top edge) */
+  .gp-card-top-line::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+    pointer-events: none;
+  }
+
+  /* Card top accent line — neon green gradient */
+  .gp-card-accent-line::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, rgba(182,255,0,0.55), transparent);
+    pointer-events: none;
+  }
+
+  /* ── Section header ─────────────────────────────── */
+
+  .gp-section-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--gp-border-05);
+    padding: 1rem 1.25rem;
+  }
+  .gp-section-header::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+    pointer-events: none;
+  }
+
+  /* ── Interactive row ────────────────────────────── */
+
+  .gp-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    transition: background var(--gp-t-fast) var(--gp-ease);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .gp-row:hover  { background: rgba(255,255,255,0.025); }
+  .gp-row:active { opacity: 0.72; }
+
+  /* ── Progress bar ───────────────────────────────── */
+
+  .gp-progress-track {
+    height: 3px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .gp-progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--gp-accent);
+    box-shadow: 0 0 8px rgba(182,255,0,0.40);
+  }
+
+  /* ── Dividers ───────────────────────────────────── */
+
+  .gp-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--gp-border-07) 30%,
+      var(--gp-border-07) 70%,
+      transparent
+    );
+  }
+
+  /* ── Icon box ───────────────────────────────────── */
+
+  .gp-icon-box {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: var(--gp-r-md);
+    background: var(--gp-accent-10);
+    color: var(--gp-accent);
+    transition:
+      background var(--gp-t-normal) var(--gp-ease),
+      transform  var(--gp-t-normal) var(--gp-ease);
+  }
+  .group:hover .gp-icon-box,
+  .gp-icon-box:hover {
+    background: rgba(182,255,0,0.18);
+    transform: scale(1.08);
+  }
+
+  /* ── Buttons ────────────────────────────────────── */
+
+  .gp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--gp-r-md);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: all var(--gp-t-normal) var(--gp-ease);
+  }
+  .gp-btn:disabled          { pointer-events: none; opacity: 0.50; }
+  .gp-btn:focus-visible     { box-shadow: 0 0 0 3px rgba(182,255,0,0.22); }
+  .gp-btn:active:not(:disabled) { transform: translateY(1px); }
+
+  /* Sizes */
+  .gp-btn-sm   { height: 2rem;    padding-inline: 0.75rem; font-size: 0.75rem; border-radius: var(--gp-r-sm); }
+  .gp-btn-md   { height: 2.5rem;  padding-inline: 1rem; }
+  .gp-btn-lg   { height: 2.75rem; padding-inline: 1.25rem; }
+  .gp-btn-xl   { height: 3rem;    padding-inline: 1.5rem; font-size: 0.9375rem; }
+  .gp-btn-full { width: 100%; }
+
+  /* Primary — neon green */
+  .gp-btn-primary {
+    background: var(--gp-accent);
+    color: #080808;
+    box-shadow: 0 0 20px rgba(182,255,0,0.18), 0 4px 12px rgba(0,0,0,0.28);
+  }
+  .gp-btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 0 28px rgba(182,255,0,0.32), 0 6px 18px rgba(0,0,0,0.36);
+  }
+  .gp-btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 0 14px rgba(182,255,0,0.18), 0 2px 8px rgba(0,0,0,0.28);
+  }
+
+  /* Ghost — subtle transparent */
+  .gp-btn-ghost {
+    background: rgba(255,255,255,0.04);
+    color: var(--gp-text-60);
+  }
+  .gp-btn-ghost:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    color: var(--gp-text-90);
+  }
+
+  /* Outline — bordered */
+  .gp-btn-outline {
+    background: transparent;
+    color: var(--gp-text-60);
+    border-color: var(--gp-border-07);
+  }
+  .gp-btn-outline:hover:not(:disabled) {
+    background: rgba(255,255,255,0.04);
+    color: var(--gp-text-90);
+    border-color: var(--gp-border-09);
+  }
+
+  /* Danger — red destructive */
+  .gp-btn-danger {
+    background: var(--gp-red-10);
+    color: var(--gp-red);
+    border-color: rgba(239,68,68,0.20);
+  }
+  .gp-btn-danger:hover:not(:disabled) {
+    background: var(--gp-red-20);
+    border-color: rgba(239,68,68,0.35);
+  }
+
+  /* Accent ghost — neon green tinted */
+  .gp-btn-accent-ghost {
+    background: var(--gp-accent-06);
+    color: rgba(182,255,0,0.80);
+    border-color: rgba(182,255,0,0.14);
+  }
+  .gp-btn-accent-ghost:hover:not(:disabled) {
+    background: var(--gp-accent-10);
+    color: var(--gp-accent);
+    border-color: rgba(182,255,0,0.25);
+  }
+
+  /* ── Input ──────────────────────────────────────── */
+
+  .gp-input {
+    height: 2.75rem;
+    width: 100%;
+    border-radius: var(--gp-r-md);
+    border: 1px solid var(--gp-border-07);
+    background: rgba(255,255,255,0.035);
+    padding-inline: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #F5F5F5;
+    outline: none;
+    transition: all var(--gp-t-normal) var(--gp-ease);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .gp-input::placeholder          { color: var(--gp-text-18); }
+  .gp-input:focus {
+    border-color: rgba(182,255,0,0.38);
+    background: rgba(255,255,255,0.055);
+    box-shadow: 0 0 0 3px rgba(182,255,0,0.06);
+  }
+  .gp-input:disabled              { opacity: 0.50; pointer-events: none; }
+  .gp-input[aria-invalid="true"]  {
+    border-color: rgba(239,68,68,0.40);
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+  }
+
+  /* ── Badges ─────────────────────────────────────── */
+
+  .gp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    padding: 0.1875rem 0.5rem;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+  }
+
+  .gp-badge-accent {
+    background: var(--gp-accent-10);
+    color: var(--gp-accent);
+    border-color: rgba(182,255,0,0.22);
+  }
+
+  .gp-badge-muted {
+    background: rgba(255,255,255,0.04);
+    color: var(--gp-text-42);
+    border-color: var(--gp-border-06);
+  }
+
+  .gp-badge-danger {
+    background: var(--gp-red-10);
+    color: var(--gp-red);
+    border-color: rgba(239,68,68,0.22);
+  }
+
+  .gp-badge-blue {
+    background: var(--gp-blue-10);
+    color: var(--gp-blue);
+    border-color: rgba(96,165,250,0.22);
+  }
+
+  /* "Você" pill — the user's own row */
+  .gp-badge-you {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: rgba(182,255,0,0.10);
+    color: var(--gp-accent);
+    padding: 0.125rem 0.375rem;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: none;
+  }
+
+  /* Rank badge — square corners */
+  .gp-badge-rank {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--gp-r-sm);
+    padding: 0.25rem 0.5rem;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* Count dot — small numeric badge over icons */
+  .gp-badge-dot {
+    min-width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--gp-accent);
+    color: #080808;
+    font-size: 9px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.25rem;
+    box-shadow: 0 0 7px rgba(182,255,0,0.75);
+    flex-shrink: 0;
+  }
+
+  /* ── Empty state ────────────────────────────────── */
+
+  .gp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3.5rem 1.25rem;
+    text-align: center;
+  }
+
+  .gp-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--gp-r-lg);
+    border: 1px solid var(--gp-border-06);
+    background: rgba(255,255,255,0.025);
+    color: var(--gp-text-22);
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Presence / online dots ─────────────────────── */
+
+  .gp-dot-online {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--gp-accent);
+    flex-shrink: 0;
+    animation: gp-pulse-ring 2s ease-in-out infinite;
+  }
+
+  .gp-dot-away {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--gp-rank-gold);
+    box-shadow: 0 0 0 2px rgba(234,179,8,0.20);
+    flex-shrink: 0;
+  }
+
+  .gp-dot-offline {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--gp-text-22);
+    flex-shrink: 0;
+  }
+
+  /* ── Focus ring helper ──────────────────────────── */
+
+  .gp-focus-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(182,255,0,0.22);
+  }
+
+  /* ── Stat card — centered metric tile ──────────── */
+
+  .gp-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 76px;
+    border-radius: var(--gp-r-lg);
+    border: 1px solid var(--gp-border-06);
+    background: rgba(255,255,255,0.025);
+    padding: 0.75rem 0.625rem;
+    text-align: center;
+  }
+
+  /* ── Section title — font-hero heading ─────────── */
+
+  .gp-section-title {
+    font-family: var(--font-hero);
+    font-size: 1.25rem;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    color: #fff;
+  }
+
+  /* ── Touch row — comfortable tap target ─────────── */
+
+  .gp-touch-row {
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }

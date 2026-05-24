@@ -13,17 +13,19 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
+import { ATHLETE_TITLES } from "@/lib/athlete-title";
+import { SEASON_LEAGUES } from "@/lib/season-league";
 import { getRankForLevel, getXPRequiredForLevel, XP_RULES, type XPRank } from "@/lib/xp";
 
 export const dynamic = "force-dynamic";
 
 const RANK_STYLES: Record<XPRank, { label: string; color: string; range: string }> = {
-  rookie: { label: "Rookie", color: "#94A3B8", range: "Níveis 1-2" },
-  bronze: { label: "Bronze", color: "#CD7F32", range: "Níveis 3-7" },
-  silver: { label: "Silver", color: "#A1A1AA", range: "Níveis 8-14" },
-  gold: { label: "Gold", color: "#EAB308", range: "Níveis 15-21" },
-  platinum: { label: "Platinum", color: "#22D3EE", range: "Níveis 22-29" },
-  elite: { label: "Elite", color: "#B6FF00", range: "Nível 30+" },
+  rookie: { ...ATHLETE_TITLES.rookie, range: "Níveis 1-2" },
+  bronze: { ...ATHLETE_TITLES.bronze, range: "Níveis 3-7" },
+  silver: { ...ATHLETE_TITLES.silver, range: "Níveis 8-14" },
+  gold: { ...ATHLETE_TITLES.gold, range: "Níveis 15-21" },
+  platinum: { ...ATHLETE_TITLES.platinum, range: "Níveis 22-29" },
+  elite: { ...ATHLETE_TITLES.elite, range: "Nível 30+" },
 };
 
 const XP_SOURCES = [
@@ -102,7 +104,7 @@ const LEVELS = Array.from({ length: 15 }, (_, index) => {
 export default function XPPage() {
   return (
     <AppShell>
-      <main className="min-w-0 flex-1 px-3.5 pb-5 pt-4 sm:p-6 lg:p-10">
+      <main className="min-w-0 flex-1 px-4 pb-5 pt-4 sm:p-6 lg:p-10">
         <div className="mx-auto max-w-5xl space-y-4 sm:space-y-5">
           <HeroSection />
           <SourceGrid />
@@ -110,6 +112,7 @@ export default function XPPage() {
             <LevelSection />
             <RankSection />
           </div>
+          <SeasonLeagueSection />
           <ExampleSection />
           <TrustSection />
         </div>
@@ -128,12 +131,15 @@ function HeroSection() {
             <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#B6FF00]/65">
               Sistema XP
             </p>
-            <h1 className="font-display text-2xl font-bold tracking-tight sm:text-4xl">
+            <h1
+              className="leading-none text-white"
+              style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+            >
               Como seu progresso vira nível
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[#F5F5F5]/46">
-              O GymPace calcula XP a partir das atividades salvas. Corridas, treinos,
-              sequências, conquistas e competições alimentam o mesmo placar.
+              XP, nível e título do atleta formam a progressão permanente. A medalha
+              da season é uma competição temporária separada.
             </p>
           </div>
           <div
@@ -144,7 +150,7 @@ function HeroSection() {
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2">
           <HeroMetric label="Primeira subida de nível" value="150 XP" />
           <HeroMetric label="Base da corrida" value="+30 XP" />
           <HeroMetric label="Base do treino" value="+50 XP" />
@@ -160,7 +166,7 @@ function HeroMetric({ label, value }: { label: string; value: string }) {
       <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F5F5]/32">
         {label}
       </p>
-      <p className="mt-1 font-display text-xl font-bold text-[#F5F5F5]/90">{value}</p>
+      <p className="mt-1 leading-none text-[#F5F5F5]/90" style={{ fontFamily: "var(--font-hero)", fontSize: "1.5rem", letterSpacing: "0.02em" }}>{value}</p>
     </div>
   );
 }
@@ -169,7 +175,7 @@ function SourceGrid() {
   return (
     <section>
       <SectionTitle eyebrow="Ganhos" title="De onde vem o XP" />
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
         {XP_SOURCES.map(({ title, icon: Icon, color, formula, detail }) => (
           <article key={title} className="rounded-2xl border border-white/[0.07] bg-[#111111] p-4">
             <div
@@ -196,8 +202,8 @@ function LevelSection() {
       <div className="border-b border-white/[0.05] p-4 sm:p-5">
       <SectionTitle eyebrow="Níveis" title="Curva de progressão" compact />
         <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
-          Cada nível exige um pouco mais que o anterior. A barra de XP mostra quanto você
-          já acumulou dentro do nível atual.
+          Cada nível exige um pouco mais que o anterior. XP, nível e título do atleta formam
+          uma progressão permanente e não zeram entre seasons.
         </p>
       </div>
       <div className="divide-y divide-white/[0.045]">
@@ -234,9 +240,9 @@ function RankSection() {
   return (
     <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
       <div className="border-b border-white/[0.05] p-4 sm:p-5">
-        <SectionTitle eyebrow="Ranks" title="Faixas competitivas" compact />
+        <SectionTitle eyebrow="Títulos" title="Progressão permanente" compact />
         <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
-          O rank nasce do seu nível atual. Ele aparece no perfil, feed e ranking.
+          O título nasce do seu nível atual e não zera quando uma nova season começa.
         </p>
       </div>
       <div className="grid gap-2 p-4 sm:p-5">
@@ -244,13 +250,42 @@ function RankSection() {
           ([rank, style]) => (
             <div key={rank} className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.055] bg-white/[0.025] px-3 py-2.5">
               <div className="flex items-center gap-2.5">
-                <Medal className="size-4" style={{ color: style.color }} />
-                <span className="text-sm font-semibold">{style.label}</span>
+                <span className="text-sm font-semibold" style={{ color: style.color }}>{style.label}</span>
               </div>
               <span className="text-xs text-[#F5F5F5]/36">{style.range}</span>
             </div>
           )
         )}
+      </div>
+    </section>
+  );
+}
+
+function SeasonLeagueSection() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
+      <div className="border-b border-white/[0.05] p-4 sm:p-5">
+        <SectionTitle eyebrow="Season" title="Liga Ranqueada" compact />
+        <p className="mt-2 text-xs leading-5 text-[#F5F5F5]/38">
+          Bronze, Prata, Ouro, Platina e Diamante representam sua Liga Ranqueada na temporada ativa.
+          A pontuação usa os pontos da season e reinicia a cada nova temporada.
+        </p>
+      </div>
+      <div className="grid gap-2 p-4 sm:grid-cols-5 sm:p-5">
+        {SEASON_LEAGUES.map((league) => (
+          <div key={league.key} className="rounded-xl border border-white/[0.055] bg-white/[0.025] px-3 py-3">
+            <div
+              className="mb-2 grid size-9 place-items-center rounded-full"
+              style={{ background: `${league.color}18`, color: league.color }}
+            >
+              <Medal className="size-4" strokeWidth={2.2} />
+            </div>
+            <p className="text-sm font-semibold" style={{ color: league.color }}>{league.label}</p>
+            <p className="mt-1 text-[11px] text-[#F5F5F5]/32">
+              {league.minPoints.toLocaleString("pt-BR")}+ pts
+            </p>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -338,3 +373,4 @@ function SectionTitle({
     </div>
   );
 }
+

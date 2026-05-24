@@ -52,7 +52,10 @@ export default async function UpdatesPage() {
               GymPace
             </p>
           </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1
+            className="leading-none text-white"
+            style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+          >
             Atualizações
           </h1>
           <p className="mt-1 text-sm text-[#F5F5F5]/40 sm:mt-2">

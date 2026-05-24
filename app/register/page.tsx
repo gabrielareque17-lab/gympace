@@ -59,7 +59,6 @@ export default function RegisterPage() {
     }
 
     if (data.session) {
-      // Immediate session — save avatar right away
       await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -73,8 +72,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Email confirmation required - the selected avatar is persisted in user metadata
-    // and applied in the auth callback after the session is exchanged.
     setIsSuccess(true);
     setMessage(
       "Conta criada. Confirme seu email para continuar. Seu avatar escolhido já aparecerá no perfil."
@@ -83,54 +80,206 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center overflow-hidden bg-[#0D0D0D] px-5 py-12 text-[#F5F5F5]">
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.035] blur-[100px]" />
+    <main className="relative min-h-screen bg-[#080808] px-5 py-12 text-[#F5F5F5]">
+      {/* Background glow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#B6FF00]/[0.025] blur-[100px]" />
+      </div>
 
-      <div className={`relative w-full ${step === "avatar" ? "max-w-2xl" : "max-w-sm"}`}>
+      <div className={`relative mx-auto w-full ${step === "avatar" ? "max-w-2xl" : "max-w-sm"}`}>
         {/* Logo */}
-        <AuthLogo />
+        <Link href="/landing" className="group mb-10 flex flex-col items-center gap-3">
+          <div
+            className="grid size-12 place-items-center rounded-2xl bg-[#B6FF00]"
+            style={{ boxShadow: "0 0 28px rgba(182,255,0,0.3)" }}
+          >
+            <Zap className="size-6 text-[#080808]" strokeWidth={2.8} />
+          </div>
+          <div className="text-center">
+            <p
+              className="leading-none text-white"
+              style={{ fontFamily: "var(--font-hero)", fontSize: "1.875rem", letterSpacing: "0.1em" }}
+            >
+              GymPace
+            </p>
+            <p className="mt-1.5 text-[11px] text-[#F5F5F5]/28 transition-colors group-hover:text-[#F5F5F5]/50">
+              Voltar para apresentação
+            </p>
+          </div>
+        </Link>
 
-        {step === "credentials" ? (
-          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
-            <div className="relative px-7 pb-7 pt-6">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
+        {/* Step indicator */}
+        <div className="mb-5 flex items-center justify-center gap-3">
+          <StepDot active={step === "credentials"} done={step === "avatar"} number={1} label="Credenciais" />
+          <div className="h-px w-8 bg-white/[0.1]" />
+          <StepDot active={step === "avatar"} done={false} number={2} label="Avatar" />
+        </div>
 
-              <div className="mb-6 text-center">
-                <h1 className="font-display text-xl font-bold tracking-tight">Criar conta</h1>
-                <p className="mt-1.5 text-sm text-[#F5F5F5]/40">
-                  Comece a registrar treinos e acompanhe sua evolução.
-                </p>
-              </div>
+        {/* Card */}
+        <div
+          className="overflow-hidden rounded-2xl border border-white/[0.09]"
+          style={{
+            background: "linear-gradient(160deg, #111111, #0E0E0E)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.025)",
+          }}
+        >
+          {/* Top accent line */}
+          <div
+            className="h-[1.5px] w-full"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(182,255,0,0.55) 50%, transparent 100%)",
+            }}
+          />
 
-              <form onSubmit={handleCredentialsNext} className="space-y-4">
-                <AuthField
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="voce@email.com"
-                  autoComplete="email"
-                />
-                <AuthField
-                  label="Senha"
-                  type="password"
-                  value={password}
-                  onChange={setPassword}
-                  placeholder="Mínimo 6 caracteres"
-                  autoComplete="new-password"
-                  minLength={6}
-                />
+          <div className="px-7 pb-7 pt-6">
+            {step === "credentials" ? (
+              <>
+                <div className="mb-7">
+                  <h1
+                    className="leading-tight text-white"
+                    style={{
+                      fontFamily: "var(--font-hero)",
+                      fontSize: "1.875rem",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    Criar conta
+                  </h1>
+                  <p className="mt-1.5 text-sm text-[#F5F5F5]/40">
+                    Comece a registrar treinos e acompanhe sua evolução.
+                  </p>
+                </div>
 
-                <button
-                  type="submit"
-                  className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] text-sm font-bold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.18)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_rgba(182,255,0,0.28)] active:translate-y-0"
-                >
-                  Continuar
-                  <ArrowRight className="size-4" />
-                </button>
-              </form>
-            </div>
+                <form onSubmit={handleCredentialsNext} className="space-y-4">
+                  <AuthField
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={setEmail}
+                    placeholder="voce@email.com"
+                    autoComplete="email"
+                  />
+                  <AuthField
+                    label="Senha"
+                    type="password"
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="Mínimo 6 caracteres"
+                    autoComplete="new-password"
+                    minLength={6}
+                  />
 
+                  <button
+                    type="submit"
+                    className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] text-sm font-bold text-[#080808] transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+                    style={{ boxShadow: "0 0 24px rgba(182,255,0,0.18), 0 4px 16px rgba(0,0,0,0.3)" }}
+                  >
+                    Continuar
+                    <ArrowRight className="size-4" />
+                  </button>
+                </form>
+              </>
+            ) : (
+              <>
+                <div className="mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setStep("credentials")}
+                    className="mb-4 flex items-center gap-1.5 text-xs font-medium text-[#F5F5F5]/38 transition-colors hover:text-[#F5F5F5]/70"
+                  >
+                    <ArrowLeft className="size-3.5" />
+                    Voltar
+                  </button>
+                  <h1
+                    className="leading-tight text-white"
+                    style={{
+                      fontFamily: "var(--font-hero)",
+                      fontSize: "1.875rem",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    Escolha seu avatar
+                  </h1>
+                  <p className="mt-1.5 text-sm text-[#F5F5F5]/40">
+                    Escolha um mascote que represente seu estilo de treino.
+                  </p>
+                </div>
+
+                {(
+                  [
+                    { id: "running" as AvatarCategory, label: "Corrida", accentColor: "#B6FF00" },
+                    { id: "gym" as AvatarCategory, label: "Academia", accentColor: "#60A5FA" },
+                    { id: "hybrid" as AvatarCategory, label: "Híbrido", accentColor: "#A78BFA" },
+                  ]
+                ).map((cat) => {
+                  const avatars = AVATAR_REGISTRY.filter((a) => a.category === cat.id);
+                  return (
+                    <div key={cat.id} className="mb-4 space-y-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{
+                            backgroundColor: cat.accentColor,
+                            boxShadow: `0 0 5px ${cat.accentColor}`,
+                          }}
+                        />
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-[0.2em]"
+                          style={{ color: cat.accentColor }}
+                        >
+                          {cat.label}
+                        </span>
+                        <div className="h-px flex-1" style={{ background: `${cat.accentColor}18` }} />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {avatars.map((def) => (
+                          <AvatarCard
+                            key={def.id}
+                            definition={def}
+                            isSelected={selectedAvatarId === def.id}
+                            onSelect={handleAvatarSelect}
+                            isLoading={isLoading}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {message && (
+                  <div
+                    className={`mb-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+                      isSuccess
+                        ? "border-[#B6FF00]/18 bg-[#B6FF00]/[0.07] text-[#B6FF00]/85"
+                        : "border-red-500/20 bg-red-500/[0.07] text-red-300/90"
+                    }`}
+                  >
+                    {message}
+                  </div>
+                )}
+
+                {!isSuccess && (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] text-sm font-bold text-[#080808] transition-all duration-200 hover:-translate-y-px active:translate-y-0 disabled:pointer-events-none disabled:opacity-55"
+                    style={{ boxShadow: "0 0 24px rgba(182,255,0,0.18), 0 4px 16px rgba(0,0,0,0.3)" }}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="size-4" />
+                    )}
+                    {isLoading ? "Criando conta..." : "Criar conta grátis"}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {step === "credentials" && (
             <div className="border-t border-white/[0.05] px-7 py-4 text-center">
               <p className="text-sm text-[#F5F5F5]/35">
                 Já tem uma conta?{" "}
@@ -142,122 +291,46 @@ export default function RegisterPage() {
                 </Link>
               </p>
             </div>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] shadow-[0_28px_80px_rgba(0,0,0,0.55)]">
-            <div className="relative px-7 pb-7 pt-6">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
-
-              <div className="mb-6">
-                <button
-                  type="button"
-                  onClick={() => setStep("credentials")}
-                  className="mb-4 flex items-center gap-1.5 text-xs font-medium text-[#F5F5F5]/38 transition-colors hover:text-[#F5F5F5]/70"
-                >
-                  <ArrowLeft className="size-3.5" />
-                  Voltar
-                </button>
-                <h1 className="font-display text-xl font-bold tracking-tight">
-                  Escolha seu avatar
-                </h1>
-                <p className="mt-1.5 text-sm text-[#F5F5F5]/40">
-                  Escolha um mascote que represente seu estilo de treino.
-                </p>
-              </div>
-
-              {/* Avatar categories */}
-              {(
-                [
-                  { id: 'running' as AvatarCategory, label: 'Corrida',  accentColor: '#B6FF00' },
-                  { id: 'gym'     as AvatarCategory, label: 'Academia', accentColor: '#60A5FA' },
-                  { id: 'hybrid'  as AvatarCategory, label: 'Híbrido',  accentColor: '#A78BFA' },
-                ]
-              ).map((cat) => {
-                const avatars = AVATAR_REGISTRY.filter((a) => a.category === cat.id)
-                return (
-                  <div key={cat.id} className="mb-4 space-y-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="size-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: cat.accentColor, boxShadow: `0 0 5px ${cat.accentColor}` }}
-                      />
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-[0.2em]"
-                        style={{ color: cat.accentColor }}
-                      >
-                        {cat.label}
-                      </span>
-                      <div className="h-px flex-1" style={{ background: `${cat.accentColor}18` }} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                      {avatars.map((def) => (
-                        <AvatarCard
-                          key={def.id}
-                          definition={def}
-                          isSelected={selectedAvatarId === def.id}
-                          onSelect={handleAvatarSelect}
-                          isLoading={isLoading}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-
-              {message ? (
-                <div
-                  className={`mb-4 rounded-xl border px-4 py-3 text-sm font-medium ${
-                    isSuccess
-                      ? "border-[#B6FF00]/18 bg-[#B6FF00]/[0.07] text-[#B6FF00]/85"
-                      : "border-red-500/20 bg-red-500/[0.07] text-red-300/90"
-                  }`}
-                >
-                  {message}
-                </div>
-              ) : null}
-
-              {!isSuccess && (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#B6FF00] text-sm font-bold text-[#080808] shadow-[0_0_28px_rgba(182,255,0,0.18)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_rgba(182,255,0,0.28)] active:translate-y-0 disabled:pointer-events-none disabled:opacity-55"
-                >
-                  {isLoading ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <UserPlus className="size-4" />
-                  )}
-                  {isLoading ? "Criando conta..." : "Criar conta grátis"}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </main>
   );
 }
 
-function AuthLogo() {
+function StepDot({
+  active,
+  done,
+  number,
+  label,
+}: {
+  active: boolean;
+  done: boolean;
+  number: number;
+  label: string;
+}) {
   return (
-    <Link
-      href="/landing"
-      aria-label="Voltar para a landing page do GymPace"
-      className="group mb-8 flex flex-col items-center gap-2.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[#B6FF00]/35"
-    >
-      <div className="grid size-11 place-items-center rounded-2xl bg-[#B6FF00] shadow-[0_0_32px_rgba(182,255,0,0.28)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
-        <Zap className="size-5 text-[#080808]" strokeWidth={2.8} />
+    <div className="flex items-center gap-2">
+      <div
+        className={`grid size-6 place-items-center rounded-full text-[10px] font-bold transition-all duration-300 ${
+          done
+            ? "bg-[#B6FF00] text-[#080808]"
+            : active
+            ? "border border-[#B6FF00]/60 bg-[#B6FF00]/10 text-[#B6FF00]"
+            : "border border-white/[0.12] bg-white/[0.04] text-[#F5F5F5]/30"
+        }`}
+        style={active ? { boxShadow: "0 0 10px rgba(182,255,0,0.25)" } : {}}
+      >
+        {done ? "✓" : number}
       </div>
-      <div className="text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#B6FF00]/60">
-          GymPace
-        </p>
-        <p className="mt-1 text-[11px] font-medium text-[#F5F5F5]/24 transition-colors group-hover:text-[#F5F5F5]/45">
-          Voltar para apresentação
-        </p>
-      </div>
-    </Link>
+      <span
+        className={`text-[11px] font-medium ${
+          active || done ? "text-[#F5F5F5]/65" : "text-[#F5F5F5]/25"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -280,7 +353,7 @@ function AuthField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-semibold text-[#F5F5F5]/50">
+      <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/45">
         {label}
       </span>
       <input
@@ -291,7 +364,7 @@ function AuthField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         minLength={minLength}
-        className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 text-sm font-medium text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/18 focus:border-[#B6FF00]/38 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(182,255,0,0.06)]"
+        className="h-11 w-full rounded-xl border border-white/[0.08] bg-white/[0.035] px-4 text-sm font-medium text-[#F5F5F5] outline-none transition-all duration-200 placeholder:text-[#F5F5F5]/18 focus:border-[#B6FF00]/38 focus:bg-white/[0.055] focus:shadow-[0_0_0_3px_rgba(182,255,0,0.06)]"
       />
     </label>
   );

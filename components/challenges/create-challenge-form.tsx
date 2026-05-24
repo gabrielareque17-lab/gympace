@@ -74,7 +74,7 @@ export function CreateChallengeForm({
   );
   const [durationDays, setDurationDays] = useState(7);
   const [title, setTitle] = useState(AUTO_TITLES["distance_km"]);
-  const [description, setDescription] = useState("");
+  const [description] = useState("");
 
   // Form state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,12 +85,11 @@ export function CreateChallengeForm({
   // Debounced search
   useEffect(() => {
     if (query.length < 2) {
-      setResults([]);
       return;
     }
     if (searchRef.current) clearTimeout(searchRef.current);
-    setIsSearching(true);
     searchRef.current = setTimeout(async () => {
+      setIsSearching(true);
       const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`);
       const json = await res.json().catch(() => ({ results: [] }));
       setResults((json as { results: SearchUser[] }).results ?? []);
@@ -191,7 +190,13 @@ export function CreateChallengeForm({
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (e.target.value.length < 2) {
+                  setResults([]);
+                  setIsSearching(false);
+                }
+              }}
               placeholder="Buscar por nome ou @usuário..."
               className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] py-3 pl-10 pr-4 text-sm text-[#F5F5F5] placeholder:text-[#F5F5F5]/28 focus:outline-none focus:ring-2 focus:ring-[#B6FF00]/30"
             />

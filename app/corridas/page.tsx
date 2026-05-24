@@ -311,7 +311,10 @@ export default function RunsPage() {
             </p>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Corridas</h1>
+                <h1
+                  className="leading-none text-white"
+                  style={{ fontFamily: "var(--font-hero)", fontSize: "clamp(2rem, 4vw, 2.75rem)", letterSpacing: "0.04em" }}
+                >Corridas</h1>
                 <p className="mt-1.5 max-w-lg text-sm leading-6 text-[#F5F5F5]/40 sm:mt-2">
                   Registre manualmente ou use o rastreamento GPS em tempo real.
                 </p>
