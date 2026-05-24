@@ -12,8 +12,6 @@ import { getAvatarById } from "@/lib/avatar-registry";
 import { customAvatarRowToDefinition, type CustomAvatarRow } from "@/lib/custom-avatars";
 import { calculateLevelFromXP, getLevelProgress, getRankForLevel } from "@/lib/xp";
 import { getUserStreaks } from "@/lib/streaks";
-import { getActiveSeason } from "@/lib/seasons";
-import { calculateSeasonScores } from "@/lib/season-points";
 import { getLocalDateKey, formatDateLabel } from "@/lib/date-utils";
 import {
   ACHIEVEMENT_REGISTRY,
@@ -143,16 +141,13 @@ export default async function PerfilPage() {
   const nickname = email ? getNickname(email) : "Atleta";
   const initials = email ? email[0].toUpperCase() : "?";
 
-  const [profileRes, activeSeason] = await Promise.all([
-    user
-      ? supabase
-          .from("profiles")
-          .select("avatar_id, avatar_type, username, display_name, bio, total_xp")
-          .eq("user_id", user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    getActiveSeason(supabase),
-  ]);
+  const profileRes = user
+    ? await supabase
+        .from("profiles")
+        .select("avatar_id, avatar_type, username, display_name, bio, total_xp")
+        .eq("user_id", user.id)
+        .maybeSingle()
+    : { data: null };
   const profile = profileRes.data as {
     avatar_id: string | null;
     avatar_type: string | null;
@@ -247,10 +242,6 @@ export default async function PerfilPage() {
   const xpLevelProgress = xpState.levelProgress;
   const xpIntoLevel = xpState.xpIntoLevel;
   const xpForNextLevel = xpState.xpForNextLevel;
-  const seasonBreakdown = user
-    ? calculateSeasonScores(activeSeason, runs, workouts)[user.id] ?? { points: 0, runs: 0, workouts: 0, km: 0, activeDays: 0, hybridDays: 0 }
-    : { points: 0, runs: 0, workouts: 0, km: 0, activeDays: 0, hybridDays: 0 };
-
   const { data: selectedCustomAvatar } = profile?.avatar_id?.startsWith("custom-")
     ? await supabase
         .from("custom_avatars")
@@ -366,29 +357,27 @@ export default async function PerfilPage() {
         <div className="max-w-4xl space-y-3.5 sm:space-y-4">
           {/* ── Hero Card ── */}
           <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111111]">
-            {/* Top shimmer */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
-            {/* Avatar glow blob */}
-            {avatarDef && (
-              <div
-                className="pointer-events-none absolute -left-8 -top-8 size-56 rounded-full blur-[80px]"
-                style={{ background: avatarDef.accentColor + "18" }}
-              />
-            )}
+            {/* Top shimmer — rank-colored */}
+            <div className="absolute inset-x-0 top-0 h-[1.5px]" style={{ background: `linear-gradient(to right, transparent, ${rankStyle.color}48, transparent)` }} />
+            {/* Avatar glow blob — always visible */}
+            <div
+              className="pointer-events-none absolute -left-12 -top-12 size-72 rounded-full blur-[100px]"
+              style={{ background: avatarDef ? avatarDef.accentColor + "20" : rankStyle.color + "14" }}
+            />
 
-            <div className="relative p-4 sm:p-6">
+            <div className="relative p-5 sm:p-6">
               {/* Avatar + info row */}
-              <div className="flex flex-wrap items-start gap-3 sm:flex-nowrap sm:gap-4">
+              <div className="flex items-start gap-4 sm:gap-5">
                 <div className="shrink-0">
                   <AvatarDisplay
                     avatarId={profile?.avatar_id ?? null}
                     definition={avatarDef}
                     initials={initials}
-                    size="md"
+                    size="lg"
                   />
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                <div className="flex min-w-0 flex-1 flex-col gap-2.5">
                   <EditProfileForm
                     initialDisplayName={profile?.display_name ?? null}
                     initialBio={profile?.bio ?? null}
@@ -449,56 +438,53 @@ export default async function PerfilPage() {
                           Troféus
                         </Link>
                       )}
+                      <SeasonLeagueBadge points={totalXp} compact />
                     </div>
                   </div>
-                </div>
-
-                <div className="ml-auto shrink-0 self-start text-right">
-                  <p className="mb-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[#F5F5F5]/30">
-                    Temporada Atual
-                  </p>
-                  <SeasonLeagueBadge points={seasonBreakdown.points} compact />
                 </div>
               </div>
 
               {/* XP bar — full width below avatar row */}
-              <div className="mt-3 rounded-xl border border-white/[0.055] bg-white/[0.025] p-3">
-                <div className="mb-1.5 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5">
+              <div
+                className="mt-4 rounded-xl border p-3.5 sm:p-4"
+                style={{ borderColor: rankStyle.color + "25", background: rankStyle.color + "07" }}
+              >
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
-                      style={{ background: rankStyle.color + "20", color: rankStyle.color }}
+                      className="rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em]"
+                      style={{ background: rankStyle.color + "22", color: rankStyle.color, boxShadow: `0 0 12px ${rankStyle.color}30` }}
                     >
                       Nível {dbLevel}
                     </span>
-                    <span className="text-xs font-semibold text-[#F5F5F5]/70">
+                    <span className="text-xs font-semibold" style={{ color: rankStyle.color + "cc" }}>
                       {rankStyle.label}
                     </span>
                   </div>
-                  <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
-                    {totalXp.toLocaleString("pt-BR")} XP total
+                  <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/50">
+                    {totalXp.toLocaleString("pt-BR")} XP
                   </span>
                 </div>
-                <div className="h-[4px] overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="h-[5px] overflow-hidden rounded-full bg-white/[0.07]">
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${xpLevelProgress}%`,
                       background: rankStyle.color,
-                      boxShadow: `0 0 10px ${rankStyle.color}55`,
+                      boxShadow: `0 0 12px ${rankStyle.color}66`,
                     }}
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[#F5F5F5]/34">
                   <span>Progresso do nível</span>
-                  <span className="font-mono text-xs font-semibold tabular-nums text-[#F5F5F5]/54">
+                  <span className="font-mono tabular-nums text-[#F5F5F5]/44">
                     {xpIntoLevel.toLocaleString("pt-BR")} / {xpForNextLevel?.toLocaleString("pt-BR") ?? "max"} XP
                   </span>
                 </div>
               </div>
 
               {/* Quick stats grid */}
-              <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="mt-3.5 grid grid-cols-3 gap-2.5 sm:gap-3">
                 <QuickStat label="km" value={formatDecimal(totalKm)} unit="km" />
                 <QuickStat label="Treinos" value={String(totalRuns)} unit="" />
                 <QuickStat
@@ -714,7 +700,7 @@ function QuickStat({
   unit: string;
 }) {
   return (
-    <div className="flex min-h-[76px] min-w-0 flex-col items-center justify-center rounded-xl border border-white/[0.055] bg-white/[0.025] px-2.5 py-3 text-center sm:min-h-[84px] sm:px-3.5 sm:py-3.5">
+    <div className="flex min-h-[82px] min-w-0 flex-col items-center justify-center rounded-xl border border-white/[0.055] bg-white/[0.025] px-3 py-3.5 text-center sm:min-h-[88px] sm:px-3.5 sm:py-4">
       <p className="mb-2 truncate text-[9px] font-bold uppercase tracking-[0.12em] text-[#F5F5F5]/32 sm:text-[10px]">
         {label}
       </p>
@@ -737,8 +723,8 @@ type RecentActivityItem =
 function RecentActivityRow({ activity }: { activity: RecentActivityItem }) {
   if (activity.kind === "run") {
     return (
-      <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3">
-        <div className="grid size-8 shrink-0 place-items-center rounded-lg border border-[#B6FF00]/10 bg-[#B6FF00]/10">
+      <div className="flex items-center gap-3 px-5 py-3.5 sm:py-4">
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#B6FF00]/15 bg-[#B6FF00]/[0.08]">
           <Timer className="size-4 text-[#B6FF00]/80" strokeWidth={1.8} />
         </div>
         <div className="min-w-0 flex-1">
@@ -752,8 +738,8 @@ function RecentActivityRow({ activity }: { activity: RecentActivityItem }) {
     );
   }
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3">
-      <div className="grid size-8 shrink-0 place-items-center rounded-lg border border-[#22D3EE]/10 bg-[#22D3EE]/10">
+    <div className="flex items-center gap-3 px-5 py-3.5 sm:py-4">
+      <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#22D3EE]/15 bg-[#22D3EE]/[0.08]">
         <Dumbbell className="size-4 text-[#22D3EE]/80" strokeWidth={1.8} />
       </div>
       <div className="min-w-0 flex-1">
