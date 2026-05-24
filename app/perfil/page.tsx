@@ -421,9 +421,9 @@ export default async function PerfilPage() {
                       <span
                         className="inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]"
                         style={{
-                          borderColor: (avatarDef?.accentColor ?? "#B6FF00") + "55",
-                          color: avatarDef?.accentColor ?? "#B6FF00",
-                          background: (avatarDef?.accentColor ?? "#B6FF00") + "1A",
+                          borderColor: rankStyle.color + "55",
+                          color: rankStyle.color,
+                          background: rankStyle.color + "1A",
                         }}
                       >
                         {athleteLabel}
