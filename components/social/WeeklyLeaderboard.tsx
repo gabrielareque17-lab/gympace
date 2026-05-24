@@ -129,7 +129,9 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
                     <span className="text-[10px] font-semibold" style={{ color: athleteTitle.color }}>
                       {athleteTitle.label}
                     </span>
-                    <SeasonLeagueBadge points={entry.seasonPoints} compact showLabel={false} />
+                    {entry.seasonPoints > 0 && (
+                      <SeasonLeagueBadge points={entry.seasonPoints} compact showLabel={false} />
+                    )}
                     {entry.username && (
                       <>
                         <span className="text-[9px] text-[#F5F5F5]/10">·</span>

@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
 import { getGlobalLeaderboard, getFriendsLeaderboard, type LeaderboardEntry } from "@/lib/leaderboard";
 import { calculateSeasonScores, getSeasonDateWindow, type SeasonActivityRun, type SeasonActivityWorkout, type SeasonScoreBreakdown } from "@/lib/season-points";
-import { getLevelProgress } from "@/lib/xp";
+import { calculateLevelFromXP, getLevelProgress, getRankForLevel, syncUserXP } from "@/lib/xp";
 import { getAthleteTitle } from "@/lib/athlete-title";
 import { customAvatarRowToDefinition, type CustomAvatarRow } from "@/lib/custom-avatars";
 
@@ -40,15 +40,18 @@ export default async function SocialPage() {
     current_level: number | null;
     total_xp: number | null;
   } | null;
-  const totalXp = Number(profileMeta?.total_xp ?? 0);
+  const xpFeedback = await syncUserXP(supabase, userId);
+  const totalXp = xpFeedback.totalXp;
+  const currentLevel = calculateLevelFromXP(totalXp);
+  const currentRank = getRankForLevel(currentLevel);
   const levelState = getLevelProgress(totalXp);
 
   const profile = profileMeta ? {
     username: profileMeta.username,
     display_name: profileMeta.display_name,
     avatar_id: profileMeta.avatar_id,
-    rank: profileMeta.rank,
-    current_level: profileMeta.current_level ?? 1,
+    rank: currentRank,
+    current_level: currentLevel,
     total_xp: totalXp,
     xp_into_level: levelState.xpIntoLevel,
     xp_for_next_level: levelState.xpForNextLevel,
@@ -117,8 +120,8 @@ export default async function SocialPage() {
         displayName: profileMeta?.display_name ?? null,
         avatarId: profileMeta?.avatar_id ?? null,
         avatarDefinition: currentAvatarDefinition,
-        rank: profileMeta?.rank ?? "rookie",
-        currentLevel: profileMeta?.current_level ?? 1,
+        rank: currentRank,
+        currentLevel,
         totalXp,
         weeklyKm: 0,
         weeklyWorkouts: 0,
@@ -133,8 +136,8 @@ export default async function SocialPage() {
     patched[idx] = {
       ...patched[idx],
       totalXp,
-      currentLevel: profileMeta?.current_level ?? 1,
-      rank: profileMeta?.rank ?? "rookie",
+      currentLevel,
+      rank: currentRank,
       avatarDefinition: currentAvatarDefinition ?? patched[idx].avatarDefinition,
       seasonPoints: mySeasonBreakdown.points,
       seasonBreakdown: mySeasonBreakdown,
@@ -299,7 +302,7 @@ export default async function SocialPage() {
                   >
                     Nv {profile?.current_level ?? 1} · {athleteTitle.label}
                   </span>
-                  {activeSeason && (
+                  {activeSeason && mySeasonBreakdown.points > 0 && (
                     <SeasonLeagueBadge points={mySeasonBreakdown.points} seasonName={activeSeason.name} compact />
                   )}
                 </div>
