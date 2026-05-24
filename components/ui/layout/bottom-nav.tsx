@@ -131,7 +131,7 @@ const NavItem = memo(function NavItem({
 function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
   const pathname   = usePathname();
   const router     = useRouter();
-  const { badges } = useNavBadgeContext();
+  const { badges, markFeedSeen } = useNavBadgeContext();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [sheetOpen, setSheetOpen]       = useState(false);
   const [mounted, setMounted]           = useState(false);
@@ -157,6 +157,13 @@ function BottomNavBase({ hidden = false }: { hidden?: boolean }) {
     vv.addEventListener("resize", onResize);
     return () => vv.removeEventListener("resize", onResize);
   }, []);
+
+  // Mark feed as seen when user is on /feed
+  useEffect(() => {
+    if (pathname === "/feed") {
+      markFeedSeen();
+    }
+  }, [pathname, markFeedSeen]);
 
   // Close sheet on Escape
   useEffect(() => {

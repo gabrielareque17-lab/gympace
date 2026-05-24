@@ -220,7 +220,8 @@ export async function calculateTotalXPForUser(
       ),
     0
   );
-  const streakXp = Math.max(stats.currentStreak, stats.gymStreak) * XP_RULES.streakXpPerDay;
+  // Streak XP is intentionally excluded from total — it's volatile (resets when streak breaks)
+  // which causes XP to decrease unexpectedly and corrupt ranking order.
   const competitionXp = participants.reduce((sum, participant) => {
     const progress = Number(participant.progress ?? 0);
     const isEnded = participant.competitions?.end_date
@@ -235,7 +236,7 @@ export async function calculateTotalXPForUser(
     );
   }, 0);
 
-  return runXp + workoutXp + streakXp + achievementXp + competitionXp;
+  return runXp + workoutXp + achievementXp + competitionXp;
 }
 
 export function calculateLevelFromXP(totalXp: number) {
