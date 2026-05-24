@@ -131,7 +131,7 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
                       {athleteTitle.label}
                     </span>
                     {hasSeason && (
-                      <SeasonLeagueBadge points={entry.seasonPoints} compact showLabel={false} />
+                      <SeasonLeagueBadge points={entry.totalXp} compact showLabel={false} />
                     )}
                     {entry.username && (
                       <>

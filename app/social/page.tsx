@@ -303,7 +303,7 @@ export default async function SocialPage() {
                     Nv {profile?.current_level ?? 1} · {athleteTitle.label}
                   </span>
                   {activeSeason && (
-                    <SeasonLeagueBadge points={mySeasonBreakdown.points} seasonName={activeSeason.name} compact />
+                    <SeasonLeagueBadge points={totalXp} seasonName={activeSeason.name} compact />
                   )}
                 </div>
               </div>
