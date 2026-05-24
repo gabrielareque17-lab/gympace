@@ -19,6 +19,7 @@ type Props = {
   friendsEntries: LeaderboardEntry[];
   currentUserId: string;
   mode?: "xp";
+  hasSeason?: boolean;
 };
 
 const TROPHY_COLORS = ["#EAB308", "#A1A1AA", "#CD7F32"] as const;
@@ -40,7 +41,7 @@ function PositionBadge({ pos }: { pos: number }) {
   );
 }
 
-export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId, mode = "xp" }: Props) {
+export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId, mode = "xp", hasSeason = false }: Props) {
   const [scope, setScope] = useState<"global" | "friends">("global");
   const entries = scope === "global" ? globalEntries : friendsEntries;
   const myPos = entries.findIndex((entry) => entry.userId === currentUserId);
@@ -129,7 +130,7 @@ export function WeeklyLeaderboard({ globalEntries, friendsEntries, currentUserId
                     <span className="text-[10px] font-semibold" style={{ color: athleteTitle.color }}>
                       {athleteTitle.label}
                     </span>
-                    {entry.seasonPoints > 0 && (
+                    {hasSeason && (
                       <SeasonLeagueBadge points={entry.seasonPoints} compact showLabel={false} />
                     )}
                     {entry.username && (
