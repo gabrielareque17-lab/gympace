@@ -3,7 +3,6 @@ import { Medal } from "lucide-react";
 
 import { AppShell } from "@/components/ui/layout/app-shell";
 import { AvatarDisplay } from "@/components/ui/avatar/avatar-display";
-import { SeasonLeagueBadge } from "@/components/seasons/season-league-badge";
 import { WeeklyLeaderboard } from "@/components/social/WeeklyLeaderboard";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getActiveSeason, daysRemaining, seasonProgress } from "@/lib/seasons";
@@ -302,9 +301,6 @@ export default async function SocialPage() {
                   >
                     Nv {profile?.current_level ?? 1} · {athleteTitle.label}
                   </span>
-                  {activeSeason && mySeasonBreakdown.points > 0 && (
-                    <SeasonLeagueBadge points={mySeasonBreakdown.points} seasonName={activeSeason.name} compact />
-                  )}
                 </div>
               </div>
               <div className="shrink-0 text-right">
